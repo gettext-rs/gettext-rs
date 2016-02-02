@@ -5,12 +5,12 @@
 //! ```
 //! use gettext_rs::*;
 //!
-//! set_locale(LocaleCategory::LcAll, "en_US.UTF-8");
+//! setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
 //!
-//! bind_text_domain("hellorust", "/usr/local/share/locale");
-//! text_domain("hellorust");
+//! bindtextdomain("hellorust", "/usr/local/share/locale");
+//! textdomain("hellorust");
 //!
-//! println!("Translated: {}", get_text("Hello, world!"));
+//! println!("Translated: {}", gettext("Hello, world!"));
 //! ```
 
 /// Raw FFI interface for gettext library
@@ -26,7 +26,7 @@ mod gettext_raw {
 }
 
 /// Safe wrapper for gettext library
-mod get_text {
+mod gettext {
     use gettext_raw;
     use std::ffi::CString;
     use std::ffi::CStr;
@@ -62,7 +62,7 @@ mod get_text {
     }
 
     /// Translate msgid to localized message
-    pub fn get_text<T: Into<Vec<u8>>>(s: T) -> String {
+    pub fn gettext<T: Into<Vec<u8>>>(s: T) -> String {
         unsafe {
             CStr::from_ptr(gettext_raw::gettext(CString::new(s).unwrap().as_ptr()))
                 .to_string_lossy()
@@ -71,7 +71,7 @@ mod get_text {
     }
 
     /// Switch to specific text domain
-    pub fn text_domain<T: Into<Vec<u8>>>(domain: T) -> String {
+    pub fn textdomain<T: Into<Vec<u8>>>(domain: T) -> String {
         unsafe {
             CStr::from_ptr(gettext_raw::textdomain(CString::new(domain).unwrap().as_ptr()))
                 .to_string_lossy()
@@ -80,7 +80,7 @@ mod get_text {
     }
 
     /// Bind text domain to some directory containing gettext MO files
-    pub fn bind_text_domain<T: Into<Vec<u8>>>(domian: T, dir: T) -> String {
+    pub fn bindtextdomain<T: Into<Vec<u8>>>(domian: T, dir: T) -> String {
         unsafe {
             CStr::from_ptr(gettext_raw::bindtextdomain(CString::new(domian).unwrap().as_ptr(),
                                                        CString::new(dir).unwrap().as_ptr()))
@@ -90,7 +90,7 @@ mod get_text {
     }
 
     /// Set current locale for translations
-    pub fn set_locale<T: Into<Vec<u8>>>(category: LocaleCategory, locale: T) -> String {
+    pub fn setlocale<T: Into<Vec<u8>>>(category: LocaleCategory, locale: T) -> String {
         unsafe {
             CStr::from_ptr(gettext_raw::setlocale(category as i32,
                                                   CString::new(locale).unwrap().as_ptr()))
@@ -101,7 +101,7 @@ mod get_text {
 
 }
 
-pub use get_text::*;
+pub use gettext::*;
 
 #[cfg(test)]
 mod tests {
@@ -109,11 +109,11 @@ mod tests {
 
     #[test]
     fn smoke_test() {
-        set_locale(LocaleCategory::LcAll, "en_US.UTF-8");
+        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
 
-        bind_text_domain("hellorust", "/usr/local/share/locale");
-        text_domain("hellorust");
+        bindtextdomain("hellorust", "/usr/local/share/locale");
+        textdomain("hellorust");
 
-        assert_eq!("Hello, world!", get_text("Hello, world!"));
+        assert_eq!("Hello, world!", gettext("Hello, world!"));
     }
 }
