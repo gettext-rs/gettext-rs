@@ -4,4 +4,5 @@ description = "GNU Gettext FFI binding for Rust"
 version = "0.1.0"
 authors = ["Konstantin Salikhov <koka58@yandex.ru>"]
 repository = "https://github.com/Koka/gettext-rs"
+license = "MIT"
 
