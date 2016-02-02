@@ -4,6 +4,8 @@ GNU [Gettext](https://www.gnu.org/software/gettext/) FFI binding for Rust
 
 ![https://travis-ci.org/Koka/gettext-rs](https://travis-ci.org/Koka/gettext-rs.svg?branch=master)
 
+Docs are available [here](http://koka.github.io/gettext-rs/gettext_rs/)
+
 Usage:
 
 ```
