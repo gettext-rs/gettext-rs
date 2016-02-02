@@ -1,6 +1,6 @@
 # gettext-rs
 
-GNU Gettext FFI binding for Rust
+GNU [Gettext](https://www.gnu.org/software/gettext/) FFI binding for Rust
 
 Usage:
 
