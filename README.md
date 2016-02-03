@@ -15,5 +15,7 @@ Usage:
  bindtextdomain("hellorust", "/usr/local/share/locale");
  textdomain("hellorust");
  println!("Translated: {}", gettext("Hello, world!"));
+ println!("Singular: {}", ngettext("One thing", "Multiple things", 1));
+ println!("Plural: {}", ngettext("One thing", "Multiple things", 2));
 ```
 
