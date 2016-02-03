@@ -9,7 +9,7 @@ Docs are available [here](http://koka.github.io/gettext-rs/gettext_rs/)
 
 Usage:
 
-```
+```rust
  use gettext_rs::*;
  setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
  bindtextdomain("hellorust", "/usr/local/share/locale");
