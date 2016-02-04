@@ -8,3 +8,5 @@ license = "MIT"
 
 [lib]
 name = "gettextrs"
+doctest = false
+
