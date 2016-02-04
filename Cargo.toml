@@ -1,12 +1,11 @@
 [package]
 name = "gettext-rs"
 description = "GNU Gettext FFI binding for Rust"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Konstantin Salikhov <koka58@yandex.ru>"]
 repository = "https://github.com/Koka/gettext-rs"
 license = "MIT"
 
 [lib]
 name = "gettextrs"
-doctest = false
 

@@ -3,7 +3,7 @@
 //! Usage:
 //!
 //! ```
-//! use gettext_rs::*;
+//! use gettextrs::*; 
 //!
 //! setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
 //!
