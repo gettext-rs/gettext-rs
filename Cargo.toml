@@ -6,3 +6,5 @@ authors = ["Konstantin Salikhov <koka58@yandex.ru>"]
 repository = "https://github.com/Koka/gettext-rs"
 license = "MIT"
 
+[lib]
+name = "gettextrs"
