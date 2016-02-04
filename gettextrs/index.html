@@ -4,10 +4,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="rustdoc">
-    <meta name="description" content="API documentation for the Rust `gettext_rs` crate.">
-    <meta name="keywords" content="rust, rustlang, rust-lang, gettext_rs">
+    <meta name="description" content="API documentation for the Rust `gettextrs` crate.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, gettextrs">
 
-    <title>gettext_rs - Rust</title>
+    <title>gettextrs - Rust</title>
 
     <link rel="stylesheet" type="text/css" href="../main.css">
 
@@ -26,7 +26,7 @@
 
     <nav class="sidebar">
         
-        <p class='location'></p><script>window.sidebarCurrent = {name: 'gettext_rs', ty: 'mod', relpath: '../'};</script>
+        <p class='location'></p><script>window.sidebarCurrent = {name: 'gettextrs', ty: 'mod', relpath: '../'};</script>
     </nav>
 
     <nav class="sub">
@@ -41,17 +41,17 @@
     </nav>
 
     <section id='main' class="content mod">
-<h1 class='fqn'><span class='in-band'>Crate <a class='mod' href=''>gettext_rs</a></span><span class='out-of-band'><span id='render-detail'>
+<h1 class='fqn'><span class='in-band'>Crate <a class='mod' href=''>gettextrs</a></span><span class='out-of-band'><span id='render-detail'>
             <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                 [<span class='inner'>&#x2212;</span>]
             </a>
-        </span><a id='src-0' class='srclink' href='../src/gettext_rs/lib.rs.html#1-195' title='goto source code'>[src]</a></span></h1>
+        </span><a id='src-0' class='srclink' href='../src/gettextrs/lib.rs.html#1-195' title='goto source code'>[src]</a></span></h1>
 <div class='docblock'>
 <h1 id="gettext-c-library-ffi-binding-for-rust" class='section-header'><a
                            href="#gettext-c-library-ffi-binding-for-rust">gettext C library FFI binding for Rust</a></h1>
 <p>Usage:</p>
 <pre class='rust rust-example-rendered'>
-<span class='kw'>use</span> <span class='ident'>gettext_rs</span>::<span class='op'>*</span>;
+<span class='kw'>use</span> <span class='ident'>gettextrs</span>::<span class='op'>*</span>; 
 
 <span class='ident'>setlocale</span>(<span class='ident'>LocaleCategory</span>::<span class='ident'>LcAll</span>, <span class='string'>&quot;en_US.UTF-8&quot;</span>);
 
@@ -65,7 +65,7 @@
 <table>
                     <tr class=' module-item'>
                         <td><a class='enum' href='enum.LocaleCategory.html'
-                               title='gettext_rs::LocaleCategory'>LocaleCategory</a></td>
+                               title='gettextrs::LocaleCategory'>LocaleCategory</a></td>
                         <td class='docblock short'>
                              <p>Locale category enum ported from locale.h</p>
 
@@ -75,7 +75,7 @@
 <table>
                     <tr class=' module-item'>
                         <td><a class='fn' href='fn.bind_textdomain_codeset.html'
-                               title='gettext_rs::bind_textdomain_codeset'>bind_textdomain_codeset</a></td>
+                               title='gettextrs::bind_textdomain_codeset'>bind_textdomain_codeset</a></td>
                         <td class='docblock short'>
                              
                         </td>
@@ -83,7 +83,7 @@
                 
                     <tr class=' module-item'>
                         <td><a class='fn' href='fn.bindtextdomain.html'
-                               title='gettext_rs::bindtextdomain'>bindtextdomain</a></td>
+                               title='gettextrs::bindtextdomain'>bindtextdomain</a></td>
                         <td class='docblock short'>
                              <p>Bind text domain to some directory containing gettext MO files</p>
 
@@ -92,7 +92,7 @@
                 
                     <tr class=' module-item'>
                         <td><a class='fn' href='fn.dcgettext.html'
-                               title='gettext_rs::dcgettext'>dcgettext</a></td>
+                               title='gettextrs::dcgettext'>dcgettext</a></td>
                         <td class='docblock short'>
                              <p>Translate msgid to localized message from specified domain using custom locale category</p>
 
@@ -101,7 +101,7 @@
                 
                     <tr class=' module-item'>
                         <td><a class='fn' href='fn.dcngettext.html'
-                               title='gettext_rs::dcngettext'>dcngettext</a></td>
+                               title='gettextrs::dcngettext'>dcngettext</a></td>
                         <td class='docblock short'>
                              <p>Translate msgid to localized message from specified domain using custom locale category (with plural support)</p>
 
@@ -110,7 +110,7 @@
                 
                     <tr class=' module-item'>
                         <td><a class='fn' href='fn.dgettext.html'
-                               title='gettext_rs::dgettext'>dgettext</a></td>
+                               title='gettextrs::dgettext'>dgettext</a></td>
                         <td class='docblock short'>
                              <p>Translate msgid to localized message from specified domain</p>
 
@@ -119,7 +119,7 @@
                 
                     <tr class=' module-item'>
                         <td><a class='fn' href='fn.dngettext.html'
-                               title='gettext_rs::dngettext'>dngettext</a></td>
+                               title='gettextrs::dngettext'>dngettext</a></td>
                         <td class='docblock short'>
                              <p>Translate msgid to localized message from specified domain (with plural support)</p>
 
@@ -128,7 +128,7 @@
                 
                     <tr class=' module-item'>
                         <td><a class='fn' href='fn.gettext.html'
-                               title='gettext_rs::gettext'>gettext</a></td>
+                               title='gettextrs::gettext'>gettext</a></td>
                         <td class='docblock short'>
                              <p>Translate msgid to localized message from default domain</p>
 
@@ -137,7 +137,7 @@
                 
                     <tr class=' module-item'>
                         <td><a class='fn' href='fn.ngettext.html'
-                               title='gettext_rs::ngettext'>ngettext</a></td>
+                               title='gettextrs::ngettext'>ngettext</a></td>
                         <td class='docblock short'>
                              <p>Translate msgid to localized message from default domain (with plural support)</p>
 
@@ -146,7 +146,7 @@
                 
                     <tr class=' module-item'>
                         <td><a class='fn' href='fn.setlocale.html'
-                               title='gettext_rs::setlocale'>setlocale</a></td>
+                               title='gettextrs::setlocale'>setlocale</a></td>
                         <td class='docblock short'>
                              <p>Set current locale for translations</p>
 
@@ -155,7 +155,7 @@
                 
                     <tr class=' module-item'>
                         <td><a class='fn' href='fn.textdomain.html'
-                               title='gettext_rs::textdomain'>textdomain</a></td>
+                               title='gettextrs::textdomain'>textdomain</a></td>
                         <td class='docblock short'>
                              <p>Switch to specific text domain</p>
 
@@ -214,7 +214,7 @@
 
     <script>
         window.rootPath = "../";
-        window.currentCrate = "gettext_rs";
+        window.currentCrate = "gettextrs";
         window.playgroundUrl = "";
     </script>
     <script src="../jquery.js"></script>
