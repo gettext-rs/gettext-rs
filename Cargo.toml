@@ -4,6 +4,10 @@ description = "GNU Gettext FFI binding for Rust"
 version = "0.3.0"
 authors = ["Konstantin Salikhov <koka58@yandex.ru>"]
 repository = "https://github.com/Koka/gettext-rs"
+documentation = "http://koka.github.io/gettext-rs/gettextrs/"
+homepage = "https://github.com/Koka/gettext-rs"
+readme = "README.md"
+keywords = ["gettext", "binding", "ffi", "i18n", "l10n"]
 license = "MIT"
 
 [lib]
