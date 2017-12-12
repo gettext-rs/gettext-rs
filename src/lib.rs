@@ -125,12 +125,15 @@ pub fn bindtextdomain<T: Into<Vec<u8>>>(domain: T, dir: T) -> String {
 }
 
 /// Set current locale for translations
-pub fn setlocale<T: Into<Vec<u8>>>(category: LocaleCategory, locale: T) -> String {
+pub fn setlocale<T: Into<Vec<u8>>>(category: LocaleCategory, locale: T) -> Option<String> {
+    let c = CString::new(locale).unwrap();
     unsafe {
-        CStr::from_ptr(ffi::setlocale(category as i32,
-                                              CString::new(locale).unwrap().as_ptr()))
-            .to_string_lossy()
-            .into_owned()
+        let ret = ffi::setlocale(category as i32, c.as_ptr());
+        if ret.is_null() {
+            None
+        } else {
+            Some(CStr::from_ptr(ret).to_string_lossy().into_owned())
+        }
     }
 }
 
