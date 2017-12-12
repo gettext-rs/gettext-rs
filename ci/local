@@ -22,6 +22,18 @@ case "$1" in
     export TARGET=x86_64-unknown-linux-musl
     export DOCKER=musl
     ;;
+  build)
+    export TARGET=x86_64-unknown-linux-gnu
+    export DOCKER=linux64-build
+    export GETTEXT_DIR=/result
+    ;;
+  build2)
+    export TARGET=x86_64-unknown-linux-gnu
+    export DOCKER=linux64-build
+    export GETTEXT_LIB_DIR=/result/lib
+    export GETTEXT_BIN_DIR=/result/lib
+    export GETTEXT_INCLUDE_DIR=/result/include
+    ;;
   macos-homebrew)
     export GETTEXT_DIR=/usr/local/opt/gettext
     export TARGET=x86_64-apple-darwin
@@ -44,14 +56,17 @@ else
   docker build -t rust-gettext -f ci/Dockerfile-$DOCKER ci;
   docker run \
     -w /src \
-    -v `pwd`:/src:ro \
+    -v `pwd`:/src \
     -v `pwd`/target:/src/target \
-    -v `pwd`/ci/.cargo:/src/.cargo:ro \
     -v $HOME/.rustup/toolchains/stable-x86_64-unknown-linux-gnu:/usr/local:ro \
-    -v $HOME/.cargo:/root/.cargo \
+    -v $HOME/.cargo/registry:/root/.cargo/registry \
     -e TARGET \
     -e NO_RUN \
     -e GETTEXT_SYSTEM \
+    -e GETTEXT_DIR \
+    -e GETTEXT_LIB_DIR \
+    -e GETTEXT_BIN_DIR \
+    -e GETTEXT_INCLUDE_DIR \
     -e CARGO_TARGET_DIR=/src/target \
     -it rust-gettext \
     sh ci/run.sh;

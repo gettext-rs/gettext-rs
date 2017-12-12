@@ -21,15 +21,18 @@ matrix:
     - os: linux
       rust: stable
       env: TARGET=i686-unknown-linux-gnu DOCKER=linux32-gettext GETTEXT_SYSTEM=1
+    - os: linux
+      rust: stable
+      env: TARGET=x86_64-unknown-linux-gnu DOCKER=linux64-build NO_ADD=1 GETTEXT_DIR=/result
+    - os: linux
+      rust: stable
+      env: TARGET=x86_64-unknown-linux-gnu DOCKER=linux64-build NO_ADD=1 GETTEXT_BIN_DIR=/result/bin GETTEXT_LIB_DIR=/result/lib GETTEXT_INCLUDE_DIR=/result/include
     - os: osx
       rust: stable
       env: TARGET=x86_64-apple-darwin NO_ADD=1 HOMEBREW=1 GETTEXT_DIR=/usr/local/opt/gettext
     - os: osx
       rust: stable
-      env: TARGET=x86_64-apple-darwin NO_ADD=1 HOMEBREW=1 GETTEXT_LIB_DIR=/usr/local/opt/gettext/lib GETTEXT_BIN_DIR=/usr/local/opt/gettext/bin GETTEXT_INCLUDE_DIR=/usr/local/opt/gettext/include
-    - os: osx
-      rust: stable
-      env: TARGET=x86_64-apple-darwin NO_ADD=1 HOMEBREW=1
+      env: TARGET=x86_64-apple-darwin NO_ADD=1
     - os: linux
       rust: beta
       env: TARGET=x86_64-unknown-linux-gnu DOCKER=linux64 NO_ADD=1
@@ -52,7 +55,6 @@ script:
         -w /src
         -v `pwd`:/src:ro
         -v `pwd`/target:/src/target
-        -v `pwd`/ci/.cargo:/src/.cargo:ro
         -v `rustc --print sysroot`:/usr/local:ro
         -e TARGET
         -e NO_RUN
