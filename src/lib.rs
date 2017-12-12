@@ -19,6 +19,7 @@ extern crate gettext_sys as ffi;
 
 use std::ffi::CString;
 use std::ffi::CStr;
+use std::os::raw::c_ulong;
 
 /// Locale category enum ported from locale.h
 pub enum LocaleCategory {
@@ -80,7 +81,7 @@ pub fn dcgettext<T: Into<Vec<u8>>>(domain: T, s: T, category: LocaleCategory) ->
 /// Translate msgid to localized message from default domain (with plural support)
 pub fn ngettext<T: Into<Vec<u8>>>(singular: T, plural : T, n : u32) -> String {
     unsafe {
-        CStr::from_ptr(ffi::ngettext(CString::new(singular).unwrap().as_ptr(), CString::new(plural).unwrap().as_ptr(), n))
+        CStr::from_ptr(ffi::ngettext(CString::new(singular).unwrap().as_ptr(), CString::new(plural).unwrap().as_ptr(), n as c_ulong))
             .to_string_lossy()
             .into_owned()
     }
@@ -89,7 +90,7 @@ pub fn ngettext<T: Into<Vec<u8>>>(singular: T, plural : T, n : u32) -> String {
 /// Translate msgid to localized message from specified domain (with plural support)
 pub fn dngettext<T: Into<Vec<u8>>>(domain: T, singular: T, plural: T, n : u32) -> String {
     unsafe {
-        CStr::from_ptr(ffi::dngettext(CString::new(domain).unwrap().as_ptr(), CString::new(singular).unwrap().as_ptr(), CString::new(plural).unwrap().as_ptr(), n))
+        CStr::from_ptr(ffi::dngettext(CString::new(domain).unwrap().as_ptr(), CString::new(singular).unwrap().as_ptr(), CString::new(plural).unwrap().as_ptr(), n as c_ulong))
             .to_string_lossy()
             .into_owned()
     }
@@ -98,7 +99,7 @@ pub fn dngettext<T: Into<Vec<u8>>>(domain: T, singular: T, plural: T, n : u32) -
 /// Translate msgid to localized message from specified domain using custom locale category (with plural support)
 pub fn dcngettext<T: Into<Vec<u8>>>(domain: T, singular: T, plural: T, n : u32, category: LocaleCategory) -> String {
     unsafe {
-        CStr::from_ptr(ffi::dcngettext(CString::new(domain).unwrap().as_ptr(), CString::new(singular).unwrap().as_ptr(), CString::new(plural).unwrap().as_ptr(), n, category as i32))
+        CStr::from_ptr(ffi::dcngettext(CString::new(domain).unwrap().as_ptr(), CString::new(singular).unwrap().as_ptr(), CString::new(plural).unwrap().as_ptr(), n as c_ulong, category as i32))
             .to_string_lossy()
             .into_owned()
     }
