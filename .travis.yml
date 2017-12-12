@@ -1,27 +1,28 @@
 sudo: false
 language: rust
+matrix:
+  include:
+    - os: linux
+      rust: stable
+      env: TARGET=x86_64-unknown-linux-gnu NO_ADD=1
+    - os: linux
+      rust: stable
+      env: TARGET=i686-unknown-linux-gnu
+    - os: linux
+      rust: beta
+      env: TARGET=x86_64-unknown-linux-gnu NO_ADD=1
+    - os: linux
+      rust: nightly
+      env: TARGET=x86_64-unknown-linux-gnu NO_ADD=1
 
-rust:
-    - stable
-    - beta
-    - nightly
-os:
-  - linux
-
-env:
-  - ARCH=x86_64
-  - ARCH=i686
-
+install:
+  - if [ -z "$NO_ADD" ]; then rustup target add $TARGET; fi
 script:
-  - curl -sSL https://raw.githubusercontent.com/carllerche/travis-rust-matrix/master/test | bash
+  - cargo generate-lockfile
+  - cargo generate-lockfile --manifest-path systest/Cargo.toml
+  - sh ci/run.sh
 
 addons:
   apt:
     packages:
       - gcc-multilib
-
-matrix:
-  allow_failures:
-    - rust: nightly
-    - rust: beta
-
