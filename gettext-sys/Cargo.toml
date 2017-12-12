@@ -1,0 +1,7 @@
+[package]
+name = "gettext-sys"
+version = "0.19.8"
+authors = ["Brian Olsen <brian@maven-group.org>"]
+
+[lib]
+path = "lib.rs"
