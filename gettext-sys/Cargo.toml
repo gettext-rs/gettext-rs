@@ -1,0 +1,12 @@
+[package]
+name = "gettext-sys"
+version = "0.19.8"
+authors = ["Brian Olsen <brian@maven-group.org>"]
+build = "build.rs"
+links = "gettext"
+
+[lib]
+path = "lib.rs"
+
+[build-dependencies]
+cc = "1.0"

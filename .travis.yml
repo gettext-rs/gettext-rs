@@ -1,27 +1,65 @@
-sudo: false
+sudo: required
 language: rust
-
-rust:
-    - stable
-    - beta
-    - nightly
-os:
-  - linux
-
-env:
-  - ARCH=x86_64
-  - ARCH=i686
-
-script:
-  - curl -sSL https://raw.githubusercontent.com/carllerche/travis-rust-matrix/master/test | bash
-
-addons:
-  apt:
-    packages:
-      - gcc-multilib
+dist: trusty
+services:
+  - docker
 
 matrix:
-  allow_failures:
-    - rust: nightly
-    - rust: beta
+  include:
+    - os: linux
+      rust: stable
+      env: TARGET=x86_64-unknown-linux-gnu DOCKER=linux64 NO_ADD=1
+    - os: linux
+      rust: stable
+      env: TARGET=i686-unknown-linux-gnu DOCKER=linux32
+    - os: linux
+      rust: stable
+      env: TARGET=x86_64-unknown-linux-musl DOCKER=musl
+    - os: linux
+      rust: stable
+      env: TARGET=x86_64-unknown-linux-gnu DOCKER=linux64-gettext NO_ADD=1 GETTEXT_SYSTEM=1
+    - os: linux
+      rust: stable
+      env: TARGET=i686-unknown-linux-gnu DOCKER=linux32-gettext GETTEXT_SYSTEM=1
+    - os: linux
+      rust: stable
+      env: TARGET=x86_64-unknown-linux-gnu DOCKER=linux64-build NO_ADD=1 GETTEXT_DIR=/result
+    - os: linux
+      rust: stable
+      env: TARGET=x86_64-unknown-linux-gnu DOCKER=linux64-build NO_ADD=1 GETTEXT_BIN_DIR=/result/bin GETTEXT_LIB_DIR=/result/lib GETTEXT_INCLUDE_DIR=/result/include
+    - os: osx
+      rust: stable
+      env: TARGET=x86_64-apple-darwin NO_ADD=1 HOMEBREW=1 GETTEXT_DIR=/usr/local/opt/gettext
+    - os: osx
+      rust: stable
+      env: TARGET=x86_64-apple-darwin NO_ADD=1
+    - os: linux
+      rust: beta
+      env: TARGET=x86_64-unknown-linux-gnu DOCKER=linux64 NO_ADD=1
+    - os: linux
+      rust: nightly
+      env: TARGET=x86_64-unknown-linux-gnu DOCKER=linux64 NO_ADD=1
 
+install:
+  - if [ -z "$NO_ADD" ]; then rustup target add $TARGET; fi
+  - if [ -n "$HOMEBREW" ]; then brew install gettext; fi
+script:
+  - cargo generate-lockfile
+  - cargo generate-lockfile --manifest-path systest/Cargo.toml
+  - if [ -z "$DOCKER" ]; then
+      sh ci/run.sh;
+    else
+      mkdir .cargo target;
+      docker build -t rust -f ci/Dockerfile-$DOCKER ci;
+      docker run
+        -w /src
+        -v `pwd`:/src:ro
+        -v `pwd`/target:/src/target
+        -v `rustc --print sysroot`:/usr/local:ro
+        -e TARGET
+        -e NO_RUN
+        -e GETTEXT_SYSTEM
+        -e CARGO_TARGET_DIR=/src/target
+        -it rust
+        sh ci/run.sh;
+    fi

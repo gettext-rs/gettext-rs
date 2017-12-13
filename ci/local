@@ -1,0 +1,73 @@
+#!/bin/bash
+set -o errexit
+case "$1" in
+  linux64-system)
+    export TARGET=x86_64-unknown-linux-gnu
+    export DOCKER=linux64-gettext
+    export GETTEXT_SYSTEM=1
+    ;;
+  linux64)
+    export TARGET=x86_64-unknown-linux-gnu
+    export DOCKER=linux64
+    ;;
+  linux32-system)
+    export TARGET=i686-unknown-linux-gnu
+    export DOCKER=linux32-gettext
+    ;;
+  linux32)
+    export TARGET=i686-unknown-linux-gnu
+    export DOCKER=linux32
+    ;;
+  musl)
+    export TARGET=x86_64-unknown-linux-musl
+    export DOCKER=musl
+    ;;
+  build)
+    export TARGET=x86_64-unknown-linux-gnu
+    export DOCKER=linux64-build
+    export GETTEXT_DIR=/result
+    ;;
+  build2)
+    export TARGET=x86_64-unknown-linux-gnu
+    export DOCKER=linux64-build
+    export GETTEXT_LIB_DIR=/result/lib
+    export GETTEXT_BIN_DIR=/result/lib
+    export GETTEXT_INCLUDE_DIR=/result/include
+    ;;
+  macos-homebrew)
+    export GETTEXT_DIR=/usr/local/opt/gettext
+    export TARGET=x86_64-apple-darwin
+    ;;
+  macos-homebrew2)
+    export GETTEXT_LIB_DIR=/usr/local/opt/gettext/lib
+    export GETTEXT_BIN_DIR=/usr/local/opt/gettext/lib
+    export GETTEXT_INCLUDE_DIR=/usr/local/opt/gettext/include
+    export TARGET=x86_64-apple-darwin
+    ;;
+  macos)
+    export TARGET=x86_64-apple-darwin
+    ;;
+esac
+
+if [ -z "$DOCKER" ]; then
+  sh ci/run.sh;
+else
+  mkdir -p .cargo target;
+  docker build -t rust-gettext -f ci/Dockerfile-$DOCKER ci;
+  docker run \
+    -w /src \
+    -v `pwd`:/src \
+    -v `pwd`/target:/src/target \
+    -v $HOME/.rustup/toolchains/stable-x86_64-unknown-linux-gnu:/usr/local:ro \
+    -v $HOME/.cargo/registry:/root/.cargo/registry \
+    -e TARGET \
+    -e NO_RUN \
+    -e GETTEXT_SYSTEM \
+    -e GETTEXT_DIR \
+    -e GETTEXT_LIB_DIR \
+    -e GETTEXT_BIN_DIR \
+    -e GETTEXT_INCLUDE_DIR \
+    -e CARGO_TARGET_DIR=/src/target \
+    -it rust-gettext \
+    sh ci/run.sh;
+fi

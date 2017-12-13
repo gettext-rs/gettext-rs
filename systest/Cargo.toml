@@ -1,0 +1,12 @@
+[package]
+name = "systest"
+version = "0.1.0"
+authors = ["Konstantin Salikhov <koka58@yandex.ru>",
+           "Brian Olsen <brian@maven-group.org>"]
+build = "build.rs"
+
+[dependencies]
+gettext-sys = { path = "../gettext-sys" }
+
+[build-dependencies]
+ctest = "0.1"

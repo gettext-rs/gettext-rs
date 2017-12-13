@@ -13,3 +13,9 @@ license = "MIT"
 [lib]
 name = "gettextrs"
 
+[dependencies.gettext-sys]
+version = "0.19.8"
+path = "gettext-sys"
+
+[workspace]
+members = ["systest"]
