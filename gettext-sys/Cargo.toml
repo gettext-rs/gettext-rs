@@ -1,5 +1,7 @@
 [package]
 name = "gettext-sys"
+description = "Gettext raw FFI bindings"
+license = "MIT"
 version = "0.19.8"
 authors = ["Brian Olsen <brian@maven-group.org>"]
 build = "build.rs"
