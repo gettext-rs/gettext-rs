@@ -20,12 +20,49 @@ fn env(name: &str) -> Option<String> {
     env::var(name).ok()
 }
 
-fn main() {
-    if let Some(_) = env("GETTEXT_SYSTEM") {
-        return
-    }
+fn get_windows_gnu_root() -> String {
+    // attempt to find the installation directory for the gnu distribution
+    env("MSYSTEM_PREFIX").or_else(||
+        env("MINGW_PREFIX")
+    ).or_else(|| {
+        // AppVeyor env doesn't declare any usable prefix
+        let arch = if env::var("TARGET").unwrap().contains("x86_64") {
+            "64"
+        } else {
+            "32"
+        };
+        let root_test = PathBuf::from(format!("C:/msys64/mingw{}", arch));
+        if root_test.is_dir() {
+            Some(root_test.to_str().unwrap().to_owned())
+        } else {
+            None
+        }
+    }).unwrap_or_else(||
+        fail("Failed to get gnu installation root dir")
+    )
+}
 
+fn main() {
     let target = env::var("TARGET").unwrap();
+
+    if env("GETTEXT_SYSTEM").is_some() {
+        if target.contains("linux") && target.contains("-gnu") {
+            // intl is part of glibc
+            return;
+        } else if target.contains("windows") && target.contains("-gnu") {
+            // gettext doesn't come with a pkg-config file
+            let gnu_root = get_windows_gnu_root();
+            println!("cargo:rustc-link-search=native={}/lib", &gnu_root);
+            println!("cargo:rustc-link-search=native={}/../usr/lib", &gnu_root);
+            println!("cargo:rustc-link-lib=dylib=intl");
+            // FIXME: should pthread support be optional?
+            // It is needed by `cargo test` while generating doc
+            println!("cargo:rustc-link-lib=dylib=pthread");
+            println!("cargo:include={}/../usr/include", &gnu_root);
+            return;
+        }
+        // else can't use system gettext on this target
+    }
 
     if target.contains("apple-darwin") {
         println!("cargo:rustc-link-lib=framework=CoreFoundation");

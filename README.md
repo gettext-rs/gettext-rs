@@ -25,7 +25,7 @@ gettext.rs's build script will by default build its own version of gettext and
 statically link against that. If that is not what you want the build script can
 be configured via environment variables:
 
-  GETTEXT_SYSTEM - If specified gettext-sys uses the gettext that is part of glibc. This only works on linux
+  GETTEXT_SYSTEM - If specified gettext-sys uses the gettext that is part of glibc. This only works on linux and Windows + GNU (e.g. [MSYS2](http://www.msys2.org/)). On Windows, you will need to install `gettext-devel`.
 
   GETTEXT_DIR - If specified, a directory that will be used to find gettext installation. It's expected that under this directory the include folder has header files, the bin folder has gettext binary and a lib folder has the runtime libraries.
 
