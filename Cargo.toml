@@ -13,6 +13,9 @@ license = "MIT"
 [lib]
 name = "gettextrs"
 
+[features]
+gettext-system = ["gettext-sys/gettext-system"]
+
 [dependencies.gettext-sys]
 version = "0.19.8"
 path = "gettext-sys"
