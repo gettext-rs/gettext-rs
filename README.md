@@ -38,3 +38,16 @@ be configured via environment variables:
   GETTEXT_STATIC - If specified, gettext libraries will be statically rather than dynamically linked.
 
 For target-specific configuration, each of these environment variables can be prefixed by an upper-cased target, for example, X86_64_UNKNOWN_LINUX_GNU_GETTEXT_DIR. This can be useful in cross compilation contexts.
+
+Note: on Windows + GNU, if you want to build `gettext-rs` with its own static
+version of `getttext`, install the following packages first:
+```
+pacman --noconfirm -S base-devel mingw-w64-x86_64-gcc libxml2-devel tar
+```
+
+The build is quite long. You can speed things up by setting (e.g. for 4 cores):
+```
+export NUM_JOBS=5
+```
+
+This doesn't work on AppVeyor ATM. Use `SET GETTEXT_SYSTEM=true` instead.

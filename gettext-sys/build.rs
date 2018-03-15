@@ -3,7 +3,7 @@ extern crate cc;
 use std::env;
 use std::ffi::OsString;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::io::ErrorKind;
 
@@ -40,6 +40,23 @@ fn get_windows_gnu_root() -> String {
     }).unwrap_or_else(||
         fail("Failed to get gnu installation root dir")
     )
+}
+
+fn posix_path(path: &Path) -> String {
+    let path = path
+        .to_str()
+        .unwrap_or_else(|| fail(&format!("Couldn't convert path {:?} to string", path)));
+    if env::var("HOST").unwrap().contains("windows") {
+        let path = path.replace("\\", "/");
+        if path.find(":") == Some(1) {
+            // absolute path with a drive letter
+            format!("/{}{}", &path[0..1], &path[2..])
+        } else {
+            path.to_owned()
+        }
+    } else {
+        path.to_owned()
+    }
 }
 
 fn main() {
@@ -130,13 +147,22 @@ fn main() {
         cflags.push(" ");
     }
 
-    if !dst.join("gettext/configure").is_file() {
+    if target.contains("windows") {
+        // Avoid undefined reference to `__imp_xmlFree'
+        cflags.push("-DLIBXML_STATIC");
+    }
+
+    if !dst.join("gettext").join("configure").is_file() {
         let mut cmd = Command::new("tar");
         cmd.current_dir(&dst.join("gettext"))
-           .arg("xvf")
+           .arg("xf")
            .arg(&src.join("gettext-0.19.8.1.tar.gz"))
            .arg("--strip-components")
            .arg("1");
+        if host.contains("windows") {
+            // tar confuses local path with a remote resource because of ':'
+            cmd.arg("--force-local");
+        }
         run(&mut cmd, "tar");
     }
 
@@ -146,7 +172,7 @@ fn main() {
        .env("LD", &which("ld").unwrap())
        .env("VERBOSE", "1")
        .current_dir(&dst.join("build"))
-       .arg(&dst.join("gettext/configure"));
+       .arg(&posix_path(&dst.join("gettext").join("configure")));
 
     cmd.arg("--without-emacs");
     cmd.arg("--disable-java");
@@ -160,7 +186,13 @@ fn main() {
     cmd.arg("--with-included-libcroco");
     cmd.arg("--with-included-libunistring");
 
-    cmd.arg(format!("--prefix={}", dst.to_str().unwrap().to_string()));
+    if target.contains("windows") {
+        // FIXME: should pthread support be optional?
+        // It is needed by `cargo test` while generating doc
+        cmd.arg("--enable-threads=windows");
+    }
+
+    cmd.arg(format!("--prefix={}", &posix_path(&dst)));
 
     if target != host &&
        (!target.contains("windows") || !host.contains("windows")) {
@@ -193,6 +225,11 @@ fn main() {
     println!("cargo:include={}/include", dst.display());
     println!("cargo:bin={}/bin", dst.display());
     println!("cargo:root={}", dst.display());
+
+    if target.contains("windows") {
+        println!("cargo:rustc-link-search=native={}/lib", &get_windows_gnu_root());
+        println!("cargo:rustc-link-lib=dylib=iconv");
+    }
 }
 
 fn run(cmd: &mut Command, program: &str) {
