@@ -25,7 +25,7 @@ gettext.rs's build script will by default build its own version of gettext and
 statically link against that. If that is not what you want the build script can
 be configured via environment variables:
 
-  GETTEXT_SYSTEM - If specified gettext-sys uses the gettext that is part of glibc. This only works on linux
+  GETTEXT_SYSTEM - If specified gettext-sys uses the gettext that is part of glibc. This only works on linux and Windows + GNU (e.g. [MSYS2](http://www.msys2.org/)). On Windows, you will need to install `gettext-devel`.
 
   GETTEXT_DIR - If specified, a directory that will be used to find gettext installation. It's expected that under this directory the include folder has header files, the bin folder has gettext binary and a lib folder has the runtime libraries.
 
@@ -38,3 +38,16 @@ be configured via environment variables:
   GETTEXT_STATIC - If specified, gettext libraries will be statically rather than dynamically linked.
 
 For target-specific configuration, each of these environment variables can be prefixed by an upper-cased target, for example, X86_64_UNKNOWN_LINUX_GNU_GETTEXT_DIR. This can be useful in cross compilation contexts.
+
+Note: on Windows + GNU, if you want to build `gettext-rs` with its own static
+version of `getttext`, install the following packages first:
+```
+pacman --noconfirm -S base-devel mingw-w64-x86_64-gcc libxml2-devel tar
+```
+
+The build is quite long. You can speed things up by setting (e.g. for 4 cores):
+```
+export NUM_JOBS=5
+```
+
+This doesn't work on AppVeyor ATM. Use `SET GETTEXT_SYSTEM=true` instead.

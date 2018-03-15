@@ -17,7 +17,9 @@ fn main() {
     // Skip ptr check because the symbol name is different between glibc
     // implementation and static lib.
     // eg. gettext is libintl_gettext in static lib
-    if env::var_os("GETTEXT_SYSTEM").is_none() {
+    if env::var_os("GETTEXT_SYSTEM").is_none()
+        || env::var("TARGET").unwrap().contains("windows")
+    {
         println!("Skipping ptr check");
         cfg.skip_fn_ptrcheck(|_| true);
     }
