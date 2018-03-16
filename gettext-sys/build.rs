@@ -62,7 +62,7 @@ fn posix_path(path: &Path) -> String {
 fn main() {
     let target = env::var("TARGET").unwrap();
 
-    if env("GETTEXT_SYSTEM").is_some() {
+    if cfg!(feature = "gettext-system") || env("GETTEXT_SYSTEM").is_some() {
         if target.contains("linux") && target.contains("-gnu") {
             // intl is part of glibc
             return;

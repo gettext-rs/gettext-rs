@@ -26,6 +26,10 @@ statically link against that. If that is not what you want the build script can
 be configured via environment variables:
 
   GETTEXT_SYSTEM - If specified gettext-sys uses the gettext that is part of glibc. This only works on linux and Windows + GNU (e.g. [MSYS2](http://www.msys2.org/)). On Windows, you will need to install `gettext-devel`.
+  You can also activate the `gettext-system` feature from your `Cargo.toml` configuration:
+  ``` toml
+  gettext-rs = { git = "https://github.com/Koka/gettext-rs", features = ["gettext-system"] }
+  ```
 
   GETTEXT_DIR - If specified, a directory that will be used to find gettext installation. It's expected that under this directory the include folder has header files, the bin folder has gettext binary and a lib folder has the runtime libraries.
 
