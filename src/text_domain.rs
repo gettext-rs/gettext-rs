@@ -56,7 +56,7 @@ pub enum TextDomainError {
 ///
 /// TextDomain::new("my_textdomain")
 ///            .init()
-///            .ok();
+///            .unwrap();
 /// ```
 ///
 /// Use the translation in current language under the `target` directory if available, otherwise
@@ -68,7 +68,7 @@ pub enum TextDomainError {
 /// TextDomain::new("my_textdomain")
 ///            .prepend("target")
 ///            .init()
-///            .ok();
+///            .unwrap();
 /// ```
 ///
 /// Scan the `target` directory only, force locale to `fr_FR` and handle errors:
@@ -244,7 +244,7 @@ impl TextDomain {
     ///
     /// TextDomain::new("my_textdomain")
     ///            .init()
-    ///            .ok();
+    ///            .unwrap();
     /// ```
     ///
     /// [`TextDomainError`]: enum.TextDomainError.html
