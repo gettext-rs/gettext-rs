@@ -24,7 +24,7 @@
 //!
 //! TextDomain::new("hellorust")
 //!            .init()
-//!            .ok();
+//!            .unwrap();
 //! ```
 //!
 //! [`TextDomain`]: struct.TextDomain.html

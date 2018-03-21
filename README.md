@@ -28,7 +28,7 @@ use gettextrs::TextDomain;
 
 TextDomain::new("hellorust")
            .init()
-           .ok();
+           .unwrap();
 ```
 
 ## Manual configuration
