@@ -14,6 +14,22 @@
 //! println!("Singular: {}", ngettext("One thing", "Multiple things", 1));
 //! println!("Plural: {}", ngettext("One thing", "Multiple things", 2));
 //! ```
+//!
+//! Alternatively, you can initialize the locale and text domain using the [`TextDomain`] builder.
+//! By default, a translation of the specified text domain in current language is searched in
+//! the system's data paths. See [`TextDomain`]'s documentation for other options.
+//!
+//! ```no_run
+//! use gettextrs::TextDomain;
+//!
+//! TextDomain::new("hellorust")
+//!            .init()
+//!            .ok();
+//! ```
+//!
+//! [`TextDomain`]: struct.TextDomain.html
+
+extern crate locale_config;
 
 extern crate gettext_sys as ffi;
 
@@ -21,7 +37,11 @@ use std::ffi::CString;
 use std::ffi::CStr;
 use std::os::raw::c_ulong;
 
+mod text_domain;
+pub use text_domain::{TextDomain, TextDomainError};
+
 /// Locale category enum ported from locale.h
+#[derive(Debug, PartialEq)]
 pub enum LocaleCategory {
     /// Character classification and case conversion.
     LcCType = 0,

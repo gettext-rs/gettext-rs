@@ -19,6 +19,18 @@ Usage:
  println!("Plural: {}", ngettext("One thing", "Multiple things", 2));
 ```
 
+Alternatively, you can initialize the locale and text domain using the `TextDomain` builder.
+By default, a translation of the specified text domain in current language is searched in
+the system's data paths. See `TextDomain`'s documentation for other options.
+
+```rust
+use gettextrs::TextDomain;
+
+TextDomain::new("hellorust")
+           .init()
+           .ok();
+```
+
 ## Manual configuration
 
 gettext.rs's build script will by default build its own version of gettext and

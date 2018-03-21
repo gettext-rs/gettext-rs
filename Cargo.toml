@@ -20,5 +20,8 @@ gettext-system = ["gettext-sys/gettext-system"]
 version = "0.19.8"
 path = "gettext-sys"
 
+[dependencies]
+locale_config = "0.2"
+
 [workspace]
 members = ["systest"]
