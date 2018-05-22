@@ -155,8 +155,8 @@ fn main() {
     if !dst.join("gettext").join("configure").is_file() {
         let mut cmd = Command::new("tar");
         cmd.current_dir(&dst.join("gettext"))
-           .arg("xf")
-           .arg(&src.join("gettext-0.19.8.1.tar.gz"))
+           .arg("xJf")
+           .arg(&src.join("gettext-0.19.8.1.tar.xz"))
            .arg("--strip-components")
            .arg("1");
         if host.contains("windows") {
