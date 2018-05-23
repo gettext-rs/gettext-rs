@@ -6,8 +6,6 @@ GNU [Gettext](https://www.gnu.org/software/gettext/) FFI binding for Rust
 [![https://crates.io/crates/gettext-rs](https://meritbadge.herokuapp.com/gettext-rs?v2)](https://crates.io/crates/gettext-rs)
 [![Docs](https://docs.rs/gettext-rs/badge.svg)](https://docs.rs/gettext-rs)
 
-Docs are available [here](http://koka.github.io/gettext-rs/gettextrs/)
-
 Usage:
 
 ```rust
