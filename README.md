@@ -4,6 +4,7 @@ GNU [Gettext](https://www.gnu.org/software/gettext/) FFI binding for Rust
 
 [![https://travis-ci.org/Koka/gettext-rs](https://travis-ci.org/Koka/gettext-rs.svg?branch=master)](https://travis-ci.org/Koka/gettext-rs)
 [![https://crates.io/crates/gettext-rs](https://meritbadge.herokuapp.com/gettext-rs?v2)](https://crates.io/crates/gettext-rs)
+[![Docs](https://docs.rs/gettext-rs/badge.svg)](https://docs.rs/gettext-rs)
 
 Docs are available [here](http://koka.github.io/gettext-rs/gettextrs/)
 
