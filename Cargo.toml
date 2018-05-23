@@ -10,6 +10,12 @@ readme = "README.md"
 keywords = ["gettext", "binding", "ffi", "i18n", "l10n"]
 license = "MIT"
 
+exclude = [
+    "systest/*",
+    "ci/*",
+    "gettext-sys/*",
+]
+
 [lib]
 name = "gettextrs"
 
