@@ -166,6 +166,47 @@ pub fn bind_textdomain_codeset<T: Into<Vec<u8>>>(domain: T, codeset: T) -> Strin
     }
 }
 
+static CONTEXT_SEPARATOR: u8 = b'\x04';
+
+fn build_context_id(ctx: &Vec<u8>, s: &Vec<u8>) -> String {
+    let mut text: Vec<u8> = vec![];
+    text.extend(ctx.iter().cloned());
+    text.push(CONTEXT_SEPARATOR);
+    text.extend(s.iter().cloned());
+    CString::new(text).unwrap().to_string_lossy().into_owned()
+}
+
+/// Translate msgid to localized message from default domain (with context support)
+pub fn pgettext<T: Into<Vec<u8>>>(ctx: T, s: T) -> String {
+    let msgid = s.into();
+    let text = build_context_id(&ctx.into(), &msgid);
+
+    let trans = gettext(text);
+    if trans.contains(CONTEXT_SEPARATOR as char) {
+        return gettext(msgid);
+        //return CString::new(msgid).unwrap().to_string_lossy().into_owned();
+    }
+
+    trans
+}
+
+/// Translate msgid to localized message from default domain (with plural support and context
+/// support)
+pub fn npgettext<T: Into<Vec<u8>>>(ctx: T, singular: T, plural: T, n: u32) -> String {
+    let ctx = ctx.into();
+    let singular_msgid = singular.into();
+    let plural_msgid = plural.into();
+    let singular_ctx = build_context_id(&ctx, &singular_msgid);
+    let plural_ctx = build_context_id(&ctx, &plural_msgid);
+
+    let trans = ngettext(singular_ctx, plural_ctx, n);
+    if trans.contains(CONTEXT_SEPARATOR as char) {
+        return ngettext(singular_msgid, plural_msgid, n);
+    }
+
+    trans
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -189,5 +230,26 @@ mod tests {
 
         assert_eq!("Hello, world!", ngettext("Hello, world!", "Hello, worlds!", 1));
         assert_eq!("Hello, worlds!", ngettext("Hello, world!", "Hello, worlds!", 2));
+    }
+
+    #[test]
+    fn context_test() {
+        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
+
+        bindtextdomain("hellorust", "/usr/local/share/locale");
+        textdomain("hellorust");
+
+        assert_eq!("Hello, world!", pgettext("context", "Hello, world!"));
+    }
+
+    #[test]
+    fn plural_context_test() {
+        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
+
+        bindtextdomain("hellorust", "/usr/local/share/locale");
+        textdomain("hellorust");
+
+        assert_eq!("Hello, world!", npgettext("context", "Hello, world!", "Hello, worlds!", 1));
+        assert_eq!("Hello, worlds!", npgettext("context", "Hello, world!", "Hello, worlds!", 2));
     }
 }
