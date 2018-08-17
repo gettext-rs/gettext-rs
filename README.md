@@ -23,6 +23,8 @@ Usage:
  println!("Translated: {}", gettext("Hello, world!"));
  println!("Singular: {}", ngettext("One thing", "Multiple things", 1));
  println!("Plural: {}", ngettext("One thing", "Multiple things", 2));
+ println!("With context: {}", pgettext("This is the context", "Hello, world!"));
+ println!("Plural with context: {}", npgettext("This is the context", "One thing", "Multiple things", 2));
 ```
 
 Alternatively, you can initialize the locale and text domain using the `TextDomain` builder.
