@@ -63,8 +63,8 @@ fn main() {
     let target = env::var("TARGET").unwrap();
 
     if cfg!(feature = "gettext-system") || env("GETTEXT_SYSTEM").is_some() {
-        if target.contains("linux") && target.contains("-gnu") {
-            // intl is part of glibc
+        if target.contains("linux") && (target.contains("-gnu") || target.contains("-musl")) {
+            // intl is part of glibc and musl
             return;
         } else if target.contains("windows") && target.contains("-gnu") {
             // gettext doesn't come with a pkg-config file
