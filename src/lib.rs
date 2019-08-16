@@ -41,7 +41,7 @@ mod text_domain;
 pub use text_domain::{TextDomain, TextDomainError};
 
 /// Locale category enum ported from locale.h
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum LocaleCategory {
     /// Character classification and case conversion.
     LcCType = 0,
