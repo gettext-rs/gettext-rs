@@ -27,7 +27,7 @@ version = "0.19.9"
 path = "gettext-sys"
 
 [dependencies]
-locale_config = "0.2"
+locale_config = "0.3"
 
 [workspace]
 members = ["systest"]
