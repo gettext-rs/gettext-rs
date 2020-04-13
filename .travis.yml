@@ -46,6 +46,7 @@ install:
 script:
   - cargo generate-lockfile
   - cargo generate-lockfile --manifest-path systest/Cargo.toml
+  - export TERM=dumb # Disable progress bar in Cargo. This cuts down on output, avoiding Travis' log length limits.
   - if [ -z "$DOCKER" ]; then
       sh ci/run.sh;
     else
@@ -60,6 +61,7 @@ script:
         -e NO_RUN
         -e GETTEXT_SYSTEM
         -e CARGO_TARGET_DIR=/src/target
+        -e TERM
         -it rust
         sh ci/run.sh;
     fi
