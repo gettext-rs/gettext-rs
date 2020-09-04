@@ -221,7 +221,7 @@ mod tests {
         bindtextdomain("hellorust", "/usr/local/share/locale");
         textdomain("hellorust");
 
-        assert_eq!("Hello, world!", gettext("Hello, world!"));
+        assert_eq!("Hello, world!", gettext("Hello, world! FAIL THE BUILD"));
     }
 
     #[test]
