@@ -61,9 +61,9 @@ fn posix_path(path: &Path) -> String {
 
 fn check_dependencies(required_programs: Vec<&str>) {
     let command = |x| { 
-        let status = Command::new("command")
-            .arg("-v")
-            .arg(x)
+        let status = Command::new("sh")
+            .arg("-c")
+            .arg(format!("command -v {}", x))
             .status()
             .expect("failed to excute process");
         
@@ -109,7 +109,7 @@ fn main() {
     }
 
     // Programs required to compile GNU gettext
-    check_dependencies(vec!["cmp", "diff", "find", "gcc", "xz"]);
+    check_dependencies(vec!["cmp", "diff", "find", "xz"]);
 
     if let Some(gettext_dir) = env("GETTEXT_DIR") {
         println!("cargo:root={}", gettext_dir);
