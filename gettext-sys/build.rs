@@ -59,6 +59,28 @@ fn posix_path(path: &Path) -> String {
     }
 }
 
+fn check_dependencies(required_programs: Vec<&str>) {
+    let command = |x| { 
+        let status = Command::new("sh")
+            .arg("-c")
+            .arg(format!("command -v {}", x))
+            .status()
+            .expect("failed to excute process");
+        
+        if status.success() {
+            "".to_owned()
+        } else {
+            format!(" {},", x)
+        }      
+    };
+
+    let errors: String = required_programs.iter().map(|x| command(x)).collect();
+    
+    if !errors.is_empty() {
+        fail(&format!("The following programs were not found:{}", errors));
+    }
+}
+
 fn main() {
     let target = env::var("TARGET").unwrap();
 
@@ -85,6 +107,9 @@ fn main() {
         println!("cargo:rustc-link-lib=framework=CoreFoundation");
         println!("cargo:rustc-link-lib=dylib=iconv");
     }
+
+    // Programs required to compile GNU gettext
+    check_dependencies(vec!["cmp", "diff", "find", "xz"]);
 
     if let Some(gettext_dir) = env("GETTEXT_DIR") {
         println!("cargo:root={}", gettext_dir);
