@@ -29,6 +29,12 @@ jobs:
       - name: Check out the code
         uses: actions/checkout@v2
 
+      - name: Generate lockfile
+        run: cargo generate-lockfile
+
+      - name: Generate lockfile for systest
+        run: cargo generate-lockfile --manifest-path systest/Cargo.toml
+
       - name: Cache Cargo dependencies
         uses: actions/cache@v2
         with:
@@ -36,12 +42,6 @@ jobs:
           path: |
             ~/.cargo/registry/cache
             ~/.cargo/registry/index
-
-      - name: Generate lockfile
-        run: cargo generate-lockfile
-
-      - name: Generate lockfile for systest
-        run: cargo generate-lockfile --manifest-path systest/Cargo.toml
 
       - name: ./ci/run.sh
         run: sh ci/run.sh
