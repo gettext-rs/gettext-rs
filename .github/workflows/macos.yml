@@ -17,7 +17,7 @@ jobs:
 
     steps:
       - name: Install gettext from Homebrew
-        if: ${{ matrix.use_homebrew == "true" }}
+        if: ${{ matrix.use_homebrew }}
         run: |
           brew install gettext
           echo 'GETTEXT_DIR=/usr/local/opt/gettext' >> $GITHUB_ENV
