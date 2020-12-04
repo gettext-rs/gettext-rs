@@ -1,0 +1,132 @@
+name: Build & test on Linux
+
+on: [push, pull_request]
+
+jobs:
+  build_and_test_linux:
+    runs-on: ubuntu-18.04
+    env:
+      # Disable progress bar in Cargo. This cuts down on output, avoiding log length limits.
+      TERM: dumb
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rust-version: stable
+            env:
+              TARGET: x86_64-unknown-linux-gnu
+              DOCKER: linux64
+              NO_ADD: true
+            name: "x86_64, Rust stable"
+          - rust-version: stable
+            env:
+              TARGET: i686-unknown-linux-gnu
+              DOCKER: linux32
+            name: "i686, Rust stable"
+          - rust-version: stable
+            env:
+              TARGET: x86_64-unknown-linux-musl
+              DOCKER: musl
+            name: "x86_64 with musl, Rust stable"
+          - rust-version: stable
+            env:
+              TARGET: x86_64-unknown-linux-gnu
+              DOCKER: linux64-gettext
+              NO_ADD: true
+              GETTEXT_SYSTEM: 1
+            name: "x86_64 with system gettext, Rust stable"
+          - rust-version: stable
+            env:
+              TARGET: i686-unknown-linux-gnu
+              DOCKER: linux32-gettext
+              GETTEXT_SYSTEM: 1
+            name: "i686 with system gettext, Rust stable"
+          - rust-version: stable
+            env:
+              TARGET: x86_64-unknown-linux-gnu
+              DOCKER: linux64-build
+              NO_ADD: true
+              GETTEXT_DIR: /result
+            name: "x86_64 with side-built gettext (via GETTEXT_DIR), Rust stable"
+          - rust-version: stable
+            env:
+              TARGET: x86_64-unknown-linux-gnu
+              DOCKER: linux64-build
+              NO_ADD: true
+              GETTEXT_BIN_DIR: /result/bin
+              GETTEXT_LIB_DIR: /result/lib
+              GETTEXT_INCLUDE_DIR: /result/include
+            name: "x86_64 with side-built gettext (via GETTEXT_*_DIR), Rust stable"
+          - rust-version: beta
+            env:
+              TARGET: x86_64-unknown-linux-gnu
+              DOCKER: linux64
+              NO_ADD: true
+            name: "x86_64, Rust beta"
+          - rust-version: nightly
+            env:
+              TARGET: x86_64-unknown-linux-gnu
+              DOCKER: linux64
+              NO_ADD: true
+            name: "x86_64, Rust nightly"
+
+    name: ci/run.sh on ${{ matrix.name }}
+
+    steps:
+      - uses: hecrj/setup-rust-action@v1
+        with:
+          rust-version: ${{ matrix.rust-version }}
+
+      - name: Add appropriate target to Cargo
+        run: rustup target add ${{ matrix.env.TARGET }}
+        if: ${{ ! matrix.env.NO_ADD }}
+
+      - name: Check out the code
+        uses: actions/checkout@v2
+
+      - name: Generate lockfile
+        run: cargo generate-lockfile
+
+      - name: Generate lockfile for systest
+        run: cargo generate-lockfile --manifest-path systest/Cargo.toml
+
+      - name: Cache Cargo dependencies
+        uses: actions/cache@v2
+        with:
+          key: ${{ hashFiles('**/Cargo.lock') }}
+          path: |
+            ~/.cargo/registry/cache
+            ~/.cargo/registry/index
+
+      - name: Prepare target directory to be passed into Docker
+        run: mkdir target
+
+      - name: Build Docker image
+        run: docker build -t rust -f ci/Dockerfile-${{ matrix.env.DOCKER }} ci
+
+      - name: Prepare to pass host's rustc into Docker container
+        run: echo "RUSTC_SYSROOT=$(rustc --print sysroot)" >> $GITHUB_ENV
+
+      - name: Set NO_RUN environment variable
+        run: echo NO_RUN=${{ matrix.env.NO_RUN }} >> $GITHUB_ENV
+        if: ${{ matrix.env.NO_RUN }}
+
+      - name: Set GETTEXT_SYSTEM environment variable
+        run: echo GETTEXT_SYSTEM=${{ matrix.env.GETTEXT_SYSTEM }} >> $GITHUB_ENV
+        if: ${{ matrix.env.GETTEXT_SYSTEM }}
+
+      - name: Run ./ci/run.sh
+        run: |
+          docker run \
+          -w /src \
+          -v ${{ github.workspace }}:/src:ro \
+          -v ${{ github.workspace }}/target:/src/target \
+          -v ${{ env.RUSTC_SYSROOT }}:/usr/local:ro \
+          -e TARGET=${{ matrix.env.TARGET }} \
+          -e NO_RUN \
+          -e GETTEXT_SYSTEM \
+          -e CARGO_TARGET_DIR=/src/target \
+          -e TERM=${{ env.TERM }} \
+          -i rust \
+          sh ci/run.sh
