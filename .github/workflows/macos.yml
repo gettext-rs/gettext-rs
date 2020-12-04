@@ -1,0 +1,48 @@
+name: Build & test on macOS
+
+on: [push, pull_request]
+
+jobs:
+  build_and_test_macos:
+    name: "ci/run.sh on macOS"
+    runs-on: macos-10.15
+    env:
+      # Disable progress bar in Cargo. This cuts down on output, avoiding log length limits.
+      TERM: dumb
+      TARGET: x86_64-apple-darwin
+
+    strategy:
+      fail-fast: false
+      matrix:
+        use_homebrew: [false, true]
+
+    steps:
+      - name: Install gettext from Homebrew
+        if: ${{ matrix.use_homebrew }}
+        run: |
+          brew install gettext
+          echo 'GETTEXT_DIR=/usr/local/opt/gettext' >> $GITHUB_ENV
+
+      - uses: hecrj/setup-rust-action@v1
+        with:
+          rust-version: stable
+
+      - name: Check out the code
+        uses: actions/checkout@v2
+
+      - name: Generate lockfile
+        run: cargo generate-lockfile
+
+      - name: Generate lockfile for systest
+        run: cargo generate-lockfile --manifest-path systest/Cargo.toml
+
+      - name: Cache Cargo dependencies
+        uses: actions/cache@v2
+        with:
+          key: ${{ hashFiles('**/Cargo.lock') }}
+          path: |
+            ~/.cargo/registry/cache
+            ~/.cargo/registry/index
+
+      - name: ./ci/run.sh
+        run: sh ci/run.sh
