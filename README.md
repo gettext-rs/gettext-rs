@@ -3,7 +3,8 @@
 
 GNU [Gettext](https://www.gnu.org/software/gettext/) FFI binding for Rust
 
-[![https://travis-ci.org/Koka/gettext-rs](https://travis-ci.org/Koka/gettext-rs.svg?branch=master)](https://travis-ci.org/Koka/gettext-rs)
+[![Build & test on macOS](https://github.com/Koka/gettext-rs/workflows/Build%20&%20test%20on%20macOS/badge.svg)](https://github.com/Koka/gettext-rs/actions)
+[![Build & test on Linux](https://github.com/Koka/gettext-rs/workflows/Build%20&%20test%20on%20Linux/badge.svg)](https://github.com/Koka/gettext-rs/actions)
 
 gettext-rs:
 [![https://crates.io/crates/gettext-rs](https://meritbadge.herokuapp.com/gettext-rs?v2)](https://crates.io/crates/gettext-rs)
