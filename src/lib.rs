@@ -239,12 +239,18 @@ pub fn bind_textdomain_codeset<T: Into<Vec<u8>>>(domain: T, codeset: T) -> Strin
 
 static CONTEXT_SEPARATOR: u8 = b'\x04';
 
-fn build_context_id(ctx: &Vec<u8>, s: &Vec<u8>) -> String {
+fn build_context_id(ctx: &Vec<u8>, s: &Vec<u8>) -> Vec<u8> {
     let mut text: Vec<u8> = vec![];
     text.extend(ctx.iter().cloned());
     text.push(CONTEXT_SEPARATOR);
     text.extend(s.iter().cloned());
-    CString::new(text).unwrap().to_string_lossy().into_owned()
+    text
+}
+
+fn panic_on_zero_in_ctx(string: &Vec<u8>) {
+    if string.contains(&0) {
+        panic!("`ctx` contains an internal 0 byte");
+    }
 }
 
 /// Translate msgid to localized message from default domain (with context support).
@@ -254,13 +260,15 @@ fn build_context_id(ctx: &Vec<u8>, s: &Vec<u8>) -> String {
 /// Panics if `ctx` or `s` contain an internal 0 byte, as such values can't be passed to the
 /// gettext's C API.
 pub fn pgettext<T: Into<Vec<u8>>>(ctx: T, s: T) -> String {
+    let ctx = ctx.into();
+    panic_on_zero_in_ctx(&ctx);
+
     let msgid = s.into();
-    let text = build_context_id(&ctx.into(), &msgid);
+    let text = build_context_id(&ctx, &msgid);
 
     let trans = gettext(text);
     if trans.contains(CONTEXT_SEPARATOR as char) {
         return gettext(msgid);
-        //return CString::new(msgid).unwrap().to_string_lossy().into_owned();
     }
 
     trans
@@ -275,6 +283,8 @@ pub fn pgettext<T: Into<Vec<u8>>>(ctx: T, s: T) -> String {
 /// passed to the gettext's C API.
 pub fn npgettext<T: Into<Vec<u8>>>(ctx: T, singular: T, plural: T, n: u32) -> String {
     let ctx = ctx.into();
+    panic_on_zero_in_ctx(&ctx);
+
     let singular_msgid = singular.into();
     let plural_msgid = plural.into();
     let singular_ctx = build_context_id(&ctx, &singular_msgid);
@@ -449,31 +459,31 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
-    fn pgettext_panics_on_zero_in_context() {
+    #[should_panic(expected = "`ctx` contains an internal 0 byte")]
+    fn pgettext_panics_on_zero_in_ctx() {
         pgettext("context\0", "string");
     }
 
     #[test]
-    #[should_panic]
+    #[should_panic(expected = "`s` contains an internal 0 byte")]
     fn pgettext_panics_on_zero_in_s() {
         pgettext("ctx", "a message\0to be translated");
     }
 
     #[test]
-    #[should_panic]
+    #[should_panic(expected = "`ctx` contains an internal 0 byte")]
     fn npgettext_panics_on_zero_in_ctx() {
         npgettext("c\0tx", "singular", "plural", 0);
     }
 
     #[test]
-    #[should_panic]
+    #[should_panic(expected = "`singular` contains an internal 0 byte")]
     fn npgettext_panics_on_zero_in_singular() {
         npgettext("ctx", "sing\0ular", "many many more", 135626);
     }
 
     #[test]
-    #[should_panic]
+    #[should_panic(expected = "`plural` contains an internal 0 byte")]
     fn npgettext_panics_on_zero_in_plural() {
         npgettext("context", "uno", "one \0fewer", 10585);
     }
