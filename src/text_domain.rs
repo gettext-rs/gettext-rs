@@ -1,6 +1,5 @@
 use locale_config::{LanguageRange, Locale};
 
-use std::default::Default;
 use std::env;
 use std::fmt;
 use std::fs;
@@ -106,11 +105,10 @@ pub enum TextDomainError {
 /// [`skip_system_data_paths`]: struct.TextDomain.html#method.skip_system_data_paths
 /// [`prepend`]: struct.TextDomain.html#method.prepend
 /// [`push`]: struct.TextDomain.html#method.push
-#[derive(Default)]
 pub struct TextDomain {
-    name: Option<String>,
+    name: String,
     locale: Option<String>,
-    locale_category: Option<LocaleCategory>,
+    locale_category: LocaleCategory,
     codeset: Option<String>,
     pre_paths: Vec<PathBuf>,
     post_paths: Vec<PathBuf>,
@@ -129,9 +127,13 @@ impl TextDomain {
     /// ```
     pub fn new<S: Into<String>>(name: S) -> TextDomain {
         TextDomain {
-            name: Some(name.into()),
-            locale_category: Some(LocaleCategory::LcMessages),
-            ..TextDomain::default()
+            name: name.into(),
+            locale: None,
+            locale_category: LocaleCategory::LcMessages,
+            codeset: None,
+            pre_paths: vec![],
+            post_paths: vec![],
+            skip_system_data_paths: false,
         }
     }
 
@@ -163,7 +165,7 @@ impl TextDomain {
     ///
     /// [`LocaleCategory::LcMessages`]: enum.LocaleCategory.html#variant.LcMessages
     pub fn locale_category(mut self, locale_category: LocaleCategory) -> Self {
-        self.locale_category = Some(locale_category);
+        self.locale_category = locale_category;
         self
     }
 
@@ -276,8 +278,8 @@ impl TextDomain {
 
         let lang = norm_locale.as_ref().splitn(2, "-").collect::<Vec<&str>>()[0].to_owned();
 
-        let name = self.name.take().unwrap();
-        let locale_category = self.locale_category.take().unwrap();
+        let name = self.name;
+        let locale_category = self.locale_category;
         let mut codeset = self.codeset.take();
 
         let mo_rel_path = PathBuf::from("LC_MESSAGES").join(&format!("{}.mo", &name));
@@ -351,7 +353,7 @@ impl fmt::Debug for TextDomain {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         let mut debug_struct = fmt.debug_struct("TextDomain");
         debug_struct
-            .field("name", &self.name.as_ref().unwrap())
+            .field("name", &self.name)
             .field(
                 "locale",
                 &match self.locale.as_ref() {
@@ -362,7 +364,7 @@ impl fmt::Debug for TextDomain {
                     }
                 },
             )
-            .field("locale_category", &self.locale_category.as_ref().unwrap())
+            .field("locale_category", &self.locale_category)
             .field("codeset", &self.codeset)
             .field("pre_paths", &self.pre_paths);
 
@@ -397,19 +399,16 @@ mod tests {
     #[test]
     fn attributes() {
         let text_domain = TextDomain::new("test");
-        assert_eq!(Some("test".to_owned()), text_domain.name);
+        assert_eq!("test".to_owned(), text_domain.name);
         assert!(text_domain.locale.is_none());
-        assert_eq!(Some(LocaleCategory::LcMessages), text_domain.locale_category);
+        assert_eq!(LocaleCategory::LcMessages, text_domain.locale_category);
         assert!(text_domain.codeset.is_none());
         assert!(text_domain.pre_paths.is_empty());
         assert!(text_domain.post_paths.is_empty());
         assert!(!text_domain.skip_system_data_paths);
 
         let text_domain = text_domain.locale_category(LocaleCategory::LcAll);
-        assert_eq!(
-            Some(LocaleCategory::LcAll),
-            text_domain.locale_category
-        );
+        assert_eq!(LocaleCategory::LcAll, text_domain.locale_category);
 
         let text_domain = text_domain.codeset("UTF-8");
         assert_eq!(Some("UTF-8".to_owned()), text_domain.codeset);
