@@ -76,8 +76,9 @@ pub enum LocaleCategory {
 
 /// Translate msgid to localized message from default domain
 pub fn gettext<T: Into<Vec<u8>>>(s: T) -> String {
+    let s = CString::new(s).unwrap();
     unsafe {
-        CStr::from_ptr(ffi::gettext(CString::new(s).unwrap().as_ptr()))
+        CStr::from_ptr(ffi::gettext(s.as_ptr()))
             .to_string_lossy()
             .into_owned()
     }
@@ -85,8 +86,10 @@ pub fn gettext<T: Into<Vec<u8>>>(s: T) -> String {
 
 /// Translate msgid to localized message from specified domain
 pub fn dgettext<T: Into<Vec<u8>>>(domain: T, s: T) -> String {
+    let domain = CString::new(domain).unwrap();
+    let s = CString::new(s).unwrap();
     unsafe {
-        CStr::from_ptr(ffi::dgettext(CString::new(domain).unwrap().as_ptr(), CString::new(s).unwrap().as_ptr()))
+        CStr::from_ptr(ffi::dgettext(domain.as_ptr(), s.as_ptr()))
             .to_string_lossy()
             .into_owned()
     }
@@ -94,8 +97,10 @@ pub fn dgettext<T: Into<Vec<u8>>>(domain: T, s: T) -> String {
 
 /// Translate msgid to localized message from specified domain using custom locale category
 pub fn dcgettext<T: Into<Vec<u8>>>(domain: T, s: T, category: LocaleCategory) -> String {
+    let domain = CString::new(domain).unwrap();
+    let s = CString::new(s).unwrap();
     unsafe {
-        CStr::from_ptr(ffi::dcgettext(CString::new(domain).unwrap().as_ptr(), CString::new(s).unwrap().as_ptr(), category as i32))
+        CStr::from_ptr(ffi::dcgettext(domain.as_ptr(), s.as_ptr(), category as i32))
             .to_string_lossy()
             .into_owned()
     }
@@ -103,8 +108,10 @@ pub fn dcgettext<T: Into<Vec<u8>>>(domain: T, s: T, category: LocaleCategory) ->
 
 /// Translate msgid to localized message from default domain (with plural support)
 pub fn ngettext<T: Into<Vec<u8>>>(singular: T, plural : T, n : u32) -> String {
+    let singular = CString::new(singular).unwrap();
+    let plural = CString::new(plural).unwrap();
     unsafe {
-        CStr::from_ptr(ffi::ngettext(CString::new(singular).unwrap().as_ptr(), CString::new(plural).unwrap().as_ptr(), n as c_ulong))
+        CStr::from_ptr(ffi::ngettext(singular.as_ptr(), plural.as_ptr(), n as c_ulong))
             .to_string_lossy()
             .into_owned()
     }
@@ -112,8 +119,11 @@ pub fn ngettext<T: Into<Vec<u8>>>(singular: T, plural : T, n : u32) -> String {
 
 /// Translate msgid to localized message from specified domain (with plural support)
 pub fn dngettext<T: Into<Vec<u8>>>(domain: T, singular: T, plural: T, n : u32) -> String {
+    let domain = CString::new(domain).unwrap();
+    let singular = CString::new(singular).unwrap();
+    let plural = CString::new(plural).unwrap();
     unsafe {
-        CStr::from_ptr(ffi::dngettext(CString::new(domain).unwrap().as_ptr(), CString::new(singular).unwrap().as_ptr(), CString::new(plural).unwrap().as_ptr(), n as c_ulong))
+        CStr::from_ptr(ffi::dngettext(domain.as_ptr(), singular.as_ptr(), plural.as_ptr(), n as c_ulong))
             .to_string_lossy()
             .into_owned()
     }
@@ -121,8 +131,11 @@ pub fn dngettext<T: Into<Vec<u8>>>(domain: T, singular: T, plural: T, n : u32) -
 
 /// Translate msgid to localized message from specified domain using custom locale category (with plural support)
 pub fn dcngettext<T: Into<Vec<u8>>>(domain: T, singular: T, plural: T, n : u32, category: LocaleCategory) -> String {
+    let domain = CString::new(domain).unwrap();
+    let singular = CString::new(singular).unwrap();
+    let plural = CString::new(plural).unwrap();
     unsafe {
-        CStr::from_ptr(ffi::dcngettext(CString::new(domain).unwrap().as_ptr(), CString::new(singular).unwrap().as_ptr(), CString::new(plural).unwrap().as_ptr(), n as c_ulong, category as i32))
+        CStr::from_ptr(ffi::dcngettext(domain.as_ptr(), singular.as_ptr(), plural.as_ptr(), n as c_ulong, category as i32))
             .to_string_lossy()
             .into_owned()
     }
@@ -130,8 +143,9 @@ pub fn dcngettext<T: Into<Vec<u8>>>(domain: T, singular: T, plural: T, n : u32, 
 
 /// Switch to specific text domain
 pub fn textdomain<T: Into<Vec<u8>>>(domain: T) -> String {
+    let domain = CString::new(domain).unwrap();
     unsafe {
-        CStr::from_ptr(ffi::textdomain(CString::new(domain).unwrap().as_ptr()))
+        CStr::from_ptr(ffi::textdomain(domain.as_ptr()))
             .to_string_lossy()
             .into_owned()
     }
@@ -139,9 +153,11 @@ pub fn textdomain<T: Into<Vec<u8>>>(domain: T) -> String {
 
 /// Bind text domain to some directory containing gettext MO files
 pub fn bindtextdomain<T: Into<Vec<u8>>>(domain: T, dir: T) -> String {
+    let domain = CString::new(domain).unwrap();
+    let dir = CString::new(dir).unwrap();
     unsafe {
-        CStr::from_ptr(ffi::bindtextdomain(CString::new(domain).unwrap().as_ptr(),
-                                                   CString::new(dir).unwrap().as_ptr()))
+        CStr::from_ptr(ffi::bindtextdomain(domain.as_ptr(),
+                                                   dir.as_ptr()))
             .to_string_lossy()
             .into_owned()
     }
@@ -161,9 +177,11 @@ pub fn setlocale<T: Into<Vec<u8>>>(category: LocaleCategory, locale: T) -> Optio
 }
 
 pub fn bind_textdomain_codeset<T: Into<Vec<u8>>>(domain: T, codeset: T) -> String {
+    let domain = CString::new(domain).unwrap();
+    let codeset = CString::new(codeset).unwrap();
     unsafe {
-        CStr::from_ptr(ffi::bind_textdomain_codeset(CString::new(domain).unwrap().as_ptr(),
-                                                   CString::new(codeset).unwrap().as_ptr()))
+        CStr::from_ptr(ffi::bind_textdomain_codeset(domain.as_ptr(),
+                                                   codeset.as_ptr()))
             .to_string_lossy()
             .into_owned()
     }
