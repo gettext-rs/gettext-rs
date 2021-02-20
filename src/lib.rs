@@ -34,9 +34,10 @@ extern crate locale_config;
 
 extern crate gettext_sys as ffi;
 
-use std::ffi::CString;
 use std::ffi::CStr;
+use std::ffi::CString;
 use std::os::raw::c_ulong;
+use std::path::PathBuf;
 
 mod macros;
 pub use macros::*;
@@ -217,14 +218,37 @@ pub fn textdomain<T: Into<Vec<u8>>>(domain: T) -> String {
 pub fn bindtextdomain<T, U>(domain: T, dir: U) -> String
 where
     T: Into<Vec<u8>>,
-    U: Into<Vec<u8>>,
+    U: Into<PathBuf>,
 {
     let domain = CString::new(domain).expect("`domain` contains an internal 0 byte");
-    let dir = CString::new(dir).expect("`dir` contains an internal 0 byte");
-    unsafe {
-        CStr::from_ptr(ffi::bindtextdomain(domain.as_ptr(), dir.as_ptr()))
-            .to_string_lossy()
-            .into_owned()
+    let dir = dir.into().into_os_string();
+
+    #[cfg(windows)]
+    {
+        use std::os::windows::ffi::{OsStrExt, OsStringExt};
+
+        let dir: Vec<u16> = dir.encode_wide().collect();
+        if dir.contains(&0) {
+            panic!("`dir` contains an internal 0 byte");
+        }
+        unsafe {
+            OsString::from_wide(&ffi::wbindtextdomain(domain.as_ptr(), &dir.as_ptr()))
+                .to_string_lossy()
+                .into_owned()
+        }
+    }
+
+    #[cfg(not(windows))]
+    {
+        use std::os::unix::ffi::OsStringExt;
+
+        let dir = dir.into_vec();
+        let dir = CString::new(dir).expect("`dir` contains an internal 0 byte");
+        unsafe {
+            CStr::from_ptr(ffi::bindtextdomain(domain.as_ptr(), dir.as_ptr()))
+                .to_string_lossy()
+                .into_owned()
+        }
     }
 }
 
