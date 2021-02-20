@@ -8,13 +8,13 @@ macro_rules! gettext {
 /// Like [dgettext](fn.dgettext.html), but allows for formatting.
 #[macro_export]
 macro_rules! dgettext {
-    ($domain:expr, $string:expr, $($string_names:ident = $string_values:expr),*) => ($crate::dgettext($domain, &format!($string, $( $string_names = $string_values ),*)));
+    ($domain:expr, $string:expr, $($string_names:ident = $string_values:expr),*) => ($crate::dgettext($domain, format!($string, $( $string_names = $string_values ),*)));
 }
 
 /// Like [dcgettext](fn.gettext.html), but allows for formatting.
 #[macro_export]
 macro_rules! dcgettext {
-    ($domain:expr, $category:expr, $string:expr, $($string_names:ident = $string_values:expr),*,) => ($crate::dcgettext($domain, &format!($string, $( $string_names = $string_values ),*), $category));
+    ($domain:expr, $category:expr, $string:expr, $($string_names:ident = $string_values:expr),*,) => ($crate::dcgettext($domain, format!($string, $( $string_names = $string_values ),*), $category));
 }
 
 /// Like [ngettext](fn.gettext.html), but allows for formatting.
@@ -26,25 +26,25 @@ macro_rules! ngettext {
 /// Like [dngettext](fn.gettext.html), but allows for formatting.
 #[macro_export]
 macro_rules! dngettext {
-    ($domain:expr, $singular:expr, $($singular_names:ident = $singular_values:expr),*, $plural:expr, $($plural_names:ident = $plural_values:expr),*, $n:expr) => ($crate::dngettext($domain, &format!($singular, $( $singular_names = $singular_values ),*), &format!($plural, $( $plural_names = $plural_values ),*), $n));
+    ($domain:expr, $singular:expr, $($singular_names:ident = $singular_values:expr),*, $plural:expr, $($plural_names:ident = $plural_values:expr),*, $n:expr) => ($crate::dngettext($domain, format!($singular, $( $singular_names = $singular_values ),*), format!($plural, $( $plural_names = $plural_values ),*), $n));
 }
 
 /// Like [dcngettext](fn.gettext.html), but allows for formatting.
 #[macro_export]
 macro_rules! dcngettext {
-    ($domain:expr, $singular:expr, $($singular_names:ident = $singular_values:expr),*, $plural:expr, $($plural_names:ident = $plural_values:expr),*, $n:expr, $category:expr) => ($crate::dcngettext($domain, &format!($singular, $( $singular_names = $singular_values ),*), &format!($plural, $( $plural_names = $plural_values ),*), $n, $category));
+    ($domain:expr, $singular:expr, $($singular_names:ident = $singular_values:expr),*, $plural:expr, $($plural_names:ident = $plural_values:expr),*, $n:expr, $category:expr) => ($crate::dcngettext($domain, format!($singular, $( $singular_names = $singular_values ),*), format!($plural, $( $plural_names = $plural_values ),*), $n, $category));
 }
 
 /// Like [pgettext](fn.gettext.html), but allows for formatting.
 #[macro_export]
 macro_rules! pgettext {
-    ($ctx:expr, $s:expr, $($s_names:ident = $s_values:expr),*) => ($crate::pgettext($ctx, &format!($s, $( $s_names = $s_values ),*)));
+    ($ctx:expr, $s:expr, $($s_names:ident = $s_values:expr),*) => ($crate::pgettext($ctx, format!($s, $( $s_names = $s_values ),*)));
 }
 
 /// Like [npgettext](fn.gettext.html), but allows for formatting.
 #[macro_export]
 macro_rules! npgettext {
-    ($ctx:expr, $singular:expr, $($singular_names:ident = $singular_values:expr),*, $plural:expr, $($plural_names:ident = $plural_values:expr),*, $n:expr) => ($crate::npgettext($ctx, &format!($singular, $( $singular_names = $singular_values ),*), &format!($plural, $( $plural_names = $plural_values ),*), $n));
+    ($ctx:expr, $singular:expr, $($singular_names:ident = $singular_values:expr),*, $plural:expr, $($plural_names:ident = $plural_values:expr),*, $n:expr) => ($crate::npgettext($ctx, format!($singular, $( $singular_names = $singular_values ),*), format!($plural, $( $plural_names = $plural_values ),*), $n));
 }
 
 #[cfg(test)]

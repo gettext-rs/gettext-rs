@@ -95,7 +95,11 @@ pub fn gettext<T: Into<Vec<u8>>>(s: T) -> String {
 ///
 /// Panics if `domain` or `s` contain an internal 0 byte, as such values can't be passed to the
 /// gettext's C API.
-pub fn dgettext<T: Into<Vec<u8>>>(domain: T, s: T) -> String {
+pub fn dgettext<T, U>(domain: T, s: U) -> String
+where
+    T: Into<Vec<u8>>,
+    U: Into<Vec<u8>>,
+{
     let domain = CString::new(domain).expect("`domain` contains an internal 0 byte");
     let s = CString::new(s).expect("`s` contains an internal 0 byte");
     unsafe {
@@ -111,7 +115,11 @@ pub fn dgettext<T: Into<Vec<u8>>>(domain: T, s: T) -> String {
 ///
 /// Panics if `domain` or `s` contain an internal 0 byte, as such values can't be passed to the
 /// gettext's C API.
-pub fn dcgettext<T: Into<Vec<u8>>>(domain: T, s: T, category: LocaleCategory) -> String {
+pub fn dcgettext<T, U>(domain: T, s: U, category: LocaleCategory) -> String
+where
+    T: Into<Vec<u8>>,
+    U: Into<Vec<u8>>,
+{
     let domain = CString::new(domain).expect("`domain` contains an internal 0 byte");
     let s = CString::new(s).expect("`s` contains an internal 0 byte");
     unsafe {
@@ -127,7 +135,11 @@ pub fn dcgettext<T: Into<Vec<u8>>>(domain: T, s: T, category: LocaleCategory) ->
 ///
 /// Panics if `singular` or `plural` contain an internal 0 byte, as such values can't be passed to
 /// the gettext's C API.
-pub fn ngettext<T: Into<Vec<u8>>>(singular: T, plural : T, n : u32) -> String {
+pub fn ngettext<T, S>(singular: T, plural : S, n : u32) -> String
+where
+    T: Into<Vec<u8>>,
+    S: Into<Vec<u8>>,
+{
     let singular = CString::new(singular).expect("`singular` contains an internal 0 byte");
     let plural = CString::new(plural).expect("`plural` contains an internal 0 byte");
     unsafe {
@@ -143,7 +155,12 @@ pub fn ngettext<T: Into<Vec<u8>>>(singular: T, plural : T, n : u32) -> String {
 ///
 /// Panics if `domain`, `singular`, or `plural` contain an internal 0 byte, as such values can't be
 /// passed to the gettext's C API.
-pub fn dngettext<T: Into<Vec<u8>>>(domain: T, singular: T, plural: T, n : u32) -> String {
+pub fn dngettext<T, U, V>(domain: T, singular: U, plural: V, n : u32) -> String
+where
+    T: Into<Vec<u8>>,
+    U: Into<Vec<u8>>,
+    V: Into<Vec<u8>>,
+{
     let domain = CString::new(domain).expect("`domain` contains an internal 0 byte");
     let singular = CString::new(singular).expect("`singular` contains an internal 0 byte");
     let plural = CString::new(plural).expect("`plural` contains an internal 0 byte");
@@ -160,7 +177,12 @@ pub fn dngettext<T: Into<Vec<u8>>>(domain: T, singular: T, plural: T, n : u32) -
 ///
 /// Panics if `domain`, `singular`, or `plural` contain an internal 0 byte, as such values can't be
 /// passed to the gettext's C API.
-pub fn dcngettext<T: Into<Vec<u8>>>(domain: T, singular: T, plural: T, n : u32, category: LocaleCategory) -> String {
+pub fn dcngettext<T, U, V>(domain: T, singular: U, plural: V, n : u32, category: LocaleCategory) -> String
+where
+    T: Into<Vec<u8>>,
+    U: Into<Vec<u8>>,
+    V: Into<Vec<u8>>,
+{
     let domain = CString::new(domain).expect("`domain` contains an internal 0 byte");
     let singular = CString::new(singular).expect("`singular` contains an internal 0 byte");
     let plural = CString::new(plural).expect("`plural` contains an internal 0 byte");
@@ -192,7 +214,11 @@ pub fn textdomain<T: Into<Vec<u8>>>(domain: T) -> String {
 ///
 /// Panics if `domain` or `dir` contain an internal 0 byte, as such values can't be passed to the
 /// gettext's C API.
-pub fn bindtextdomain<T: Into<Vec<u8>>>(domain: T, dir: T) -> String {
+pub fn bindtextdomain<T, U>(domain: T, dir: U) -> String
+where
+    T: Into<Vec<u8>>,
+    U: Into<Vec<u8>>,
+{
     let domain = CString::new(domain).expect("`domain` contains an internal 0 byte");
     let dir = CString::new(dir).expect("`dir` contains an internal 0 byte");
     unsafe {
@@ -226,7 +252,11 @@ pub fn setlocale<T: Into<Vec<u8>>>(category: LocaleCategory, locale: T) -> Optio
 ///
 /// Panics if `domain` or `codeset` contain an internal 0 byte, as such values can't be passed to
 /// the gettext's C API.
-pub fn bind_textdomain_codeset<T: Into<Vec<u8>>>(domain: T, codeset: T) -> String {
+pub fn bind_textdomain_codeset<T, U>(domain: T, codeset: U) -> String
+where
+    T: Into<Vec<u8>>,
+    U: Into<Vec<u8>>,
+{
     let domain = CString::new(domain).expect("`domain` contains an internal 0 byte");
     let codeset = CString::new(codeset).expect("`codeset` contains an internal 0 byte");
     unsafe {
@@ -259,7 +289,11 @@ fn panic_on_zero_in_ctx(string: &Vec<u8>) {
 ///
 /// Panics if `ctx` or `s` contain an internal 0 byte, as such values can't be passed to the
 /// gettext's C API.
-pub fn pgettext<T: Into<Vec<u8>>>(ctx: T, s: T) -> String {
+pub fn pgettext<T, U>(ctx: T, s: U) -> String
+where
+    T: Into<Vec<u8>>,
+    U: Into<Vec<u8>>,
+{
     let ctx = ctx.into();
     panic_on_zero_in_ctx(&ctx);
 
@@ -281,7 +315,12 @@ pub fn pgettext<T: Into<Vec<u8>>>(ctx: T, s: T) -> String {
 ///
 /// Panics if `ctx`, `singular`, or `plural` contain an internal 0 byte, as such values can't be
 /// passed to the gettext's C API.
-pub fn npgettext<T: Into<Vec<u8>>>(ctx: T, singular: T, plural: T, n: u32) -> String {
+pub fn npgettext<T, U, V>(ctx: T, singular: U, plural: V, n: u32) -> String
+where
+    T: Into<Vec<u8>>,
+    U: Into<Vec<u8>>,
+    V: Into<Vec<u8>>,
+{
     let ctx = ctx.into();
     panic_on_zero_in_ctx(&ctx);
 
