@@ -23,7 +23,7 @@ name = "gettextrs"
 gettext-system = ["gettext-sys/gettext-system"]
 
 [dependencies.gettext-sys]
-version = "0.19.9"
+version = "0.21.0"
 path = "gettext-sys"
 
 [dependencies]

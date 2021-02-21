@@ -181,7 +181,7 @@ fn main() {
         let mut cmd = Command::new("tar");
         cmd.current_dir(&dst.join("gettext"))
            .arg("xJf")
-           .arg(&src.join("gettext-0.19.8.1.tar.xz"))
+           .arg(&src.join("gettext-0.21.tar.xz"))
            .arg("--strip-components")
            .arg("1");
         if host.contains("windows") {
