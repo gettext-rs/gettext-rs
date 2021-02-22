@@ -9,4 +9,4 @@ build = "build.rs"
 gettext-sys = { path = "../gettext-sys" }
 
 [build-dependencies]
-ctest = "0.1"
+ctest2 = "0.4"

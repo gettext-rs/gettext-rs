@@ -1,11 +1,11 @@
-extern crate ctest;
+extern crate ctest2;
 
 use std::env;
 use std::process::{self, Command};
 use std::path::{Path, PathBuf};
 
 fn main() {
-    let mut cfg = ctest::TestGenerator::new();
+    let mut cfg = ctest2::TestGenerator::new();
 
     if let Ok(out) = env::var("DEP_GETTEXT_INCLUDE") {
         cfg.include(&out);
