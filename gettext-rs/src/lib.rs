@@ -131,8 +131,8 @@ pub enum LocaleCategory {
 ///
 /// * `s` contains an internal 0 byte, as such values can't be passed to the gettext's C API;
 /// * the result is not in UTF-8 (see [this note](./index.html#utf-8-is-required)).
-pub fn gettext<T: Into<Vec<u8>>>(s: T) -> String {
-    let s = CString::new(s).expect("`s` contains an internal 0 byte");
+pub fn gettext<T: Into<String>>(s: T) -> String {
+    let s = CString::new(s.into()).expect("`s` contains an internal 0 byte");
     unsafe {
         CStr::from_ptr(ffi::gettext(s.as_ptr()))
             .to_str()
@@ -152,11 +152,11 @@ pub fn gettext<T: Into<Vec<u8>>>(s: T) -> String {
 /// * the result is not in UTF-8 (see [this note](./index.html#utf-8-is-required)).
 pub fn dgettext<T, U>(domain: T, s: U) -> String
 where
-    T: Into<Vec<u8>>,
-    U: Into<Vec<u8>>,
+    T: Into<String>,
+    U: Into<String>,
 {
-    let domain = CString::new(domain).expect("`domain` contains an internal 0 byte");
-    let s = CString::new(s).expect("`s` contains an internal 0 byte");
+    let domain = CString::new(domain.into()).expect("`domain` contains an internal 0 byte");
+    let s = CString::new(s.into()).expect("`s` contains an internal 0 byte");
     unsafe {
         CStr::from_ptr(ffi::dgettext(domain.as_ptr(), s.as_ptr()))
             .to_str()
@@ -175,11 +175,11 @@ where
 /// * the result is not in UTF-8 (see [this note](./index.html#utf-8-is-required)).
 pub fn dcgettext<T, U>(domain: T, s: U, category: LocaleCategory) -> String
 where
-    T: Into<Vec<u8>>,
-    U: Into<Vec<u8>>,
+    T: Into<String>,
+    U: Into<String>,
 {
-    let domain = CString::new(domain).expect("`domain` contains an internal 0 byte");
-    let s = CString::new(s).expect("`s` contains an internal 0 byte");
+    let domain = CString::new(domain.into()).expect("`domain` contains an internal 0 byte");
+    let s = CString::new(s.into()).expect("`s` contains an internal 0 byte");
     unsafe {
         CStr::from_ptr(ffi::dcgettext(domain.as_ptr(), s.as_ptr(), category as i32))
             .to_str()
@@ -198,11 +198,11 @@ where
 /// * the result is not in UTF-8 (see [this note](./index.html#utf-8-is-required)).
 pub fn ngettext<T, S>(singular: T, plural : S, n : u32) -> String
 where
-    T: Into<Vec<u8>>,
-    S: Into<Vec<u8>>,
+    T: Into<String>,
+    S: Into<String>,
 {
-    let singular = CString::new(singular).expect("`singular` contains an internal 0 byte");
-    let plural = CString::new(plural).expect("`plural` contains an internal 0 byte");
+    let singular = CString::new(singular.into()).expect("`singular` contains an internal 0 byte");
+    let plural = CString::new(plural.into()).expect("`plural` contains an internal 0 byte");
     unsafe {
         CStr::from_ptr(ffi::ngettext(singular.as_ptr(), plural.as_ptr(), n as c_ulong))
             .to_str()
@@ -221,13 +221,13 @@ where
 /// * the result is not in UTF-8 (see [this note](./index.html#utf-8-is-required)).
 pub fn dngettext<T, U, V>(domain: T, singular: U, plural: V, n : u32) -> String
 where
-    T: Into<Vec<u8>>,
-    U: Into<Vec<u8>>,
-    V: Into<Vec<u8>>,
+    T: Into<String>,
+    U: Into<String>,
+    V: Into<String>,
 {
-    let domain = CString::new(domain).expect("`domain` contains an internal 0 byte");
-    let singular = CString::new(singular).expect("`singular` contains an internal 0 byte");
-    let plural = CString::new(plural).expect("`plural` contains an internal 0 byte");
+    let domain = CString::new(domain.into()).expect("`domain` contains an internal 0 byte");
+    let singular = CString::new(singular.into()).expect("`singular` contains an internal 0 byte");
+    let plural = CString::new(plural.into()).expect("`plural` contains an internal 0 byte");
     unsafe {
         CStr::from_ptr(ffi::dngettext(domain.as_ptr(), singular.as_ptr(), plural.as_ptr(), n as c_ulong))
             .to_str()
@@ -246,13 +246,13 @@ where
 /// * the result is not in UTF-8 (see [this note](./index.html#utf-8-is-required)).
 pub fn dcngettext<T, U, V>(domain: T, singular: U, plural: V, n : u32, category: LocaleCategory) -> String
 where
-    T: Into<Vec<u8>>,
-    U: Into<Vec<u8>>,
-    V: Into<Vec<u8>>,
+    T: Into<String>,
+    U: Into<String>,
+    V: Into<String>,
 {
-    let domain = CString::new(domain).expect("`domain` contains an internal 0 byte");
-    let singular = CString::new(singular).expect("`singular` contains an internal 0 byte");
-    let plural = CString::new(plural).expect("`plural` contains an internal 0 byte");
+    let domain = CString::new(domain.into()).expect("`domain` contains an internal 0 byte");
+    let singular = CString::new(singular.into()).expect("`singular` contains an internal 0 byte");
+    let plural = CString::new(plural.into()).expect("`plural` contains an internal 0 byte");
     unsafe {
         CStr::from_ptr(ffi::dcngettext(domain.as_ptr(), singular.as_ptr(), plural.as_ptr(), n as c_ulong, category as i32))
             .to_str()
@@ -358,18 +358,14 @@ where
     }
 }
 
-static CONTEXT_SEPARATOR: u8 = b'\x04';
+static CONTEXT_SEPARATOR: char = '\x04';
 
-fn build_context_id(ctx: &Vec<u8>, s: &Vec<u8>) -> Vec<u8> {
-    let mut text: Vec<u8> = vec![];
-    text.extend(ctx.iter().cloned());
-    text.push(CONTEXT_SEPARATOR);
-    text.extend(s.iter().cloned());
-    text
+fn build_context_id(ctx: &str, s: &str) -> String {
+    format!("{}{}{}", ctx, CONTEXT_SEPARATOR, s)
 }
 
-fn panic_on_zero_in_ctx(string: &Vec<u8>) {
-    if string.contains(&0) {
+fn panic_on_zero_in_ctx(string: &str) {
+    if string.contains('\0') {
         panic!("`ctx` contains an internal 0 byte");
     }
 }
@@ -384,8 +380,8 @@ fn panic_on_zero_in_ctx(string: &Vec<u8>) {
 /// * the result is not in UTF-8 (see [this note](./index.html#utf-8-is-required)).
 pub fn pgettext<T, U>(ctx: T, s: U) -> String
 where
-    T: Into<Vec<u8>>,
-    U: Into<Vec<u8>>,
+    T: Into<String>,
+    U: Into<String>,
 {
     let ctx = ctx.into();
     panic_on_zero_in_ctx(&ctx);
@@ -412,9 +408,9 @@ where
 /// * the result is not in UTF-8 (see [this note](./index.html#utf-8-is-required)).
 pub fn npgettext<T, U, V>(ctx: T, singular: U, plural: V, n: u32) -> String
 where
-    T: Into<Vec<u8>>,
-    U: Into<Vec<u8>>,
-    V: Into<Vec<u8>>,
+    T: Into<String>,
+    U: Into<String>,
+    V: Into<String>,
 {
     let ctx = ctx.into();
     panic_on_zero_in_ctx(&ctx);
