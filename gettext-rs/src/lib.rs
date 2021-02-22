@@ -2,13 +2,15 @@
 //!
 //! Usage:
 //!
-//! ```
+//! ```rust,no_run
 //! use gettextrs::*;
 //!
-//! setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-//!
-//! bindtextdomain("hellorust", "/usr/local/share/locale");
 //! textdomain("hellorust");
+//! bindtextdomain("hellorust", "/usr/local/share/locale");
+//!
+//! // It's sufficient to call any one of those two. See "UTF-8 is required" section below.
+//! setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
+//! bind_textdomain_codeset("hellorust", "UTF-8");
 //!
 //! println!("Translated: {}", gettext("Hello, world!"));
 //! println!("Singular: {}", ngettext("One thing", "Multiple things", 1));
@@ -20,7 +22,7 @@
 //! By default, a translation of the specified text domain in current language is searched in
 //! the system's data paths. See [`TextDomain`]'s documentation for other options.
 //!
-//! ```no_run
+//! ```rust,no_run
 //! use gettextrs::TextDomain;
 //!
 //! TextDomain::new("hellorust")
@@ -29,6 +31,52 @@
 //! ```
 //!
 //! [`TextDomain`]: struct.TextDomain.html
+//!
+//! ## UTF-8 is required
+//!
+//! By default, gettext converts results to the locale's codeset. Rust, on the other hand, uses
+//! UTF-8 regardless of the locale. There's no universal way to bridge that gap, so this crate
+//! doesn't even try. Instead, *you* have to do at least one of the following:
+//!
+//! 1. force gettext to encode its results into UTF-8, either by calling an appropriate function:
+//!
+//!     ```rust,no_run
+//!     # use gettextrs::*;
+//!     bind_textdomain_codeset("hellorust", "UTF-8");
+//!     ```
+//!
+//!     ...or using [`TextDomain`] builder:
+//!
+//!     ```rust,no_run
+//!     # use gettextrs::*;
+//!     TextDomain::new("hellorust")
+//!         .codeset("UTF-8") // Optional, the builder does this by default
+//!         .init()
+//!         .unwrap();
+//!     ```
+//!
+//! 2. change into a locale that uses UTF-8, either by calling an appropriate function:
+//!
+//!     ```rust,no_run
+//!     # use gettextrs::*;
+//!     setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
+//!     // or just for messages:
+//!     setlocale(LocaleCategory::LcMessages, "en_US.UTF-8");
+//!     ```
+//!
+//!     ...or using [`TextDomain`] builder:
+//!
+//!     ```rust,no_run
+//!     # use gettextrs::*;
+//!     TextDomain::new("hellorust")
+//!         .locale("en_US.UTF-8")
+//!         .init()
+//!         .unwrap();
+//!     ```
+//!
+//! If you don't do any of that, calls to `gettext()` and other functions might panic when they
+//! encounter something that isn't UTF-8. They can also garble data as they interpret the other
+//! encoding as UTF-8.
 
 extern crate locale_config;
 
@@ -79,14 +127,17 @@ pub enum LocaleCategory {
 ///
 /// # Panics
 ///
-/// Panics if `s` contains an internal 0 byte, as such values can't be passed to the gettext's
-/// C API.
+/// Panics if:
+///
+/// * `s` contains an internal 0 byte, as such values can't be passed to the gettext's C API;
+/// * the result is not in UTF-8 (see [this note](./index.html#utf-8-is-required)).
 pub fn gettext<T: Into<Vec<u8>>>(s: T) -> String {
     let s = CString::new(s).expect("`s` contains an internal 0 byte");
     unsafe {
         CStr::from_ptr(ffi::gettext(s.as_ptr()))
-            .to_string_lossy()
-            .into_owned()
+            .to_str()
+            .expect("gettext() returned invalid UTF-8")
+            .to_owned()
     }
 }
 
@@ -94,8 +145,11 @@ pub fn gettext<T: Into<Vec<u8>>>(s: T) -> String {
 ///
 /// # Panics
 ///
-/// Panics if `domain` or `s` contain an internal 0 byte, as such values can't be passed to the
-/// gettext's C API.
+/// Panics if:
+///
+/// * `domain` or `s` contain an internal 0 byte, as such values can't be passed to the gettext's
+///     C API;
+/// * the result is not in UTF-8 (see [this note](./index.html#utf-8-is-required)).
 pub fn dgettext<T, U>(domain: T, s: U) -> String
 where
     T: Into<Vec<u8>>,
@@ -105,8 +159,9 @@ where
     let s = CString::new(s).expect("`s` contains an internal 0 byte");
     unsafe {
         CStr::from_ptr(ffi::dgettext(domain.as_ptr(), s.as_ptr()))
-            .to_string_lossy()
-            .into_owned()
+            .to_str()
+            .expect("dgettext() returned invalid UTF-8")
+            .to_owned()
     }
 }
 
@@ -114,8 +169,10 @@ where
 ///
 /// # Panics
 ///
-/// Panics if `domain` or `s` contain an internal 0 byte, as such values can't be passed to the
-/// gettext's C API.
+/// Panics if:
+/// * `domain` or `s` contain an internal 0 byte, as such values can't be passed to the gettext's
+///     C API;
+/// * the result is not in UTF-8 (see [this note](./index.html#utf-8-is-required)).
 pub fn dcgettext<T, U>(domain: T, s: U, category: LocaleCategory) -> String
 where
     T: Into<Vec<u8>>,
@@ -125,8 +182,9 @@ where
     let s = CString::new(s).expect("`s` contains an internal 0 byte");
     unsafe {
         CStr::from_ptr(ffi::dcgettext(domain.as_ptr(), s.as_ptr(), category as i32))
-            .to_string_lossy()
-            .into_owned()
+            .to_str()
+            .expect("dcgettext() returned invalid UTF-8")
+            .to_owned()
     }
 }
 
@@ -134,8 +192,10 @@ where
 ///
 /// # Panics
 ///
-/// Panics if `singular` or `plural` contain an internal 0 byte, as such values can't be passed to
-/// the gettext's C API.
+/// Panics if:
+/// * `singular` or `plural` contain an internal 0 byte, as such values can't be passed to the
+///     gettext's C API;
+/// * the result is not in UTF-8 (see [this note](./index.html#utf-8-is-required)).
 pub fn ngettext<T, S>(singular: T, plural : S, n : u32) -> String
 where
     T: Into<Vec<u8>>,
@@ -145,8 +205,9 @@ where
     let plural = CString::new(plural).expect("`plural` contains an internal 0 byte");
     unsafe {
         CStr::from_ptr(ffi::ngettext(singular.as_ptr(), plural.as_ptr(), n as c_ulong))
-            .to_string_lossy()
-            .into_owned()
+            .to_str()
+            .expect("ngettext() returned invalid UTF-8")
+            .to_owned()
     }
 }
 
@@ -154,8 +215,10 @@ where
 ///
 /// # Panics
 ///
-/// Panics if `domain`, `singular`, or `plural` contain an internal 0 byte, as such values can't be
-/// passed to the gettext's C API.
+/// Panics if:
+/// * `domain`, `singular`, or `plural` contain an internal 0 byte, as such values can't be passed
+///     to the gettext's C API;
+/// * the result is not in UTF-8 (see [this note](./index.html#utf-8-is-required)).
 pub fn dngettext<T, U, V>(domain: T, singular: U, plural: V, n : u32) -> String
 where
     T: Into<Vec<u8>>,
@@ -167,8 +230,9 @@ where
     let plural = CString::new(plural).expect("`plural` contains an internal 0 byte");
     unsafe {
         CStr::from_ptr(ffi::dngettext(domain.as_ptr(), singular.as_ptr(), plural.as_ptr(), n as c_ulong))
-            .to_string_lossy()
-            .into_owned()
+            .to_str()
+            .expect("dngettext() returned invalid UTF-8")
+            .to_owned()
     }
 }
 
@@ -176,8 +240,10 @@ where
 ///
 /// # Panics
 ///
-/// Panics if `domain`, `singular`, or `plural` contain an internal 0 byte, as such values can't be
-/// passed to the gettext's C API.
+/// Panics if:
+/// * `domain`, `singular`, or `plural` contain an internal 0 byte, as such values can't be passed
+///     to the gettext's C API;
+/// * the result is not in UTF-8 (see [this note](./index.html#utf-8-is-required)).
 pub fn dcngettext<T, U, V>(domain: T, singular: U, plural: V, n : u32, category: LocaleCategory) -> String
 where
     T: Into<Vec<u8>>,
@@ -189,8 +255,9 @@ where
     let plural = CString::new(plural).expect("`plural` contains an internal 0 byte");
     unsafe {
         CStr::from_ptr(ffi::dcngettext(domain.as_ptr(), singular.as_ptr(), plural.as_ptr(), n as c_ulong, category as i32))
-            .to_string_lossy()
-            .into_owned()
+            .to_str()
+            .expect("dcngettext() returned invalid UTF-8")
+            .to_owned()
     }
 }
 
@@ -311,8 +378,10 @@ fn panic_on_zero_in_ctx(string: &Vec<u8>) {
 ///
 /// # Panics
 ///
-/// Panics if `ctx` or `s` contain an internal 0 byte, as such values can't be passed to the
-/// gettext's C API.
+/// Panics if:
+/// * `ctx` or `s` contain an internal 0 byte, as such values can't be passed to the gettext's
+///     C API;
+/// * the result is not in UTF-8 (see [this note](./index.html#utf-8-is-required)).
 pub fn pgettext<T, U>(ctx: T, s: U) -> String
 where
     T: Into<Vec<u8>>,
@@ -337,8 +406,10 @@ where
 ///
 /// # Panics
 ///
-/// Panics if `ctx`, `singular`, or `plural` contain an internal 0 byte, as such values can't be
-/// passed to the gettext's C API.
+/// Panics if:
+/// * `ctx`, `singular`, or `plural` contain an internal 0 byte, as such values can't be passed to
+///     the gettext's C API;
+/// * the result is not in UTF-8 (see [this note](./index.html#utf-8-is-required)).
 pub fn npgettext<T, U, V>(ctx: T, singular: U, plural: V, n: u32) -> String
 where
     T: Into<Vec<u8>>,
