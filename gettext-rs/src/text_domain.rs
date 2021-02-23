@@ -15,6 +15,8 @@ pub enum TextDomainError {
     TranslationNotFound(String),
     /// The call to `textdomain()` failed.
     TextDomainCallFailed(std::io::Error),
+    /// The call to `bindtextdomain()` failed.
+    BindTextDomainCallFailed(std::io::Error),
 }
 
 /// A text domain initializer builder which finds the path to bind by searching translations
@@ -95,6 +97,9 @@ pub enum TextDomainError {
 ///         format!("invalid locale {}", locale)
 ///     }
 ///     Err(TextDomainError::TextDomainCallFailed(e)) => {
+///         e.to_string()
+///     }
+///     Err(TextDomainError::BindTextDomainCallFailed(e)) => {
 ///         e.to_string()
 ///     }
 /// };
@@ -348,7 +353,7 @@ impl TextDomain {
                     bindtextdomain(
                         name.clone(),
                         path.join("locale").to_str().unwrap().to_owned(),
-                    );
+                    ).map_err(TextDomainError::BindTextDomainCallFailed)?;
                     bind_textdomain_codeset(name.clone(), codeset);
                     textdomain(name).map_err(TextDomainError::TextDomainCallFailed)?;
                     Ok(result)

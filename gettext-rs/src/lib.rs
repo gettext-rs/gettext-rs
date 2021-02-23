@@ -7,7 +7,7 @@
 //!
 //! fn main() -> Result<(), Box<dyn std::error::Error>> {
 //!     textdomain("hellorust")?;
-//!     bindtextdomain("hellorust", "/usr/local/share/locale");
+//!     bindtextdomain("hellorust", "/usr/local/share/locale")?;
 //!
 //!     // It's sufficient to call any one of those two. See "UTF-8 is required" section below.
 //!     setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
@@ -289,11 +289,13 @@ pub fn textdomain<T: Into<Vec<u8>>>(domain: T) -> Result<Vec<u8>, io::Error> {
 
 /// Bind text domain to some directory containing gettext MO files.
 ///
+/// Returns the current directory for given domain, after possibly changing it.
+///
 /// # Panics
 ///
 /// Panics if `domain` or `dir` contain an internal 0 byte, as such values can't be passed to the
 /// gettext's C API.
-pub fn bindtextdomain<T, U>(domain: T, dir: U) -> String
+pub fn bindtextdomain<T, U>(domain: T, dir: U) -> Result<PathBuf, io::Error>
 where
     T: Into<Vec<u8>>,
     U: Into<PathBuf>,
@@ -313,31 +315,35 @@ where
         // Trailing zero to mark the end of the C string.
         dir.push(0);
         unsafe {
-            let result = {
-                let mut ptr = ffi::wbindtextdomain(domain.as_ptr(), dir.as_ptr());
+            let mut ptr = ffi::wbindtextdomain(domain.as_ptr(), dir.as_ptr());
+            if ptr.is_null() {
+                Err(io::Error::last_os_error())
+            } else {
                 let mut result = vec![];
                 while *ptr != 0_u16 {
                     result.push(*ptr);
                     ptr = ptr.offset(1);
                 }
-                result
-            };
-            OsString::from_wide(&result)
-                .to_string_lossy()
-                .into_owned()
+                Ok(PathBuf::from(OsString::from_wide(&result)))
+            }
         }
     }
 
     #[cfg(not(windows))]
     {
+        use std::ffi::OsString;
         use std::os::unix::ffi::OsStringExt;
 
         let dir = dir.into_vec();
         let dir = CString::new(dir).expect("`dir` contains an internal 0 byte");
         unsafe {
-            CStr::from_ptr(ffi::bindtextdomain(domain.as_ptr(), dir.as_ptr()))
-                .to_string_lossy()
-                .into_owned()
+            let result = ffi::bindtextdomain(domain.as_ptr(), dir.as_ptr());
+            if result.is_null() {
+                Err(io::Error::last_os_error())
+            } else {
+                let result = CStr::from_ptr(result);
+                Ok(PathBuf::from(OsString::from_vec(result.to_bytes().to_vec())))
+            }
         }
     }
 }
@@ -463,7 +469,7 @@ mod tests {
     fn smoke_test() {
         setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
 
-        bindtextdomain("hellorust", "/usr/local/share/locale");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
         textdomain("hellorust").unwrap();
 
         assert_eq!("Hello, world!", gettext("Hello, world!"));
@@ -473,7 +479,7 @@ mod tests {
     fn plural_test() {
         setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
 
-        bindtextdomain("hellorust", "/usr/local/share/locale");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
         textdomain("hellorust").unwrap();
 
         assert_eq!("Hello, world!", ngettext("Hello, world!", "Hello, worlds!", 1));
@@ -484,7 +490,7 @@ mod tests {
     fn context_test() {
         setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
 
-        bindtextdomain("hellorust", "/usr/local/share/locale");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
         textdomain("hellorust").unwrap();
 
         assert_eq!("Hello, world!", pgettext("context", "Hello, world!"));
@@ -494,7 +500,7 @@ mod tests {
     fn plural_context_test() {
         setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
 
-        bindtextdomain("hellorust", "/usr/local/share/locale");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
         textdomain("hellorust").unwrap();
 
         assert_eq!("Hello, world!", npgettext("context", "Hello, world!", "Hello, worlds!", 1));
@@ -588,13 +594,13 @@ mod tests {
     #[test]
     #[should_panic(expected = "`domain` contains an internal 0 byte")]
     fn bindtextdomain_panics_on_zero_in_domain() {
-        bindtextdomain("\0bind this", "/usr/share/locale");
+        bindtextdomain("\0bind this", "/usr/share/locale").unwrap();
     }
 
     #[test]
     #[should_panic(expected = "`dir` contains an internal 0 byte")]
     fn bindtextdomain_panics_on_zero_in_dir() {
-        bindtextdomain("my_domain", "/opt/locales\0");
+        bindtextdomain("my_domain", "/opt/locales\0").unwrap();
     }
 
     #[test]

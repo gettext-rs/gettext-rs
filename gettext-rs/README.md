@@ -22,7 +22,7 @@ use gettextrs::*;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     textdomain("hellorust")?;
-    bindtextdomain("hellorust", "/usr/local/share/locale");
+    bindtextdomain("hellorust", "/usr/local/share/locale")?;
 
     // It's sufficient to call any one of those two. See "UTF-8 is required" in the
     // rustdocs.
