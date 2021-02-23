@@ -350,10 +350,8 @@ impl TextDomain {
                 Err(TextDomainError::TranslationNotFound(lang)),
                 |path| {
                     let result = setlocale(locale_category, req_locale);
-                    bindtextdomain(
-                        name.clone(),
-                        path.join("locale").to_str().unwrap().to_owned(),
-                    ).map_err(TextDomainError::BindTextDomainCallFailed)?;
+                    bindtextdomain(name.clone(), path.join("locale"))
+                        .map_err(TextDomainError::BindTextDomainCallFailed)?;
                     bind_textdomain_codeset(name.clone(), codeset);
                     textdomain(name).map_err(TextDomainError::TextDomainCallFailed)?;
                     Ok(result)
