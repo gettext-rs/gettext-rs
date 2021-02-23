@@ -306,10 +306,12 @@ where
         use std::ffi::OsString;
         use std::os::windows::ffi::{OsStrExt, OsStringExt};
 
-        let dir: Vec<u16> = dir.encode_wide().collect();
+        let mut dir: Vec<u16> = dir.encode_wide().collect();
         if dir.contains(&0) {
             panic!("`dir` contains an internal 0 byte");
         }
+        // Trailing zero to mark the end of the C string.
+        dir.push(0);
         unsafe {
             let result = {
                 let mut ptr = ffi::wbindtextdomain(domain.as_ptr(), dir.as_ptr());
