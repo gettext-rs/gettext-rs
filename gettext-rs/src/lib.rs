@@ -11,7 +11,7 @@
 //!
 //!     // It's sufficient to call any one of those two. See "UTF-8 is required" section below.
 //!     setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-//!     bind_textdomain_codeset("hellorust", "UTF-8");
+//!     bind_textdomain_codeset("hellorust", "UTF-8")?;
 //!
 //!     println!("Translated: {}", gettext("Hello, world!"));
 //!     println!("Singular: {}", ngettext("One thing", "Multiple things", 1));
@@ -46,7 +46,10 @@
 //!
 //!     ```rust,no_run
 //!     # use gettextrs::*;
-//!     bind_textdomain_codeset("hellorust", "UTF-8");
+//!     # fn main() -> Result<(), Box<dyn std::error::Error>> {
+//!     bind_textdomain_codeset("hellorust", "UTF-8")?;
+//!     # Ok(())
+//!     # }
 //!     ```
 //!
 //!     ...or using [`TextDomain`] builder:
@@ -372,22 +375,40 @@ pub fn setlocale<T: Into<Vec<u8>>>(category: LocaleCategory, locale: T) -> Optio
 
 /// Set encoding of translated messages.
 ///
+/// Returns the current charset for given domain, after possibly changing it. `None` means no
+/// codeset has been set.
+///
 /// # Panics
 ///
-/// Panics if `domain` or `codeset` contain an internal 0 byte, as such values can't be passed to
-/// the gettext's C API.
-pub fn bind_textdomain_codeset<T, U>(domain: T, codeset: U) -> String
+/// Panics if:
+/// * `domain` or `codeset` contain an internal 0 byte, as such values can't be passed to the
+///     gettext's C API;
+/// * the result is not in UTF-8 (which shouldn't happen as the results should always be ASCII, as
+///     they're just codeset names).
+pub fn bind_textdomain_codeset<T, U>(domain: T, codeset: U) -> Result<Option<String>, io::Error>
 where
     T: Into<Vec<u8>>,
-    U: Into<Vec<u8>>,
+    U: Into<String>,
 {
     let domain = CString::new(domain).expect("`domain` contains an internal 0 byte");
-    let codeset = CString::new(codeset).expect("`codeset` contains an internal 0 byte");
+    let codeset = CString::new(codeset.into()).expect("`codeset` contains an internal 0 byte");
     unsafe {
-        CStr::from_ptr(ffi::bind_textdomain_codeset(domain.as_ptr(),
-                                                   codeset.as_ptr()))
-            .to_string_lossy()
-            .into_owned()
+        let result = ffi::bind_textdomain_codeset(domain.as_ptr(), codeset.as_ptr());
+        if result.is_null() {
+            let error = io::Error::last_os_error();
+            if let Some(0) = error.raw_os_error() {
+                return Ok(None)
+            } else {
+                return Err(error)
+            }
+        } else {
+            let result =
+                CStr::from_ptr(result)
+                .to_str()
+                .expect("`bind_textdomain_codeset()` returned non-UTF-8 string")
+                .to_owned();
+            Ok(Some(result))
+        }
     }
 }
 
@@ -612,13 +633,13 @@ mod tests {
     #[test]
     #[should_panic(expected = "`domain` contains an internal 0 byte")]
     fn bind_textdomain_codeset_panics_on_zero_in_domain() {
-        bind_textdomain_codeset("doma\0in", "UTF-8");
+        bind_textdomain_codeset("doma\0in", "UTF-8").unwrap();
     }
 
     #[test]
     #[should_panic(expected = "`codeset` contains an internal 0 byte")]
     fn bind_textdomain_codeset_panics_on_zero_in_codeset() {
-        bind_textdomain_codeset("name", "K\0I8-R");
+        bind_textdomain_codeset("name", "K\0I8-R").unwrap();
     }
 
     #[test]

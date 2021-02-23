@@ -17,6 +17,8 @@ pub enum TextDomainError {
     TextDomainCallFailed(std::io::Error),
     /// The call to `bindtextdomain()` failed.
     BindTextDomainCallFailed(std::io::Error),
+    /// The call to `bind_textdomain_codeset()` failed.
+    BindTextDomainCodesetCallFailed(std::io::Error),
 }
 
 /// A text domain initializer builder which finds the path to bind by searching translations
@@ -100,6 +102,9 @@ pub enum TextDomainError {
 ///         e.to_string()
 ///     }
 ///     Err(TextDomainError::BindTextDomainCallFailed(e)) => {
+///         e.to_string()
+///     }
+///     Err(TextDomainError::BindTextDomainCodesetCallFailed(e)) => {
 ///         e.to_string()
 ///     }
 /// };
@@ -352,7 +357,8 @@ impl TextDomain {
                     let result = setlocale(locale_category, req_locale);
                     bindtextdomain(name.clone(), path.join("locale"))
                         .map_err(TextDomainError::BindTextDomainCallFailed)?;
-                    bind_textdomain_codeset(name.clone(), codeset);
+                    bind_textdomain_codeset(name.clone(), codeset)
+                        .map_err(TextDomainError::BindTextDomainCodesetCallFailed)?;
                     textdomain(name).map_err(TextDomainError::TextDomainCallFailed)?;
                     Ok(result)
                 },

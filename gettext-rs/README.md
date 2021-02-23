@@ -27,7 +27,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // It's sufficient to call any one of those two. See "UTF-8 is required" in the
     // rustdocs.
     setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-    bind_textdomain_codeset("hellorust", "UTF-8");
+    bind_textdomain_codeset("hellorust", "UTF-8")?;
 
     println!("Translated: {}", gettext("Hello, world!"));
     println!("Singular: {}", ngettext("One thing", "Multiple things", 1));
