@@ -20,9 +20,13 @@ want or can't do that, there are two ways out:
 ```rust
 use gettextrs::*;
 
-setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-bindtextdomain("hellorust", "/usr/local/share/locale");
 textdomain("hellorust");
+bindtextdomain("hellorust", "/usr/local/share/locale");
+
+// It's sufficient to call any one of those two. See "UTF-8 is required" in the
+// rustdocs.
+setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
+bind_textdomain_codeset("hellorust", "UTF-8");
 
 println!("Translated: {}", gettext("Hello, world!"));
 println!("Singular: {}", ngettext("One thing", "Multiple things", 1));

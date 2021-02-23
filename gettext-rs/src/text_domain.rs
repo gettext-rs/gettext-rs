@@ -24,11 +24,13 @@ pub enum TextDomainError {
 ///
 /// # Defaults
 ///
+/// - [`bind_textdomain_codeset`] is called by default to set UTF-8. You can use [`codeset`] to
+/// override this, but please bear in mind that [other functions in this crate require
+/// UTF-8](./index.html#utf-8-is-required).
 /// - Current user's locale is selected by default. You can override this behaviour by calling
 /// [`locale`].
 /// - [`LocaleCategory::LcMessages`] is used when calling [`setlocale`]. Use [`locale_category`]
 /// to override.
-/// - [`bind_textdomain_codeset`] is not invoked by default. Use [`codeset`] to specify a `codeset`.
 /// - System data paths are searched by default (see below for details). Use
 /// [`skip_system_data_paths`] to limit the search to user provided paths.
 ///
@@ -109,7 +111,7 @@ pub struct TextDomain {
     name: String,
     locale: Option<String>,
     locale_category: LocaleCategory,
-    codeset: Option<String>,
+    codeset: String,
     pre_paths: Vec<PathBuf>,
     post_paths: Vec<PathBuf>,
     skip_system_data_paths: bool,
@@ -130,7 +132,7 @@ impl TextDomain {
             name: name.into(),
             locale: None,
             locale_category: LocaleCategory::LcMessages,
-            codeset: None,
+            codeset: "UTF-8".to_string(),
             pre_paths: vec![],
             post_paths: vec![],
             skip_system_data_paths: false,
@@ -170,7 +172,9 @@ impl TextDomain {
     }
 
     /// Define the `codeset` that will be used for calling [`bind_textdomain_codeset`].
-    /// The default is to **not** call [`bind_textdomain_codeset`].
+    /// The default is to call [`bind_textdomain_codeset`] with "UTF-8" codeset.
+    ///
+    /// **Warning:** [other functions in this crate require UTF-8](./index.html#utf-8-is-required).
     ///
     /// # Examples
     ///
@@ -178,12 +182,12 @@ impl TextDomain {
     /// use gettextrs::TextDomain;
     ///
     /// let text_domain = TextDomain::new("my_textdomain")
-    ///                              .codeset("UTF-8");
+    ///                              .codeset("KOI8-R");
     /// ```
     ///
     /// [`bind_textdomain_codeset`]: fn.bind_textdomain_codeset.html
     pub fn codeset<S: Into<String>>(mut self, codeset: S) -> Self {
-        self.codeset = Some(codeset.into());
+        self.codeset = codeset.into();
         self
     }
 
@@ -280,7 +284,7 @@ impl TextDomain {
 
         let name = self.name;
         let locale_category = self.locale_category;
-        let mut codeset = self.codeset.take();
+        let codeset = self.codeset;
 
         let mo_rel_path = PathBuf::from("LC_MESSAGES").join(&format!("{}.mo", &name));
 
@@ -339,9 +343,7 @@ impl TextDomain {
                         name.clone(),
                         path.join("locale").to_str().unwrap().to_owned(),
                     );
-                    if let Some(codeset) = codeset.take() {
-                        bind_textdomain_codeset(name.clone(), codeset);
-                    }
+                    bind_textdomain_codeset(name.clone(), codeset);
                     textdomain(name);
                     Ok(result)
                 },
@@ -402,7 +404,7 @@ mod tests {
         assert_eq!("test".to_owned(), text_domain.name);
         assert!(text_domain.locale.is_none());
         assert_eq!(LocaleCategory::LcMessages, text_domain.locale_category);
-        assert!(text_domain.codeset.is_none());
+        assert_eq!(text_domain.codeset, "UTF-8");
         assert!(text_domain.pre_paths.is_empty());
         assert!(text_domain.post_paths.is_empty());
         assert!(!text_domain.skip_system_data_paths);
@@ -410,8 +412,8 @@ mod tests {
         let text_domain = text_domain.locale_category(LocaleCategory::LcAll);
         assert_eq!(LocaleCategory::LcAll, text_domain.locale_category);
 
-        let text_domain = text_domain.codeset("UTF-8");
-        assert_eq!(Some("UTF-8".to_owned()), text_domain.codeset);
+        let text_domain = text_domain.codeset("ISO-8859-15");
+        assert_eq!("ISO-8859-15", text_domain.codeset);
 
         let text_domain = text_domain.prepend("pre");
         assert!(!text_domain.pre_paths.is_empty());
