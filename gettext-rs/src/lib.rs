@@ -342,18 +342,22 @@ where
 
 /// Set current locale for translations.
 ///
+/// Returns an opaque string that describes the locale set. You can pass that string into
+/// `setlocale()` later to set the same local again. `None` means the call failed (the underlying
+/// API doesn't provide any details).
+///
 /// # Panics
 ///
 /// Panics if `locale` contains an internal 0 byte, as such values can't be passed to the gettext's
 /// C API.
-pub fn setlocale<T: Into<Vec<u8>>>(category: LocaleCategory, locale: T) -> Option<String> {
+pub fn setlocale<T: Into<Vec<u8>>>(category: LocaleCategory, locale: T) -> Option<Vec<u8>> {
     let c = CString::new(locale).expect("`locale` contains an internal 0 byte");
     unsafe {
         let ret = ffi::setlocale(category as i32, c.as_ptr());
         if ret.is_null() {
             None
         } else {
-            Some(CStr::from_ptr(ret).to_string_lossy().into_owned())
+            Some(CStr::from_ptr(ret).to_bytes().to_owned())
         }
     }
 }

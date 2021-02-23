@@ -243,7 +243,8 @@ impl TextDomain {
     }
 
     /// Search for translations in the search paths and initialize the `locale` and `textdomain`.
-    /// Return an `Option` with the locale (i.e. the result from the call to [`setlocale`]) if:
+    /// Return an `Option` with the opaque string that describes the locale set (i.e. the result
+    /// from the call to [`setlocale`]) if:
     ///
     /// - a translation of the text domain in the requested language was found,
     /// - the locale is valid.
@@ -260,11 +261,11 @@ impl TextDomain {
     ///
     /// [`TextDomainError`]: enum.TextDomainError.html
     /// [`setlocale`]: fn.setlocale.html
-    pub fn init(mut self) -> Result<Option<String>, TextDomainError> {
+    pub fn init(mut self) -> Result<Option<Vec<u8>>, TextDomainError> {
         let (req_locale, norm_locale) = match self.locale.take() {
             Some(req_locale) => {
                 if req_locale == "C" || req_locale == "POSIX" {
-                    return Ok(Some(req_locale));
+                    return Ok(Some(req_locale.as_bytes().to_owned()));
                 }
                 match LanguageRange::new(&req_locale) {
                     Ok(lang_range) => (req_locale.clone(), lang_range.into()),
