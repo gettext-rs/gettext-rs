@@ -103,7 +103,7 @@ mod test {
         setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
 
         bindtextdomain("hellorust", "/usr/local/share/locale");
-        textdomain("hellorust");
+        textdomain("hellorust").unwrap();
 
         assert_eq!(gettext!("Hello, {}!", "world"), "Hello, world!");
         assert_eq!(
@@ -117,7 +117,7 @@ mod test {
         setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
 
         bindtextdomain("hellorust", "/usr/local/share/locale");
-        textdomain("hellorust");
+        textdomain("hellorust").unwrap();
 
         assert_eq!(
             ngettext!("Singular {}!", "Multiple {}!", 2, "Worlds"),
@@ -130,7 +130,7 @@ mod test {
         setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
 
         bindtextdomain("hellorust", "/usr/local/share/locale");
-        textdomain("hellorust");
+        textdomain("hellorust").unwrap();
 
         assert_eq!("Hello, world!", pgettext!("context", "Hello, {}!", "world"));
     }
@@ -140,7 +140,7 @@ mod test {
         setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
 
         bindtextdomain("hellorust", "/usr/local/share/locale");
-        textdomain("hellorust");
+        textdomain("hellorust").unwrap();
 
         assert_eq!(
             "Multiple Worlds!",

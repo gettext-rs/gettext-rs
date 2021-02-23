@@ -5,17 +5,21 @@
 //! ```rust,no_run
 //! use gettextrs::*;
 //!
-//! textdomain("hellorust");
-//! bindtextdomain("hellorust", "/usr/local/share/locale");
+//! fn main() -> Result<(), Box<dyn std::error::Error>> {
+//!     textdomain("hellorust")?;
+//!     bindtextdomain("hellorust", "/usr/local/share/locale");
 //!
-//! // It's sufficient to call any one of those two. See "UTF-8 is required" section below.
-//! setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-//! bind_textdomain_codeset("hellorust", "UTF-8");
+//!     // It's sufficient to call any one of those two. See "UTF-8 is required" section below.
+//!     setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
+//!     bind_textdomain_codeset("hellorust", "UTF-8");
 //!
-//! println!("Translated: {}", gettext("Hello, world!"));
-//! println!("Singular: {}", ngettext("One thing", "Multiple things", 1));
-//! println!("Plural: {}", ngettext("One thing", "Multiple things", 2));
-//! println!("With placeholder: {}", gettext!("Hello, {}!",  "Example User"));
+//!     println!("Translated: {}", gettext("Hello, world!"));
+//!     println!("Singular: {}", ngettext("One thing", "Multiple things", 1));
+//!     println!("Plural: {}", ngettext("One thing", "Multiple things", 2));
+//!     println!("With placeholder: {}", gettext!("Hello, {}!",  "Example User"));
+//!
+//!     Ok(())
+//! }
 //! ```
 //!
 //! Alternatively, you can initialize the locale and text domain using the [`TextDomain`] builder.
@@ -84,6 +88,7 @@ extern crate gettext_sys as ffi;
 
 use std::ffi::CStr;
 use std::ffi::CString;
+use std::io;
 use std::os::raw::c_ulong;
 use std::path::PathBuf;
 
@@ -263,16 +268,22 @@ where
 
 /// Switch to specific text domain.
 ///
+/// Returns the current domain, after possibly changing it. (There's no trailing 0 byte in the
+/// return value.)
+///
 /// # Panics
 ///
 /// Panics if `domain` contains an internal 0 byte, as such values can't be passed to the gettext's
 /// C API.
-pub fn textdomain<T: Into<Vec<u8>>>(domain: T) -> String {
+pub fn textdomain<T: Into<Vec<u8>>>(domain: T) -> Result<Vec<u8>, io::Error> {
     let domain = CString::new(domain).expect("`domain` contains an internal 0 byte");
     unsafe {
-        CStr::from_ptr(ffi::textdomain(domain.as_ptr()))
-            .to_string_lossy()
-            .into_owned()
+        let result = ffi::textdomain(domain.as_ptr());
+        if result.is_null() {
+            Err(io::Error::last_os_error())
+        } else {
+            Ok(CStr::from_ptr(result).to_bytes().to_owned())
+        }
     }
 }
 
@@ -447,7 +458,7 @@ mod tests {
         setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
 
         bindtextdomain("hellorust", "/usr/local/share/locale");
-        textdomain("hellorust");
+        textdomain("hellorust").unwrap();
 
         assert_eq!("Hello, world!", gettext("Hello, world!"));
     }
@@ -457,7 +468,7 @@ mod tests {
         setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
 
         bindtextdomain("hellorust", "/usr/local/share/locale");
-        textdomain("hellorust");
+        textdomain("hellorust").unwrap();
 
         assert_eq!("Hello, world!", ngettext("Hello, world!", "Hello, worlds!", 1));
         assert_eq!("Hello, worlds!", ngettext("Hello, world!", "Hello, worlds!", 2));
@@ -468,7 +479,7 @@ mod tests {
         setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
 
         bindtextdomain("hellorust", "/usr/local/share/locale");
-        textdomain("hellorust");
+        textdomain("hellorust").unwrap();
 
         assert_eq!("Hello, world!", pgettext("context", "Hello, world!"));
     }
@@ -478,7 +489,7 @@ mod tests {
         setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
 
         bindtextdomain("hellorust", "/usr/local/share/locale");
-        textdomain("hellorust");
+        textdomain("hellorust").unwrap();
 
         assert_eq!("Hello, world!", npgettext("context", "Hello, world!", "Hello, worlds!", 1));
         assert_eq!("Hello, worlds!", npgettext("context", "Hello, world!", "Hello, worlds!", 2));
@@ -565,7 +576,7 @@ mod tests {
     #[test]
     #[should_panic(expected = "`domain` contains an internal 0 byte")]
     fn textdomain_panics_on_zero_in_domain() {
-        textdomain("this is \0 my domain");
+        textdomain("this is \0 my domain").unwrap();
     }
 
     #[test]

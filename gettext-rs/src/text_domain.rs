@@ -7,12 +7,14 @@ use std::path::PathBuf;
 
 use super::{bind_textdomain_codeset, bindtextdomain, setlocale, textdomain, LocaleCategory};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug)]
 pub enum TextDomainError {
     /// The locale is malformed.
     InvalidLocale(String),
     /// The translation for the requested language could not be found or the search path is empty.
     TranslationNotFound(String),
+    /// The call to `textdomain()` failed.
+    TextDomainCallFailed(std::io::Error),
 }
 
 /// A text domain initializer builder which finds the path to bind by searching translations
@@ -91,6 +93,9 @@ pub enum TextDomainError {
 ///     }
 ///     Err(TextDomainError::InvalidLocale(locale)) => {
 ///         format!("invalid locale {}", locale)
+///     }
+///     Err(TextDomainError::TextDomainCallFailed(e)) => {
+///         e.to_string()
 ///     }
 /// };
 /// println!("Textdomain init result: {}", init_msg);
@@ -344,7 +349,7 @@ impl TextDomain {
                         path.join("locale").to_str().unwrap().to_owned(),
                     );
                     bind_textdomain_codeset(name.clone(), codeset);
-                    textdomain(name);
+                    textdomain(name).map_err(TextDomainError::TextDomainCallFailed)?;
                     Ok(result)
                 },
             )
@@ -387,15 +392,15 @@ mod tests {
 
     #[test]
     fn errors() {
-        assert_eq!(
-            Some(TextDomainError::InvalidLocale("(°_°)".to_owned())),
-            TextDomain::new("test").locale("(°_°)").init().err()
-        );
+        match TextDomain::new("test").locale("(°_°)").init().err() {
+            Some(TextDomainError::InvalidLocale(message)) => assert_eq!(message, "(°_°)"),
+            _ => panic!(),
+        };
 
-        assert_eq!(
-            Some(TextDomainError::TranslationNotFound("en".to_owned())),
-            TextDomain::new("0_0").locale("en_US").init().err()
-        );
+        match TextDomain::new("0_0").locale("en_US").init().err() {
+            Some(TextDomainError::TranslationNotFound(message)) => assert_eq!(message, "en"),
+            _ => panic!(),
+        };
     }
 
     #[test]
@@ -427,9 +432,10 @@ mod tests {
         let text_domain = TextDomain::new("test").locale("en_US");
         assert_eq!(Some("en_US".to_owned()), text_domain.locale);
 
-        assert_eq!(
-            Some(TextDomainError::TranslationNotFound("en".to_owned())),
-            TextDomain::new("0_0").locale("en_US").init().err()
-        ); // accept locale, but fail to find translation
+        // accept locale, but fail to find translation
+        match TextDomain::new("0_0").locale("en_US").init().err() {
+            Some(TextDomainError::TranslationNotFound(message)) => assert_eq!(message, "en"),
+            _ => panic!(),
+        };
     }
 }
