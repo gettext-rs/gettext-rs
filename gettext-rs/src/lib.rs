@@ -15,7 +15,7 @@
 //! println!("Translated: {}", gettext("Hello, world!"));
 //! println!("Singular: {}", ngettext("One thing", "Multiple things", 1));
 //! println!("Plural: {}", ngettext("One thing", "Multiple things", 2));
-//! println!("With placeholder: {}", gettext!("Hello, {user}!", user = "Example User"));
+//! println!("With placeholder: {}", gettext!("Hello, {}!",  "Example User"));
 //! ```
 //!
 //! Alternatively, you can initialize the locale and text domain using the [`TextDomain`] builder.
@@ -87,7 +87,7 @@ use std::ffi::CString;
 use std::os::raw::c_ulong;
 use std::path::PathBuf;
 
-mod macros;
+pub mod macros;
 pub use macros::*;
 mod text_domain;
 pub use text_domain::{TextDomain, TextDomainError};

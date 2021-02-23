@@ -1,50 +1,97 @@
+/// This is an implementation detail for counting arguments in the gettext macros. Don't call this directly.
+#[macro_export]
+#[doc(hidden)]
+macro_rules! count_args {
+    () => { 0 };
+    ($_e: expr $(, $rest: expr)*) => { 1 + $crate::count_args!($($rest),*) }
+}
+
+/// This is an implementation detail for replacing arguments in the gettext macros. Don't call this directly.
+#[macro_export]
+#[doc(hidden)]
+macro_rules! freplace {
+    ($input:expr, $($args:expr),+ $(,)?) => {{
+        let mut parts = $input.split("{}");
+        debug_assert_eq!(parts.clone().count() - 1, $crate::count_args!($($args),*), "Argument count has to match number of format directives ({{}})");
+
+        let mut output = parts.next().unwrap_or_default().to_string();
+        $(
+            output += &format!("{}{}", $args, &parts.next().expect("Argument count has to match number of format directives ({})"));
+        )*
+        output
+    }};
+}
 
 /// Like [gettext](fn.gettext.html), but allows for formatting.
 #[macro_export]
 macro_rules! gettext {
-    ($($arg:tt)*) => ($crate::gettext(std::fmt::format(format_args!($($arg)*))))
+    ($format:expr, $($args:expr),+ $(,)?) => {{
+        let s = $crate::gettext($format);
+        $crate::freplace!(s, $($args),*)
+    }};
 }
 
 /// Like [dgettext](fn.dgettext.html), but allows for formatting.
 #[macro_export]
 macro_rules! dgettext {
-    ($domain:expr, $string:expr, $($string_names:ident = $string_values:expr),*) => ($crate::dgettext($domain, format!($string, $( $string_names = $string_values ),*)));
+    ($domain:expr, $format:expr, $($args:expr),+ $(,)?) => {{
+        let s = $crate::dgettext($domain, $format);
+        $crate::freplace!(s, $($args),*)
+    }};
 }
 
-/// Like [dcgettext](fn.gettext.html), but allows for formatting.
+/// Like [dcgettext](fn.dcgettext.html), but allows for formatting.
 #[macro_export]
 macro_rules! dcgettext {
-    ($domain:expr, $category:expr, $string:expr, $($string_names:ident = $string_values:expr),*,) => ($crate::dcgettext($domain, format!($string, $( $string_names = $string_values ),*), $category));
+    ($domain:expr, $category:expr, $format:expr, $($args:expr),+ $(,)?) => {{
+        let s = $crate::dcgettext($domain, $format, $category);
+        $crate::freplace!(s, $($args),*)
+    }};
 }
 
-/// Like [ngettext](fn.gettext.html), but allows for formatting.
+/// Like [ngettext](fn.ngettext.html), but allows for formatting.
 #[macro_export]
 macro_rules! ngettext {
-    ($singular:expr, $($singular_names:ident = $singular_values:expr),*, $plural:expr, $($plural_names:ident = $plural_values:expr),*, $n:expr) => ($crate::ngettext(format!($singular, $( $singular_names = $singular_values ),*), format!($plural, $( $plural_names = $plural_values ),*), $n));
+    ($singular:expr, $plural:expr, $n:expr, $($args:expr),+ $(,)?) => {{
+        let s = $crate::ngettext($singular, $plural, $n);
+        $crate::freplace!(s, $($args),*)
+    }}
 }
 
-/// Like [dngettext](fn.gettext.html), but allows for formatting.
+/// Like [dngettext](fn.dngettext.html), but allows for formatting.
 #[macro_export]
 macro_rules! dngettext {
-    ($domain:expr, $singular:expr, $($singular_names:ident = $singular_values:expr),*, $plural:expr, $($plural_names:ident = $plural_values:expr),*, $n:expr) => ($crate::dngettext($domain, format!($singular, $( $singular_names = $singular_values ),*), format!($plural, $( $plural_names = $plural_values ),*), $n));
+    ($domain:expr, $singular:expr, $plural:expr, $n:expr, $($args:expr),+ $(,)?) => {{
+        let s = $crate::dngettext($domain, $singular, $plural, $n);
+        $crate::freplace!(s, $($args),*)
+    }}
 }
 
-/// Like [dcngettext](fn.gettext.html), but allows for formatting.
+/// Like [dcngettext](fn.dcngettext.html), but allows for formatting.
 #[macro_export]
 macro_rules! dcngettext {
-    ($domain:expr, $singular:expr, $($singular_names:ident = $singular_values:expr),*, $plural:expr, $($plural_names:ident = $plural_values:expr),*, $n:expr, $category:expr) => ($crate::dcngettext($domain, format!($singular, $( $singular_names = $singular_values ),*), format!($plural, $( $plural_names = $plural_values ),*), $n, $category));
+    ($domain:expr, $category:expr, $singular:expr, $plural:expr, $n:expr, $($args:expr),+ $(,)?) => {{
+        let s = $crate::dcngettext($domain, $singular, $plural, $n, $category);
+        $crate::freplace!(s, $($args),*)
+    }}
 }
 
-/// Like [pgettext](fn.gettext.html), but allows for formatting.
+/// Like [pgettext](fn.pgettext.html), but allows for formatting.
 #[macro_export]
 macro_rules! pgettext {
-    ($ctx:expr, $s:expr, $($s_names:ident = $s_values:expr),*) => ($crate::pgettext($ctx, format!($s, $( $s_names = $s_values ),*)));
+    ($ctx:expr, $format:expr, $($args:expr),+ $(,)?) => {{
+        let s = $crate::pgettext($ctx, $format);
+        $crate::freplace!(s, $($args),*)
+    }}
 }
 
-/// Like [npgettext](fn.gettext.html), but allows for formatting.
+/// Like [npgettext](fn.npgettext.html), but allows for formatting.
 #[macro_export]
 macro_rules! npgettext {
-    ($ctx:expr, $singular:expr, $($singular_names:ident = $singular_values:expr),*, $plural:expr, $($plural_names:ident = $plural_values:expr),*, $n:expr) => ($crate::npgettext($ctx, format!($singular, $( $singular_names = $singular_values ),*), format!($plural, $( $plural_names = $plural_values ),*), $n));
+    ($ctx:expr, $singular:expr, $plural:expr, $n:expr, $($args:expr),+ $(,)?) => {{
+        let s = $crate::npgettext($ctx, $singular, $plural, $n);
+        $crate::freplace!(s, $($args),*)
+    }}
 }
 
 #[cfg(test)]
@@ -58,7 +105,11 @@ mod test {
         bindtextdomain("hellorust", "/usr/local/share/locale");
         textdomain("hellorust");
 
-        assert_eq!(gettext!("Hello, {name}!", name = "world"), "Hello, world!");
+        assert_eq!(gettext!("Hello, {}!", "world"), "Hello, world!");
+        assert_eq!(
+            gettext!("Hello, {} {}!", "small", "world"),
+            "Hello, small world!"
+        );
     }
 
     #[test]
@@ -69,14 +120,8 @@ mod test {
         textdomain("hellorust");
 
         assert_eq!(
-            ngettext!(
-                "Hello, {name}!",
-                name = "world",
-                "Hello, {names}!",
-                names = "worlds",
-                2
-            ),
-            "Hello, worlds!"
+            ngettext!("Singular {}!", "Multiple {}!", 2, "Worlds"),
+            "Multiple Worlds!"
         );
     }
 
@@ -87,10 +132,7 @@ mod test {
         bindtextdomain("hellorust", "/usr/local/share/locale");
         textdomain("hellorust");
 
-        assert_eq!(
-            "Hello, world!",
-            pgettext!("context", "Hello, {name}!", name = "world")
-        );
+        assert_eq!("Hello, world!", pgettext!("context", "Hello, {}!", "world"));
     }
 
     #[test]
@@ -101,15 +143,8 @@ mod test {
         textdomain("hellorust");
 
         assert_eq!(
-            "Hello, worlds!",
-            npgettext!(
-                "context",
-                "Hello, {name}!",
-                name = "world",
-                "Hello, {names}!",
-                names = "worlds",
-                2
-            )
+            "Multiple Worlds!",
+            npgettext!("context", "Singular {}!", "Multiple {}!", 2, "Worlds")
         );
     }
 
@@ -121,7 +156,7 @@ mod test {
 
         assert_eq!(
             "Hello, world!",
-            dgettext!("hellorust", "Hello, {name}!", name = "world")
+            dgettext!("hellorust", "Hello, {}!", "world")
         );
     }
 
@@ -133,12 +168,7 @@ mod test {
 
         assert_eq!(
             "Hello, world!",
-            dcgettext!(
-                "hellorust",
-                LocaleCategory::LcAll,
-                "Hello, {name}!",
-                name = "world",
-            )
+            dcgettext!("hellorust", LocaleCategory::LcAll, "Hello, {}!", "world")
         );
     }
 
@@ -149,15 +179,14 @@ mod test {
         bindtextdomain("hellorust", "/usr/local/share/locale");
 
         assert_eq!(
-            "Hello, World!",
+            "Singular World",
             dcngettext!(
                 "hellorust",
-                "Hello, {name}!",
-                name = "World",
-                "Hello, {names}!",
-                names = "Worlds",
+                LocaleCategory::LcAll,
+                "Singular {}",
+                "Multiple {}",
                 1,
-                LocaleCategory::LcAll
+                "World"
             )
         )
     }
@@ -169,15 +198,8 @@ mod test {
         bindtextdomain("hellorust", "/usr/local/share/locale");
 
         assert_eq!(
-            "Hello, World!",
-            dngettext!(
-                "hellrust",
-                "Hello, {name}!",
-                name = "World",
-                "Hello, {names}!",
-                names = "Worlds",
-                1
-            )
+            "Singular World!",
+            dngettext!("hellrust", "Singular {}!", "Multiple {}!", 1, "World")
         )
     }
 }
