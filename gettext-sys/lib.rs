@@ -1,6 +1,8 @@
 use std::os::raw::{c_char, c_int, c_ulong};
+
 #[cfg(windows)]
-use std::os::raw::wchar_t;
+#[allow(non_camel_case_types)]
+type wchar_t = u16;
 
 extern "C" {
     pub fn gettext(s: *const c_char) -> *mut c_char;
