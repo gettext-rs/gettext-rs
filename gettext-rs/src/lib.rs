@@ -292,6 +292,7 @@ where
 
     #[cfg(windows)]
     {
+        use std::ffi::OsString;
         use std::os::windows::ffi::{OsStrExt, OsStringExt};
 
         let dir: Vec<u16> = dir.encode_wide().collect();
@@ -299,7 +300,16 @@ where
             panic!("`dir` contains an internal 0 byte");
         }
         unsafe {
-            OsString::from_wide(&ffi::wbindtextdomain(domain.as_ptr(), &dir.as_ptr()))
+            let result = {
+                let mut ptr = ffi::wbindtextdomain(domain.as_ptr(), dir.as_ptr());
+                let mut result = vec![];
+                while *ptr != 0_u16 {
+                    result.push(*ptr);
+                    ptr = ptr.offset(1);
+                }
+                result
+            };
+            OsString::from_wide(&result)
                 .to_string_lossy()
                 .into_owned()
         }
