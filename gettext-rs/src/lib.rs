@@ -99,6 +99,7 @@ pub mod macros;
 pub use macros::*;
 mod text_domain;
 pub use text_domain::{TextDomain, TextDomainError};
+pub mod getters;
 
 /// Locale category enum ported from locale.h.
 #[derive(Debug, PartialEq, Clone, Copy)]
@@ -274,6 +275,8 @@ where
 /// Returns the current domain, after possibly changing it. (There's no trailing 0 byte in the
 /// return value.)
 ///
+/// If you want to *get* current domain, rather than set it, use [`getters::current_textdomain`].
+///
 /// # Panics
 ///
 /// Panics if `domain` contains an internal 0 byte, as such values can't be passed to the gettext's
@@ -293,6 +296,8 @@ pub fn textdomain<T: Into<Vec<u8>>>(domain: T) -> Result<Vec<u8>, io::Error> {
 /// Bind text domain to some directory containing gettext MO files.
 ///
 /// Returns the current directory for given domain, after possibly changing it.
+///
+/// If you want to *get* domain directory, rather than set it, use [`getters::domain_directory`].
 ///
 /// # Panics
 ///
@@ -377,6 +382,8 @@ pub fn setlocale<T: Into<Vec<u8>>>(category: LocaleCategory, locale: T) -> Optio
 ///
 /// Returns the current charset for given domain, after possibly changing it. `None` means no
 /// codeset has been set.
+///
+/// If you want to *get* current encoding, rather than set it, use [`getters::textdomain_codeset`].
 ///
 /// # Panics
 ///
