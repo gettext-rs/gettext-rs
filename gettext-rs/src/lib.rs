@@ -5,17 +5,21 @@
 //! ```rust,no_run
 //! use gettextrs::*;
 //!
-//! textdomain("hellorust");
-//! bindtextdomain("hellorust", "/usr/local/share/locale");
+//! fn main() -> Result<(), Box<dyn std::error::Error>> {
+//!     textdomain("hellorust")?;
+//!     bindtextdomain("hellorust", "/usr/local/share/locale")?;
 //!
-//! // It's sufficient to call any one of those two. See "UTF-8 is required" section below.
-//! setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-//! bind_textdomain_codeset("hellorust", "UTF-8");
+//!     // It's sufficient to call any one of those two. See "UTF-8 is required" section below.
+//!     setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
+//!     bind_textdomain_codeset("hellorust", "UTF-8")?;
 //!
-//! println!("Translated: {}", gettext("Hello, world!"));
-//! println!("Singular: {}", ngettext("One thing", "Multiple things", 1));
-//! println!("Plural: {}", ngettext("One thing", "Multiple things", 2));
-//! println!("With placeholder: {}", gettext!("Hello, {}!",  "Example User"));
+//!     println!("Translated: {}", gettext("Hello, world!"));
+//!     println!("Singular: {}", ngettext("One thing", "Multiple things", 1));
+//!     println!("Plural: {}", ngettext("One thing", "Multiple things", 2));
+//!     println!("With placeholder: {}", gettext!("Hello, {}!",  "Example User"));
+//!
+//!     Ok(())
+//! }
 //! ```
 //!
 //! Alternatively, you can initialize the locale and text domain using the [`TextDomain`] builder.
@@ -42,7 +46,10 @@
 //!
 //!     ```rust,no_run
 //!     # use gettextrs::*;
-//!     bind_textdomain_codeset("hellorust", "UTF-8");
+//!     # fn main() -> Result<(), Box<dyn std::error::Error>> {
+//!     bind_textdomain_codeset("hellorust", "UTF-8")?;
+//!     # Ok(())
+//!     # }
 //!     ```
 //!
 //!     ...or using [`TextDomain`] builder:
@@ -84,6 +91,7 @@ extern crate gettext_sys as ffi;
 
 use std::ffi::CStr;
 use std::ffi::CString;
+use std::io;
 use std::os::raw::c_ulong;
 use std::path::PathBuf;
 
@@ -263,26 +271,34 @@ where
 
 /// Switch to specific text domain.
 ///
+/// Returns the current domain, after possibly changing it. (There's no trailing 0 byte in the
+/// return value.)
+///
 /// # Panics
 ///
 /// Panics if `domain` contains an internal 0 byte, as such values can't be passed to the gettext's
 /// C API.
-pub fn textdomain<T: Into<Vec<u8>>>(domain: T) -> String {
+pub fn textdomain<T: Into<Vec<u8>>>(domain: T) -> Result<Vec<u8>, io::Error> {
     let domain = CString::new(domain).expect("`domain` contains an internal 0 byte");
     unsafe {
-        CStr::from_ptr(ffi::textdomain(domain.as_ptr()))
-            .to_string_lossy()
-            .into_owned()
+        let result = ffi::textdomain(domain.as_ptr());
+        if result.is_null() {
+            Err(io::Error::last_os_error())
+        } else {
+            Ok(CStr::from_ptr(result).to_bytes().to_owned())
+        }
     }
 }
 
 /// Bind text domain to some directory containing gettext MO files.
 ///
+/// Returns the current directory for given domain, after possibly changing it.
+///
 /// # Panics
 ///
 /// Panics if `domain` or `dir` contain an internal 0 byte, as such values can't be passed to the
 /// gettext's C API.
-pub fn bindtextdomain<T, U>(domain: T, dir: U) -> String
+pub fn bindtextdomain<T, U>(domain: T, dir: U) -> Result<PathBuf, io::Error>
 where
     T: Into<Vec<u8>>,
     U: Into<PathBuf>,
@@ -295,76 +311,104 @@ where
         use std::ffi::OsString;
         use std::os::windows::ffi::{OsStrExt, OsStringExt};
 
-        let dir: Vec<u16> = dir.encode_wide().collect();
+        let mut dir: Vec<u16> = dir.encode_wide().collect();
         if dir.contains(&0) {
             panic!("`dir` contains an internal 0 byte");
         }
+        // Trailing zero to mark the end of the C string.
+        dir.push(0);
         unsafe {
-            let result = {
-                let mut ptr = ffi::wbindtextdomain(domain.as_ptr(), dir.as_ptr());
+            let mut ptr = ffi::wbindtextdomain(domain.as_ptr(), dir.as_ptr());
+            if ptr.is_null() {
+                Err(io::Error::last_os_error())
+            } else {
                 let mut result = vec![];
                 while *ptr != 0_u16 {
                     result.push(*ptr);
                     ptr = ptr.offset(1);
                 }
-                result
-            };
-            OsString::from_wide(&result)
-                .to_string_lossy()
-                .into_owned()
+                Ok(PathBuf::from(OsString::from_wide(&result)))
+            }
         }
     }
 
     #[cfg(not(windows))]
     {
+        use std::ffi::OsString;
         use std::os::unix::ffi::OsStringExt;
 
         let dir = dir.into_vec();
         let dir = CString::new(dir).expect("`dir` contains an internal 0 byte");
         unsafe {
-            CStr::from_ptr(ffi::bindtextdomain(domain.as_ptr(), dir.as_ptr()))
-                .to_string_lossy()
-                .into_owned()
+            let result = ffi::bindtextdomain(domain.as_ptr(), dir.as_ptr());
+            if result.is_null() {
+                Err(io::Error::last_os_error())
+            } else {
+                let result = CStr::from_ptr(result);
+                Ok(PathBuf::from(OsString::from_vec(result.to_bytes().to_vec())))
+            }
         }
     }
 }
 
 /// Set current locale for translations.
 ///
+/// Returns an opaque string that describes the locale set. You can pass that string into
+/// `setlocale()` later to set the same local again. `None` means the call failed (the underlying
+/// API doesn't provide any details).
+///
 /// # Panics
 ///
 /// Panics if `locale` contains an internal 0 byte, as such values can't be passed to the gettext's
 /// C API.
-pub fn setlocale<T: Into<Vec<u8>>>(category: LocaleCategory, locale: T) -> Option<String> {
+pub fn setlocale<T: Into<Vec<u8>>>(category: LocaleCategory, locale: T) -> Option<Vec<u8>> {
     let c = CString::new(locale).expect("`locale` contains an internal 0 byte");
     unsafe {
         let ret = ffi::setlocale(category as i32, c.as_ptr());
         if ret.is_null() {
             None
         } else {
-            Some(CStr::from_ptr(ret).to_string_lossy().into_owned())
+            Some(CStr::from_ptr(ret).to_bytes().to_owned())
         }
     }
 }
 
 /// Set encoding of translated messages.
 ///
+/// Returns the current charset for given domain, after possibly changing it. `None` means no
+/// codeset has been set.
+///
 /// # Panics
 ///
-/// Panics if `domain` or `codeset` contain an internal 0 byte, as such values can't be passed to
-/// the gettext's C API.
-pub fn bind_textdomain_codeset<T, U>(domain: T, codeset: U) -> String
+/// Panics if:
+/// * `domain` or `codeset` contain an internal 0 byte, as such values can't be passed to the
+///     gettext's C API;
+/// * the result is not in UTF-8 (which shouldn't happen as the results should always be ASCII, as
+///     they're just codeset names).
+pub fn bind_textdomain_codeset<T, U>(domain: T, codeset: U) -> Result<Option<String>, io::Error>
 where
     T: Into<Vec<u8>>,
-    U: Into<Vec<u8>>,
+    U: Into<String>,
 {
     let domain = CString::new(domain).expect("`domain` contains an internal 0 byte");
-    let codeset = CString::new(codeset).expect("`codeset` contains an internal 0 byte");
+    let codeset = CString::new(codeset.into()).expect("`codeset` contains an internal 0 byte");
     unsafe {
-        CStr::from_ptr(ffi::bind_textdomain_codeset(domain.as_ptr(),
-                                                   codeset.as_ptr()))
-            .to_string_lossy()
-            .into_owned()
+        let result = ffi::bind_textdomain_codeset(domain.as_ptr(), codeset.as_ptr());
+        if result.is_null() {
+            let error = io::Error::last_os_error();
+            if let Some(0) = error.raw_os_error() {
+                return Ok(None)
+            } else {
+                return Err(error)
+            }
+        } else {
+            let result =
+                CStr::from_ptr(result)
+                .to_str()
+                .expect("`bind_textdomain_codeset()` returned non-UTF-8 string")
+                .to_owned();
+            Ok(Some(result))
+        }
     }
 }
 
@@ -446,8 +490,8 @@ mod tests {
     fn smoke_test() {
         setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
 
-        bindtextdomain("hellorust", "/usr/local/share/locale");
-        textdomain("hellorust");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+        textdomain("hellorust").unwrap();
 
         assert_eq!("Hello, world!", gettext("Hello, world!"));
     }
@@ -456,8 +500,8 @@ mod tests {
     fn plural_test() {
         setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
 
-        bindtextdomain("hellorust", "/usr/local/share/locale");
-        textdomain("hellorust");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+        textdomain("hellorust").unwrap();
 
         assert_eq!("Hello, world!", ngettext("Hello, world!", "Hello, worlds!", 1));
         assert_eq!("Hello, worlds!", ngettext("Hello, world!", "Hello, worlds!", 2));
@@ -467,8 +511,8 @@ mod tests {
     fn context_test() {
         setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
 
-        bindtextdomain("hellorust", "/usr/local/share/locale");
-        textdomain("hellorust");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+        textdomain("hellorust").unwrap();
 
         assert_eq!("Hello, world!", pgettext("context", "Hello, world!"));
     }
@@ -477,8 +521,8 @@ mod tests {
     fn plural_context_test() {
         setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
 
-        bindtextdomain("hellorust", "/usr/local/share/locale");
-        textdomain("hellorust");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+        textdomain("hellorust").unwrap();
 
         assert_eq!("Hello, world!", npgettext("context", "Hello, world!", "Hello, worlds!", 1));
         assert_eq!("Hello, worlds!", npgettext("context", "Hello, world!", "Hello, worlds!", 2));
@@ -565,19 +609,19 @@ mod tests {
     #[test]
     #[should_panic(expected = "`domain` contains an internal 0 byte")]
     fn textdomain_panics_on_zero_in_domain() {
-        textdomain("this is \0 my domain");
+        textdomain("this is \0 my domain").unwrap();
     }
 
     #[test]
     #[should_panic(expected = "`domain` contains an internal 0 byte")]
     fn bindtextdomain_panics_on_zero_in_domain() {
-        bindtextdomain("\0bind this", "/usr/share/locale");
+        bindtextdomain("\0bind this", "/usr/share/locale").unwrap();
     }
 
     #[test]
     #[should_panic(expected = "`dir` contains an internal 0 byte")]
     fn bindtextdomain_panics_on_zero_in_dir() {
-        bindtextdomain("my_domain", "/opt/locales\0");
+        bindtextdomain("my_domain", "/opt/locales\0").unwrap();
     }
 
     #[test]
@@ -589,13 +633,13 @@ mod tests {
     #[test]
     #[should_panic(expected = "`domain` contains an internal 0 byte")]
     fn bind_textdomain_codeset_panics_on_zero_in_domain() {
-        bind_textdomain_codeset("doma\0in", "UTF-8");
+        bind_textdomain_codeset("doma\0in", "UTF-8").unwrap();
     }
 
     #[test]
     #[should_panic(expected = "`codeset` contains an internal 0 byte")]
     fn bind_textdomain_codeset_panics_on_zero_in_codeset() {
-        bind_textdomain_codeset("name", "K\0I8-R");
+        bind_textdomain_codeset("name", "K\0I8-R").unwrap();
     }
 
     #[test]

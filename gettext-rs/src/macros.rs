@@ -102,8 +102,8 @@ mod test {
     fn test_gettext_macro() {
         setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
 
-        bindtextdomain("hellorust", "/usr/local/share/locale");
-        textdomain("hellorust");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+        textdomain("hellorust").unwrap();
 
         assert_eq!(gettext!("Hello, {}!", "world"), "Hello, world!");
         assert_eq!(
@@ -116,8 +116,8 @@ mod test {
     fn test_ngettext_macro() {
         setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
 
-        bindtextdomain("hellorust", "/usr/local/share/locale");
-        textdomain("hellorust");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+        textdomain("hellorust").unwrap();
 
         assert_eq!(
             ngettext!("Singular {}!", "Multiple {}!", 2, "Worlds"),
@@ -129,8 +129,8 @@ mod test {
     fn test_pgettext_macro() {
         setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
 
-        bindtextdomain("hellorust", "/usr/local/share/locale");
-        textdomain("hellorust");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+        textdomain("hellorust").unwrap();
 
         assert_eq!("Hello, world!", pgettext!("context", "Hello, {}!", "world"));
     }
@@ -139,8 +139,8 @@ mod test {
     fn test_npgettext_macro() {
         setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
 
-        bindtextdomain("hellorust", "/usr/local/share/locale");
-        textdomain("hellorust");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+        textdomain("hellorust").unwrap();
 
         assert_eq!(
             "Multiple Worlds!",
@@ -152,7 +152,7 @@ mod test {
     fn test_dgettext_macro() {
         setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
 
-        bindtextdomain("hellorust", "/usr/local/share/locale");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
 
         assert_eq!(
             "Hello, world!",
@@ -164,7 +164,7 @@ mod test {
     fn test_dcgettext_macro() {
         setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
 
-        bindtextdomain("hellorust", "/usr/local/share/locale");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
 
         assert_eq!(
             "Hello, world!",
@@ -176,7 +176,7 @@ mod test {
     fn test_dcngettext_macro() {
         setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
 
-        bindtextdomain("hellorust", "/usr/local/share/locale");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
 
         assert_eq!(
             "Singular World",
@@ -195,7 +195,7 @@ mod test {
     fn test_dngettext_macro() {
         setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
 
-        bindtextdomain("hellorust", "/usr/local/share/locale");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
 
         assert_eq!(
             "Singular World!",
