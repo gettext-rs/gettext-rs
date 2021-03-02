@@ -41,52 +41,39 @@
 //!
 //! ## UTF-8 is required
 //!
-//! By default, gettext converts results to the locale's codeset. Rust, on the other hand, uses
-//! UTF-8 regardless of the locale. There's no universal way to bridge that gap, so this crate
-//! doesn't even try. Instead, *you* have to do at least one of the following:
+//! By default, gettext converts results to the locale's codeset. Rust, on the other hand, always
+//! encodes strings to UTF-8. The best way to bridge this gap is to ask gettext to convert strings
+//! to UTF-8:
 //!
-//! 1. force gettext to encode its results into UTF-8, either by calling an appropriate function:
+//! ```rust,no_run
+//! # use gettextrs::*;
+//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
+//! bind_textdomain_codeset("hellorust", "UTF-8")?;
+//! # Ok(())
+//! # }
+//! ```
 //!
-//!     ```rust,no_run
-//!     # use gettextrs::*;
-//!     # fn main() -> Result<(), Box<dyn std::error::Error>> {
-//!     bind_textdomain_codeset("hellorust", "UTF-8")?;
-//!     # Ok(())
-//!     # }
-//!     ```
+//! ...or using [`TextDomain`] builder:
 //!
-//!     ...or using [`TextDomain`] builder:
+//! ```rust,no_run
+//! # use gettextrs::*;
+//! TextDomain::new("hellorust")
+//!     .codeset("UTF-8") // Optional, the builder does this by default
+//!     .init()
+//!     .unwrap();
+//! ```
 //!
-//!     ```rust,no_run
-//!     # use gettextrs::*;
-//!     TextDomain::new("hellorust")
-//!         .codeset("UTF-8") // Optional, the builder does this by default
-//!         .init()
-//!         .unwrap();
-//!     ```
+//! This crate doesn't do this for you because the encoding is a global setting; changing it can
+//! affect other gettext calls in your program, like calls in C or C++ parts of your binary.
 //!
-//! 2. change into a locale that uses UTF-8, either by calling an appropriate function:
+//! If you don't do this, calls to `gettext()` and other functions might panic when they encounter
+//! something that isn't UTF-8. They can also garble data as they interpret the other encoding as
+//! UTF-8.
 //!
-//!     ```rust,no_run
-//!     # use gettextrs::*;
-//!     setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-//!     // or just for messages:
-//!     setlocale(LocaleCategory::LcMessages, "en_US.UTF-8");
-//!     ```
-//!
-//!     ...or using [`TextDomain`] builder:
-//!
-//!     ```rust,no_run
-//!     # use gettextrs::*;
-//!     TextDomain::new("hellorust")
-//!         .locale("en_US.UTF-8")
-//!         .init()
-//!         .unwrap();
-//!     ```
-//!
-//! If you don't do any of that, calls to `gettext()` and other functions might panic when they
-//! encounter something that isn't UTF-8. They can also garble data as they interpret the other
-//! encoding as UTF-8.
+//! Another thing you could do is change the locale, e.g. `setlocale(LocaleCategory::LcAll,
+//! "fr_FR.UTF-8")`, but that would also hard-code the language, defeating the purpose of gettext:
+//! if you know the language in advance, you could just write all your strings in that language and
+//! be done with that.
 
 extern crate locale_config;
 

@@ -9,10 +9,10 @@
     `bind_textdomain_codeset(domain, NULL)` (Alexander Batischev)
 
 ### Changed
-- **Users are required to configure gettext for UTF-8, either by setting a UTF-8
-    locale using `setlocale()`, or explicitly via `bind_textdomain_codeset()`.**
-    Failure to do this might lead to panics and/or garbled data (Alexander
-    Batischev)
+- **Users are required to configure gettext for UTF-8, either explicitly with
+    `bind_textdomain_codeset()`, or implicitly with `setlocale()` if they understand
+    the consequences.** Failure to do this might lead to panics and/or garbled
+    data (Alexander Batischev)
 - Functions now require more specific types, like `Into<String>` and
     `Into<PathBuf>` (Alexander Batischev)
 - Functions that take multiple strings no longer require all strings to be of
