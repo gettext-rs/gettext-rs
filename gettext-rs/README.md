@@ -17,6 +17,36 @@ want or can't do that, there are two ways out:
 
 ## Usage
 
+(If you know how to use gettext and just want a gist of this crate's API, [skip
+to the next section](#complete-api-example)).
+
+To internationalize your program with gettext, you have to do four things:
+
+1. wrap translatable strings into calls to appropriate gettext functions;
+2. use tools to extract those strings into a so-called "PO template file";
+3. translate the strings in the template, getting a so-called "message catalog"
+   as a result;
+4. compile the message catalog from the plain-text, human-readable PO format to
+   the binary MO format, and install them into a well-known location like
+   _/usr/local/share/locale_.
+
+This crate only covers the first step, the markup. To extract messages, use
+`xtr` (`cargo install xtr`). To translate, you can use desktop tools like
+[Poedit][], sites like [Crowdin][], or any text editor. To compile from PO to
+MO, use `msgfmt` tool from gettext-tools. The way you install files highly depend
+on your distribution method, so it's not covered here either.
+
+[Poedit]: https://poedit.net
+[Crowdin]: https://crowdin.com
+
+The best resource on gettext is [GNU gettext manual][]. This crate mimics the
+API, so you should have an easy time transferring the advice of that manual to
+this crate.
+
+[GNU gettext manual]: https://www.gnu.org/software/gettext/manual/index.html
+
+## Complete API example
+
 ```rust
 use gettextrs::*;
 
