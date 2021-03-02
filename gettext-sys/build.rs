@@ -1,11 +1,13 @@
 extern crate cc;
+extern crate tempfile;
 
 use std::env;
 use std::ffi::OsString;
 use std::fs;
+use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use std::io::ErrorKind;
+use tempfile::tempdir;
 
 fn env(name: &str) -> Option<String> {
     let prefix = env::var("TARGET").unwrap().to_uppercase().replace("-", "_");
@@ -158,13 +160,14 @@ fn main() {
 
     let host = env::var("HOST").unwrap();
     let src = env::current_dir().unwrap();
-    let dst = PathBuf::from(env::var_os("OUT_DIR").unwrap());
+    let build_dir = tempdir().unwrap();
+    let build_dir = build_dir.path();
 
     let cfg = cc::Build::new();
     let compiler = cfg.get_compiler();
 
-    let _ = fs::create_dir(&dst.join("build"));
-    let _ = fs::create_dir(&dst.join("gettext"));
+    let _ = fs::create_dir(&build_dir.join("build"));
+    let _ = fs::create_dir(&build_dir.join("gettext"));
 
     let mut cflags = OsString::new();
     for arg in compiler.args() {
@@ -177,27 +180,25 @@ fn main() {
         cflags.push("-DLIBXML_STATIC");
     }
 
-    if !dst.join("gettext").join("configure").is_file() {
-        let mut cmd = Command::new("tar");
-        cmd.current_dir(&dst.join("gettext"))
-           .arg("xJf")
-           .arg(&src.join("gettext-0.21.tar.xz"))
-           .arg("--strip-components")
-           .arg("1");
-        if host.contains("windows") {
-            // tar confuses local path with a remote resource because of ':'
-            cmd.arg("--force-local");
-        }
-        run(&mut cmd, "tar");
+    let mut cmd = Command::new("tar");
+    cmd.current_dir(&build_dir.join("gettext"))
+       .arg("xJf")
+       .arg(&src.join("gettext-0.21.tar.xz"))
+       .arg("--strip-components")
+       .arg("1");
+    if host.contains("windows") {
+        // tar confuses local path with a remote resource because of ':'
+        cmd.arg("--force-local");
     }
+    run(&mut cmd, "tar");
 
     let mut cmd = Command::new("sh");
     cmd.env("CC", compiler.path())
        .env("CFLAGS", cflags)
        .env("LD", &which("ld").unwrap())
        .env("VERBOSE", "1")
-       .current_dir(&dst.join("build"))
-       .arg(&posix_path(&dst.join("gettext").join("configure")));
+       .current_dir(&build_dir.join("build"))
+       .arg(&posix_path(&build_dir.join("gettext").join("configure")));
 
     cmd.arg("--without-emacs");
     cmd.arg("--disable-java");
@@ -217,7 +218,7 @@ fn main() {
         cmd.arg("--enable-threads=windows");
     }
 
-    cmd.arg(format!("--prefix={}", &posix_path(&dst)));
+    cmd.arg(format!("--prefix={}", &posix_path(&build_dir)));
 
     if target != host &&
        (!target.contains("windows") || !host.contains("windows")) {
@@ -239,10 +240,20 @@ fn main() {
     run(&mut cmd, "sh");
     run(make()
                 .arg(&format!("-j{}", env::var("NUM_JOBS").unwrap()))
-                .current_dir(&dst.join("build")), "make");
+                .current_dir(&build_dir.join("build")), "make");
     run(make()
                 .arg("install")
-                .current_dir(&dst.join("build")), "make");
+                .current_dir(&build_dir.join("build")), "make");
+
+    let dst = PathBuf::from(env::var_os("OUT_DIR").unwrap());
+    let mut cmd = Command::new("cp");
+    cmd.current_dir(&build_dir)
+       .arg("-r")
+       .arg(&build_dir.join("bin"))
+       .arg(&build_dir.join("include"))
+       .arg(&build_dir.join("lib"))
+       .arg(&dst);
+    run(&mut cmd, "cp");
 
     println!("cargo:rustc-link-lib=static=intl");
     println!("cargo:rustc-link-search=native={}/lib", dst.display());
