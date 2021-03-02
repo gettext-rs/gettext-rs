@@ -56,6 +56,17 @@ ways out:
 
 - `NUM_JOBS`: sets the number of parallel build jobs.
 
+- `TMPDIR` (on Unix), `TMP`, `TEMP`, `USERPROFILE` (on Windows): set the
+    parent directory for the temporary build directory.
+
+    GNU gettext uses autotools, which [don't allow some characters][chars] in
+    paths, notably a space character. To get around that, this crate performs
+    the build in a temporary directory which usually resides somewhere under
+    _/tmp_ or _C:\\Temp_. The aforementioned env vars allow you to move the
+    build directory elsewhere.
+
+    [chars]: https://www.gnu.org/software/autoconf/manual/autoconf-2.60/autoconf.html#Special-Chars-in-Variables
+
 For target-specific configuration, each of these environment variables can be
 prefixed by an upper-cased target, for example,
 `X86_64_UNKNOWN_LINUX_GNU_GETTEXT_DIR`. This can be useful in cross compilation

@@ -7,9 +7,13 @@
 - Checks for build tools required by GNU gettext (Dean Leggo)
 - Bindings for `wbindtextdomain` (only available on Windows) (Alexander
     Batischev)
+- Build-time dependency on `tempfile` (Alexander Batischev)
 
 ### Changed
 - Bump bundled GNU gettext to 0.21 (Alexander Batischev)
+
+### Fixed
+- Build failure when a path contains spaces (Alexander Batischev)
 
 
 
