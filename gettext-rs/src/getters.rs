@@ -21,6 +21,10 @@ use std::ptr;
 ///
 /// If you want to *set* the domain, rather than getting its current value, use
 /// [`textdomain`][::textdomain].
+///
+/// For more information, see [textdomain(3)][].
+///
+/// [textdomain(3)]: https://www.man7.org/linux/man-pages/man3/textdomain.3.html
 pub fn current_textdomain() -> Result<Vec<u8>, io::Error> {
     unsafe {
         let result = ffi::textdomain(ptr::null());
@@ -37,12 +41,16 @@ pub fn current_textdomain() -> Result<Vec<u8>, io::Error> {
 /// If you want to *set* the directory, rather than querying its current value, use
 /// [`bindtextdomain`][::bindtextdomain].
 ///
+/// For more information, see [bindtextdomain(3)][].
+///
+/// [bindtextdomain(3)]: https://www.man7.org/linux/man-pages/man3/bindtextdomain.3.html
+///
 /// # Panics
 ///
-/// Panics if `domain` contains an internal 0 byte, as such values can't be passed to the gettext's
-/// C API.
-pub fn domain_directory<T: Into<Vec<u8>>>(domain: T) -> Result<PathBuf, io::Error> {
-    let domain = CString::new(domain).expect("`domain` contains an internal 0 byte");
+/// Panics if `domainname` contains an internal 0 byte, as such values can't be passed to the
+/// underlying C API.
+pub fn domain_directory<T: Into<Vec<u8>>>(domainname: T) -> Result<PathBuf, io::Error> {
+    let domainname = CString::new(domainname).expect("`domainname` contains an internal 0 byte");
 
     #[cfg(windows)]
     {
@@ -50,7 +58,7 @@ pub fn domain_directory<T: Into<Vec<u8>>>(domain: T) -> Result<PathBuf, io::Erro
         use std::os::windows::ffi::OsStringExt;
 
         unsafe {
-            let mut ptr = ffi::wbindtextdomain(domain.as_ptr(), ptr::null());
+            let mut ptr = ffi::wbindtextdomain(domainname.as_ptr(), ptr::null());
             if ptr.is_null() {
                 Err(io::Error::last_os_error())
             } else {
@@ -70,7 +78,7 @@ pub fn domain_directory<T: Into<Vec<u8>>>(domain: T) -> Result<PathBuf, io::Erro
         use std::os::unix::ffi::OsStringExt;
 
         unsafe {
-            let result = ffi::bindtextdomain(domain.as_ptr(), ptr::null());
+            let result = ffi::bindtextdomain(domainname.as_ptr(), ptr::null());
             if result.is_null() {
                 Err(io::Error::last_os_error())
             } else {
@@ -88,16 +96,21 @@ pub fn domain_directory<T: Into<Vec<u8>>>(domain: T) -> Result<PathBuf, io::Erro
 /// If you want to *set* an encoding, rather than get the current one, use
 /// [`bind_textdomain_codeset`][::bind_textdomain_codeset].
 ///
+/// For more information, see [bind_textdomain_codeset(3)][].
+///
+/// [bind_textdomain_codeset(3)]: https://www.man7.org/linux/man-pages/man3/bind_textdomain_codeset.3.html
+///
 /// # Panics
 ///
 /// Panics if:
-/// * `domain` contains an internal 0 byte, as such values can't be passed to the gettext's C API;
+/// * `domainname` contains an internal 0 byte, as such values can't be passed to the underlying
+///     C API;
 /// * the result is not in UTF-8 (which shouldn't happen as the results should always be ASCII, as
 ///     they're just codeset names).
-pub fn textdomain_codeset<T: Into<Vec<u8>>>(domain: T) -> Result<Option<String>, io::Error> {
-    let domain = CString::new(domain).expect("`domain` contains an internal 0 byte");
+pub fn textdomain_codeset<T: Into<Vec<u8>>>(domainname: T) -> Result<Option<String>, io::Error> {
+    let domainname = CString::new(domainname).expect("`domainname` contains an internal 0 byte");
     unsafe {
-        let result = ffi::bind_textdomain_codeset(domain.as_ptr(), ptr::null());
+        let result = ffi::bind_textdomain_codeset(domainname.as_ptr(), ptr::null());
         if result.is_null() {
             let error = io::Error::last_os_error();
             if let Some(0) = error.raw_os_error() {

@@ -10,8 +10,8 @@ macro_rules! count_args {
 #[macro_export]
 #[doc(hidden)]
 macro_rules! freplace {
-    ($input:expr, $($args:expr),+ $(,)?) => {{
-        let mut parts = $input.split("{}");
+    ($format:expr, $($args:expr),+ $(,)?) => {{
+        let mut parts = $format.split("{}");
         debug_assert_eq!(parts.clone().count() - 1, $crate::count_args!($($args),*), "Argument count has to match number of format directives ({{}})");
 
         let mut output = parts.next().unwrap_or_default().to_string();
@@ -25,72 +25,72 @@ macro_rules! freplace {
 /// Like [gettext](fn.gettext.html), but allows for formatting.
 #[macro_export]
 macro_rules! gettext {
-    ($format:expr, $($args:expr),+ $(,)?) => {{
-        let s = $crate::gettext($format);
-        $crate::freplace!(s, $($args),*)
+    ($msgid:expr, $($args:expr),+ $(,)?) => {{
+        let format = $crate::gettext($msgid);
+        $crate::freplace!(format, $($args),*)
     }};
 }
 
 /// Like [dgettext](fn.dgettext.html), but allows for formatting.
 #[macro_export]
 macro_rules! dgettext {
-    ($domain:expr, $format:expr, $($args:expr),+ $(,)?) => {{
-        let s = $crate::dgettext($domain, $format);
-        $crate::freplace!(s, $($args),*)
+    ($domainname:expr, $msgid:expr, $($args:expr),+ $(,)?) => {{
+        let format = $crate::dgettext($domainname, $msgid);
+        $crate::freplace!(format, $($args),*)
     }};
 }
 
 /// Like [dcgettext](fn.dcgettext.html), but allows for formatting.
 #[macro_export]
 macro_rules! dcgettext {
-    ($domain:expr, $category:expr, $format:expr, $($args:expr),+ $(,)?) => {{
-        let s = $crate::dcgettext($domain, $format, $category);
-        $crate::freplace!(s, $($args),*)
+    ($domainname:expr, $category:expr, $msgid:expr, $($args:expr),+ $(,)?) => {{
+        let format = $crate::dcgettext($domainname, $msgid, $category);
+        $crate::freplace!(format, $($args),*)
     }};
 }
 
 /// Like [ngettext](fn.ngettext.html), but allows for formatting.
 #[macro_export]
 macro_rules! ngettext {
-    ($singular:expr, $plural:expr, $n:expr, $($args:expr),+ $(,)?) => {{
-        let s = $crate::ngettext($singular, $plural, $n);
-        $crate::freplace!(s, $($args),*)
+    ($msgid:expr, $msgid_plural:expr, $n:expr, $($args:expr),+ $(,)?) => {{
+        let format = $crate::ngettext($msgid, $msgid_plural, $n);
+        $crate::freplace!(format, $($args),*)
     }}
 }
 
 /// Like [dngettext](fn.dngettext.html), but allows for formatting.
 #[macro_export]
 macro_rules! dngettext {
-    ($domain:expr, $singular:expr, $plural:expr, $n:expr, $($args:expr),+ $(,)?) => {{
-        let s = $crate::dngettext($domain, $singular, $plural, $n);
-        $crate::freplace!(s, $($args),*)
+    ($domainname:expr, $msgid:expr, $msgid_plural:expr, $n:expr, $($args:expr),+ $(,)?) => {{
+        let format = $crate::dngettext($domainname, $msgid, $msgid_plural, $n);
+        $crate::freplace!(format, $($args),*)
     }}
 }
 
 /// Like [dcngettext](fn.dcngettext.html), but allows for formatting.
 #[macro_export]
 macro_rules! dcngettext {
-    ($domain:expr, $category:expr, $singular:expr, $plural:expr, $n:expr, $($args:expr),+ $(,)?) => {{
-        let s = $crate::dcngettext($domain, $singular, $plural, $n, $category);
-        $crate::freplace!(s, $($args),*)
+    ($domainname:expr, $category:expr, $msgid:expr, $msgid_plural:expr, $n:expr, $($args:expr),+ $(,)?) => {{
+        let format = $crate::dcngettext($domainname, $msgid, $msgid_plural, $n, $category);
+        $crate::freplace!(format, $($args),*)
     }}
 }
 
 /// Like [pgettext](fn.pgettext.html), but allows for formatting.
 #[macro_export]
 macro_rules! pgettext {
-    ($ctx:expr, $format:expr, $($args:expr),+ $(,)?) => {{
-        let s = $crate::pgettext($ctx, $format);
-        $crate::freplace!(s, $($args),*)
+    ($msgctxt:expr, $msgid:expr, $($args:expr),+ $(,)?) => {{
+        let format = $crate::pgettext($msgctxt, $msgid);
+        $crate::freplace!(format, $($args),*)
     }}
 }
 
 /// Like [npgettext](fn.npgettext.html), but allows for formatting.
 #[macro_export]
 macro_rules! npgettext {
-    ($ctx:expr, $singular:expr, $plural:expr, $n:expr, $($args:expr),+ $(,)?) => {{
-        let s = $crate::npgettext($ctx, $singular, $plural, $n);
-        $crate::freplace!(s, $($args),*)
+    ($msgctxt:expr, $msgid:expr, $msgid_plural:expr, $n:expr, $($args:expr),+ $(,)?) => {{
+        let format = $crate::npgettext($msgctxt, $msgid, $msgid_plural, $n);
+        $crate::freplace!(format, $($args),*)
     }}
 }
 
