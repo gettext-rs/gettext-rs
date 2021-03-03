@@ -8,7 +8,7 @@
 //! value, you just pass `NULL` as an argument. This is ergonomic in C, but not in Rust: wrapping
 //! everything in `Option`s is a tad ugly. That's why this crate provides getters as separate
 //! functions. They're in a module of their own to prevent them from clashing with any functions
-//! that upstream might add in the future.
+//! that the underlying C API might gain in the future.
 
 extern crate gettext_sys as ffi;
 

@@ -1,3 +1,5 @@
+//! A builder for gettext configuration.
+
 use locale_config::{LanguageRange, Locale};
 
 use std::env;
@@ -7,6 +9,7 @@ use std::path::PathBuf;
 
 use super::{bind_textdomain_codeset, bindtextdomain, setlocale, textdomain, LocaleCategory};
 
+/// Errors that might come up after running the builder.
 #[derive(Debug)]
 pub enum TextDomainError {
     /// The locale is malformed.
@@ -21,12 +24,11 @@ pub enum TextDomainError {
     BindTextDomainCodesetCallFailed(std::io::Error),
 }
 
-/// A text domain initializer builder which finds the path to bind by searching translations
-/// in the system data paths and optionally in user specified paths.
+/// A builder to configure gettext.
 ///
-/// `TextDomain` takes care of calling the [`setlocale`], [`bindtextdomain`],
-/// [`bind_textdomain_codeset`] and [`textdomain`].
-///
+/// It searches translations in the system data paths and optionally in the user-specified paths,
+/// and binds them to the given domain. `TextDomain` takes care of calling [`setlocale`],
+/// [`bindtextdomain`], [`bind_textdomain_codeset`], and [`textdomain`] for you.
 ///
 /// # Defaults
 ///
@@ -38,7 +40,7 @@ pub enum TextDomainError {
 /// - [`LocaleCategory::LcMessages`] is used when calling [`setlocale`]. Use [`locale_category`]
 /// to override.
 /// - System data paths are searched by default (see below for details). Use
-/// [`skip_system_data_paths`] to limit the search to user provided paths.
+/// [`skip_system_data_paths`] to limit the search to user-provided paths.
 ///
 /// # Text domain path binding
 ///
@@ -51,7 +53,7 @@ pub enum TextDomainError {
 ///
 /// For each `path` in the search paths, the following subdirectories are scanned:
 /// `path/locale/lang*/LC_MESSAGES` (where `lang` is the language part of the selected locale).
-/// The first `path` containing a file matching `name.mo` is used for the call to
+/// The first `path` containing a file matching `domainname.mo` is used for the call to
 /// [`bindtextdomain`].
 ///
 /// # Examples
@@ -123,7 +125,7 @@ pub enum TextDomainError {
 /// [`prepend`]: struct.TextDomain.html#method.prepend
 /// [`push`]: struct.TextDomain.html#method.push
 pub struct TextDomain {
-    name: String,
+    domainname: String,
     locale: Option<String>,
     locale_category: LocaleCategory,
     codeset: String,
@@ -133,7 +135,7 @@ pub struct TextDomain {
 }
 
 impl TextDomain {
-    /// Creates a new builder instance of `TextDomain` with the specified `name`.
+    /// Creates a new instance of `TextDomain` for the specified `domainname`.
     ///
     /// # Examples
     ///
@@ -142,9 +144,9 @@ impl TextDomain {
     ///
     /// let text_domain = TextDomain::new("my_textdomain");
     /// ```
-    pub fn new<S: Into<String>>(name: S) -> TextDomain {
+    pub fn new<S: Into<String>>(domainname: S) -> TextDomain {
         TextDomain {
-            name: name.into(),
+            domainname: domainname.into(),
             locale: None,
             locale_category: LocaleCategory::LcMessages,
             codeset: "UTF-8".to_string(),
@@ -186,8 +188,8 @@ impl TextDomain {
         self
     }
 
-    /// Define the `codeset` that will be used for calling [`bind_textdomain_codeset`].
-    /// The default is to call [`bind_textdomain_codeset`] with "UTF-8" codeset.
+    /// Define the `codeset` that will be used for calling [`bind_textdomain_codeset`]. The default
+    /// is "UTF-8".
     ///
     /// **Warning:** [other functions in this crate require UTF-8](./index.html#utf-8-is-required).
     ///
@@ -236,7 +238,7 @@ impl TextDomain {
         self
     }
 
-    /// Don't search translation in the system data paths.
+    /// Don't search for translations in the system data paths.
     ///
     /// # Examples
     ///
@@ -252,11 +254,13 @@ impl TextDomain {
         self
     }
 
-    /// Search for translations in the search paths and initialize the `locale` and `textdomain`.
-    /// Return an `Option` with the opaque string that describes the locale set (i.e. the result
-    /// from the call to [`setlocale`]) if:
+    /// Search for translations in the search paths, initialize the locale, set up the text domain
+    /// and ask gettext to convert messages to UTF-8.
     ///
-    /// - a translation of the text domain in the requested language was found,
+    /// Returns an `Option` with the opaque string that describes the locale set (i.e. the result
+    /// of [`setlocale`]) if:
+    ///
+    /// - a translation of the text domain in the requested language was found; and
     /// - the locale is valid.
     ///
     /// # Examples
@@ -298,11 +302,11 @@ impl TextDomain {
 
         let lang = norm_locale.as_ref().splitn(2, "-").collect::<Vec<&str>>()[0].to_owned();
 
-        let name = self.name;
+        let domainname = self.domainname;
         let locale_category = self.locale_category;
         let codeset = self.codeset;
 
-        let mo_rel_path = PathBuf::from("LC_MESSAGES").join(&format!("{}.mo", &name));
+        let mo_rel_path = PathBuf::from("LC_MESSAGES").join(&format!("{}.mo", &domainname));
 
         // Get paths from system data dirs if requested so
         let sys_data_paths_str = if !self.skip_system_data_paths {
@@ -355,11 +359,11 @@ impl TextDomain {
                 Err(TextDomainError::TranslationNotFound(lang)),
                 |path| {
                     let result = setlocale(locale_category, req_locale);
-                    bindtextdomain(name.clone(), path.join("locale"))
+                    bindtextdomain(domainname.clone(), path.join("locale"))
                         .map_err(TextDomainError::BindTextDomainCallFailed)?;
-                    bind_textdomain_codeset(name.clone(), codeset)
+                    bind_textdomain_codeset(domainname.clone(), codeset)
                         .map_err(TextDomainError::BindTextDomainCodesetCallFailed)?;
-                    textdomain(name).map_err(TextDomainError::TextDomainCallFailed)?;
+                    textdomain(domainname).map_err(TextDomainError::TextDomainCallFailed)?;
                     Ok(result)
                 },
             )
@@ -370,7 +374,7 @@ impl fmt::Debug for TextDomain {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         let mut debug_struct = fmt.debug_struct("TextDomain");
         debug_struct
-            .field("name", &self.name)
+            .field("domainname", &self.domainname)
             .field(
                 "locale",
                 &match self.locale.as_ref() {
@@ -416,7 +420,7 @@ mod tests {
     #[test]
     fn attributes() {
         let text_domain = TextDomain::new("test");
-        assert_eq!("test".to_owned(), text_domain.name);
+        assert_eq!("test".to_owned(), text_domain.domainname);
         assert!(text_domain.locale.is_none());
         assert_eq!(LocaleCategory::LcMessages, text_domain.locale_category);
         assert_eq!(text_domain.codeset, "UTF-8");

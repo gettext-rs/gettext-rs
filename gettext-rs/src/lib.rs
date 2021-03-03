@@ -1,4 +1,4 @@
-//! # gettext C library FFI binding for Rust
+//! # Safe Rust bindings for gettext.
 //!
 //! Usage:
 //!
@@ -122,7 +122,7 @@ pub enum LocaleCategory {
     LcIdentification = 12,
 }
 
-/// Translate msgid to localized message from default domain.
+/// Translate msgid to localized message from the default domain.
 ///
 /// For more information, see [gettext(3)][].
 ///
@@ -144,7 +144,7 @@ pub fn gettext<T: Into<String>>(msgid: T) -> String {
     }
 }
 
-/// Translate msgid to localized message from specified domain.
+/// Translate msgid to localized message from the specified domain.
 ///
 /// For more information, see [dgettext(3)][].
 ///
@@ -172,7 +172,7 @@ where
     }
 }
 
-/// Translate msgid to localized message from specified domain using custom locale category.
+/// Translate msgid to localized message from the specified domain using custom locale category.
 ///
 /// For more information, see [dcgettext(3)][].
 ///
@@ -199,7 +199,7 @@ where
     }
 }
 
-/// Translate msgid to localized message from default domain (with plural support).
+/// Translate msgid to localized message from the default domain (with plural support).
 ///
 /// For more information, see [ngettext(3)][].
 ///
@@ -226,7 +226,7 @@ where
     }
 }
 
-/// Translate msgid to localized message from specified domain (with plural support).
+/// Translate msgid to localized message from the specified domain (with plural support).
 ///
 /// For more information, see [dngettext(3)][].
 ///
@@ -255,7 +255,8 @@ where
     }
 }
 
-/// Translate msgid to localized message from specified domain using custom locale category (with plural support).
+/// Translate msgid to localized message from the specified domain using custom locale category
+/// (with plural support).
 ///
 /// For more information, see [dcngettext(3)][].
 ///
@@ -284,7 +285,7 @@ where
     }
 }
 
-/// Switch to specific text domain.
+/// Switch to the specific text domain.
 ///
 /// Returns the current domain, after possibly changing it. (There's no trailing 0 byte in the
 /// return value.)
@@ -311,7 +312,7 @@ pub fn textdomain<T: Into<Vec<u8>>>(domainname: T) -> Result<Vec<u8>, io::Error>
     }
 }
 
-/// Bind text domain to some directory containing gettext MO files.
+/// Specify the directory that contains MO files for the given domain.
 ///
 /// Returns the current directory for given domain, after possibly changing it.
 ///
@@ -378,7 +379,7 @@ where
     }
 }
 
-/// Set current locale for translations.
+/// Set current locale.
 ///
 /// Returns an opaque string that describes the locale set. You can pass that string into
 /// `setlocale()` later to set the same local again. `None` means the call failed (the underlying
@@ -461,7 +462,7 @@ fn panic_on_zero_in_ctxt(msgctxt: &str) {
     }
 }
 
-/// Translate msgid to localized message from default domain (with context support).
+/// Translate msgid to localized message from the default domain (with context support).
 ///
 /// # Panics
 ///
@@ -488,7 +489,7 @@ where
     translation
 }
 
-/// Translate msgid to localized message from default domain (with plural support and context
+/// Translate msgid to localized message from the default domain (with plural support and context
 /// support).
 ///
 /// # Panics

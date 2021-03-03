@@ -1,14 +1,13 @@
 # gettext-sys
 
-Raw FFI bindings for GNU [gettext](https://www.gnu.org/software/gettext/).
-Please see [documentation](https://docs.rs/gettext-sys) for details.
+Raw FFI bindings for gettext. Please see
+[documentation](https://docs.rs/gettext-sys) for details.
 
 ## Licensing
 
-Even though this crate is MIT-licensed, GNU gettext itself is licensed under the
-GNU LGPL. By default, this crate builds and statically links GNU gettext, and so
-you have to abide by LGPL. If you don't want or can't do that, there are two
-ways out:
+On platforms that don't have a native gettext implementation, this crate
+compiles GNU gettext, which is licensed under LGPL. This means **you have to
+abide by LGPL**. If you don't want or can't do that, there are two ways out:
 
 1. in a GNU environment, enable `gettext-system` feature (see below);
 2. dynamically link to GNU gettext library you obtained by some other means,

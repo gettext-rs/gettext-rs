@@ -1,14 +1,14 @@
 # gettext-rs
 
-Safe bindings for GNU [gettext](https://www.gnu.org/software/gettext/). Please
-see [documentation](https://docs.rs/gettext-rs) for details.
+Safe bindings for gettext. Please see
+[documentation](https://docs.rs/gettext-rs) for details.
 
 ## Licensing
 
-Even though this crate is MIT-licensed, GNU gettext itself is licensed under the
-GNU LGPL. By default, this crate (through its dependency `gettext-sys`) builds
-and statically links GNU gettext, and so you have to abide by LGPL. If you don't
-want or can't do that, there are two ways out:
+This crate depends on `gettext-sys`, which compiles GNU gettext on platforms
+that don't have a native gettext implementation. GNU gettext is licensed under
+LGPL, and is linked statically, which means **you have to abide by LGPL**. If
+you don't want or can't do that, there are two ways out:
 
 1. if you use glibc or musl libc, enable `gettext-system` feature (see below);
 2. dynamically link to GNU gettext library you obtained by some other means,
@@ -39,9 +39,10 @@ on your distribution method, so it's not covered here either.
 [Poedit]: https://poedit.net
 [Crowdin]: https://crowdin.com
 
-The best resource on gettext is [GNU gettext manual][]. This crate mimics the
-API, so you should have an easy time transferring the advice of that manual to
-this crate.
+The best resource on gettext is [GNU gettext manual][]. This crate has the same
+API, so you should have an easy time transferring the advice from that manual to
+this crate. In a pitch, you can also glance at the manpages for C functions
+which this crate wraps.
 
 [GNU gettext manual]: https://www.gnu.org/software/gettext/manual/index.html
 

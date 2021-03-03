@@ -1,3 +1,20 @@
+//! Macros that translate the message and then replace placeholders in it.
+//!
+//! You can think of these as `format!(gettext(msgid), value1, value2…)`, but please bear in mind
+//! that the only supported placeholder is `{}`. **You cannot use any of std::fmt goodies with
+//! these macros**. The only way to get around that is to pre-format the argument which you then
+//! insert into a translated string:
+//!
+//! ```rust,no_run
+//! # use gettextrs::*;
+//! let x = 42_u64;
+//! gettext!(
+//!     "In binary, {} is {}, but it's {} in hexadecimal",
+//!     x,
+//!     format!("{:b}", x),
+//!     format!("{:x}", x));
+//! ```
+
 /// This is an implementation detail for counting arguments in the gettext macros. Don't call this directly.
 #[macro_export]
 #[doc(hidden)]
@@ -22,7 +39,12 @@ macro_rules! freplace {
     }};
 }
 
-/// Like [gettext](fn.gettext.html), but allows for formatting.
+/// Like [`gettext`], but allows for formatting.
+///
+/// It calls [`gettext`] on `msgid`, and then replaces each occurrence of `{}` with the next value
+/// out of `args`.
+///
+/// [`gettext`]: fn.gettext.html
 #[macro_export]
 macro_rules! gettext {
     ($msgid:expr, $($args:expr),+ $(,)?) => {{
@@ -31,7 +53,12 @@ macro_rules! gettext {
     }};
 }
 
-/// Like [dgettext](fn.dgettext.html), but allows for formatting.
+/// Like [`dgettext`], but allows for formatting.
+///
+/// It calls [`dgettext`] on `domainname` and `msgid`, and then replaces each occurrence of `{}`
+/// with the next value out of `args`.
+///
+/// [`dgettext`]: fn.dgettext.html
 #[macro_export]
 macro_rules! dgettext {
     ($domainname:expr, $msgid:expr, $($args:expr),+ $(,)?) => {{
@@ -40,7 +67,12 @@ macro_rules! dgettext {
     }};
 }
 
-/// Like [dcgettext](fn.dcgettext.html), but allows for formatting.
+/// Like [`dcgettext`], but allows for formatting.
+///
+/// It calls [`dcgettext`] on `domainname`, `category`, and `msgid`, and then replaces each
+/// occurrence of `{}` with the next value out of `args`.
+///
+/// [`dcgettext`]: fn.dcgettext.html
 #[macro_export]
 macro_rules! dcgettext {
     ($domainname:expr, $category:expr, $msgid:expr, $($args:expr),+ $(,)?) => {{
@@ -49,7 +81,12 @@ macro_rules! dcgettext {
     }};
 }
 
-/// Like [ngettext](fn.ngettext.html), but allows for formatting.
+/// Like [`ngettext`], but allows for formatting.
+///
+/// It calls [`ngettext`] on `msgid`, `msgid_plural`, and `n`, and then replaces each occurrence of
+/// `{}` with the next value out of `args`.
+///
+/// [`ngettext`]: fn.ngettext.html
 #[macro_export]
 macro_rules! ngettext {
     ($msgid:expr, $msgid_plural:expr, $n:expr, $($args:expr),+ $(,)?) => {{
@@ -58,7 +95,12 @@ macro_rules! ngettext {
     }}
 }
 
-/// Like [dngettext](fn.dngettext.html), but allows for formatting.
+/// Like [`dngettext`], but allows for formatting.
+///
+/// It calls [`dngettext`] on `domainname`, `msgid`, `msgid_plural`, and `n`, and then replaces
+/// each occurrence of `{}` with the next value out of `args`.
+///
+/// [`dngettext`]: fn.dngettext.html
 #[macro_export]
 macro_rules! dngettext {
     ($domainname:expr, $msgid:expr, $msgid_plural:expr, $n:expr, $($args:expr),+ $(,)?) => {{
@@ -67,7 +109,12 @@ macro_rules! dngettext {
     }}
 }
 
-/// Like [dcngettext](fn.dcngettext.html), but allows for formatting.
+/// Like [`dcngettext`], but allows for formatting.
+///
+/// It calls [`dcngettext`] on `domainname`, `category`, `msgid`, `msgid_plural`, and `n`, and then
+/// replaces each occurrence of `{}` with the next value out of `args`.
+///
+/// [`dcngettext`]: fn.dcngettext.html
 #[macro_export]
 macro_rules! dcngettext {
     ($domainname:expr, $category:expr, $msgid:expr, $msgid_plural:expr, $n:expr, $($args:expr),+ $(,)?) => {{
@@ -76,7 +123,12 @@ macro_rules! dcngettext {
     }}
 }
 
-/// Like [pgettext](fn.pgettext.html), but allows for formatting.
+/// Like [`pgettext`], but allows for formatting.
+///
+/// It calls [`pgettext`] on `msgctxt` and `msgid`, and then replaces each occurrence of `{}` with
+/// the next value out of `args`.
+///
+/// [`pgettext`]: fn.pgettext.html
 #[macro_export]
 macro_rules! pgettext {
     ($msgctxt:expr, $msgid:expr, $($args:expr),+ $(,)?) => {{
@@ -85,7 +137,12 @@ macro_rules! pgettext {
     }}
 }
 
-/// Like [npgettext](fn.npgettext.html), but allows for formatting.
+/// Like [`npgettext`], but allows for formatting.
+///
+/// It calls [`npgettext`] on `msgctxt`, `msgid`, `msgid_plural`, and `n`, and then replaces each
+/// occurrence of `{}` with the next value out of `args`.
+///
+/// [`npgettext`]: fn.npgettext.html
 #[macro_export]
 macro_rules! npgettext {
     ($msgctxt:expr, $msgid:expr, $msgid_plural:expr, $n:expr, $($args:expr),+ $(,)?) => {{
