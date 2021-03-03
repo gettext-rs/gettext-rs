@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.21.0 - 2021-03-03
 
 ### Added
 - A note regarding GNU gettext's LGPL license (Alexander Batischev)
