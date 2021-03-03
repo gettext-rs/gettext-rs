@@ -14,7 +14,7 @@
 //!     // You could also use `TextDomain` builder which calls `textdomain` and
 //!     // other functions for you:
 //!     //
-//!     // TextDomain::new("hellorust").init().unwrap();
+//!     // TextDomain::new("hellorust").init()?;
 //!
 //!     // `gettext()` simultaneously marks a string for translation and translates
 //!     // it at runtime.
@@ -57,10 +57,12 @@
 //!
 //! ```rust,no_run
 //! # use gettextrs::*;
+//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! TextDomain::new("hellorust")
 //!     .codeset("UTF-8") // Optional, the builder does this by default
-//!     .init()
-//!     .unwrap();
+//!     .init()?;
+//! # Ok(())
+//! # }
 //! ```
 //!
 //! This crate doesn't do this for you because the encoding is a global setting; changing it can
@@ -85,8 +87,7 @@ use std::io;
 use std::os::raw::c_ulong;
 use std::path::PathBuf;
 
-pub mod macros;
-pub use macros::*;
+mod macros;
 mod text_domain;
 pub use text_domain::{TextDomain, TextDomainError};
 pub mod getters;

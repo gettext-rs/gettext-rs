@@ -1,19 +1,4 @@
 //! Macros that translate the message and then replace placeholders in it.
-//!
-//! You can think of these as `format!(gettext(msgid), value1, value2…)`, but please bear in mind
-//! that the only supported placeholder is `{}`. **You cannot use any of std::fmt goodies with
-//! these macros**. The only way to get around that is to pre-format the argument which you then
-//! insert into a translated string:
-//!
-//! ```rust,no_run
-//! # use gettextrs::*;
-//! let x = 42_u64;
-//! gettext!(
-//!     "In binary, {} is {}, but it's {} in hexadecimal",
-//!     x,
-//!     format!("{:b}", x),
-//!     format!("{:x}", x));
-//! ```
 
 /// This is an implementation detail for counting arguments in the gettext macros. Don't call this directly.
 #[macro_export]
