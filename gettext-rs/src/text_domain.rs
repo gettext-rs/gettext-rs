@@ -3,6 +3,7 @@
 use locale_config::{LanguageRange, Locale};
 
 use std::env;
+use std::error;
 use std::fmt;
 use std::fs;
 use std::path::PathBuf;
@@ -22,6 +23,34 @@ pub enum TextDomainError {
     BindTextDomainCallFailed(std::io::Error),
     /// The call to `bind_textdomain_codeset()` failed.
     BindTextDomainCodesetCallFailed(std::io::Error),
+}
+
+impl fmt::Display for TextDomainError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        use TextDomainError::*;
+
+        match self {
+            InvalidLocale(locale) => write!(f, r#"Locale "{}" is invalid."#, locale),
+            TranslationNotFound(language) => write!(f, "Translations not found for language {}.", language),
+            TextDomainCallFailed(inner) => write!(f, "The call to textdomain() failed: {}", inner),
+            BindTextDomainCallFailed(inner) => write!(f, "The call to bindtextdomain() failed: {}", inner),
+            BindTextDomainCodesetCallFailed(inner) => write!(f, "The call to bind_textdomain_codeset() failed: {}", inner),
+        }
+    }
+}
+
+impl error::Error for TextDomainError {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
+        use TextDomainError::*;
+
+        match self {
+            InvalidLocale(_) => None,
+            TranslationNotFound(_) => None,
+            TextDomainCallFailed(inner) => Some(inner),
+            BindTextDomainCallFailed(inner) => Some(inner),
+            BindTextDomainCodesetCallFailed(inner) => Some(inner),
+        }
+    }
 }
 
 /// A builder to configure gettext.
@@ -63,9 +92,10 @@ pub enum TextDomainError {
 /// ```no_run
 /// use gettextrs::TextDomain;
 ///
-/// TextDomain::new("my_textdomain")
-///            .init()
-///            .unwrap();
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+/// TextDomain::new("my_textdomain").init()?;
+/// # Ok(())
+/// # }
 /// ```
 ///
 /// Use the translation in current language under the `target` directory if available, otherwise
@@ -74,10 +104,12 @@ pub enum TextDomainError {
 /// ```no_run
 /// use gettextrs::TextDomain;
 ///
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// TextDomain::new("my_textdomain")
 ///            .prepend("target")
-///            .init()
-///            .unwrap();
+///            .init()?;
+/// # Ok(())
+/// # }
 /// ```
 ///
 /// Scan the `target` directory only, force locale to `fr_FR` and handle errors:
@@ -94,20 +126,8 @@ pub enum TextDomainError {
 ///     Ok(locale) => {
 ///         format!("translation found, `setlocale` returned {:?}", locale)
 ///     }
-///     Err(TextDomainError::TranslationNotFound(lang)) => {
-///         format!("translation not found for {}", lang)
-///     }
-///     Err(TextDomainError::InvalidLocale(locale)) => {
-///         format!("invalid locale {}", locale)
-///     }
-///     Err(TextDomainError::TextDomainCallFailed(e)) => {
-///         e.to_string()
-///     }
-///     Err(TextDomainError::BindTextDomainCallFailed(e)) => {
-///         e.to_string()
-///     }
-///     Err(TextDomainError::BindTextDomainCodesetCallFailed(e)) => {
-///         e.to_string()
+///     Err(error) => {
+///         format!("an error occurred: {}", error)
 ///     }
 /// };
 /// println!("Textdomain init result: {}", init_msg);
@@ -268,9 +288,10 @@ impl TextDomain {
     /// ```no_run
     /// use gettextrs::TextDomain;
     ///
-    /// TextDomain::new("my_textdomain")
-    ///            .init()
-    ///            .unwrap();
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// TextDomain::new("my_textdomain").init()?;
+    /// # Ok(())
+    /// # }
     /// ```
     ///
     /// [`TextDomainError`]: enum.TextDomainError.html

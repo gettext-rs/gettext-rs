@@ -60,7 +60,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // You could also use `TextDomain` builder which calls `textdomain` and
     // other functions for you:
     //
-    // TextDomain::new("hellorust").init().unwrap();
+    // TextDomain::new("hellorust").init()?;
 
     // `gettext()` simultaneously marks a string for translation and translates
     // it at runtime.

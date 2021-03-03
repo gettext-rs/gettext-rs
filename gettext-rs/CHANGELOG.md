@@ -7,6 +7,8 @@
 - Functions to query gettext configuration. These are wrappers over
     `textdomain(NULL)`, `bindtextdomain(domain, NULL)`, and
     `bind_textdomain_codeset(domain, NULL)` (Alexander Batischev)
+- `impl Error` for `TextDomainError`, which makes it easier to use with `?`
+    operator (Alexander Batischev)
 
 ### Changed
 - **Users are required to configure gettext for UTF-8, either explicitly with
