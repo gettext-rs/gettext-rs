@@ -1,6 +1,10 @@
 name: Build & test on macOS
 
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "0 0 * * 2" # At 00:00 every Tuesday
 
 jobs:
   build_and_test_macos:
