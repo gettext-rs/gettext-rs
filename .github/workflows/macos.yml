@@ -33,9 +33,6 @@ jobs:
       - name: Generate lockfile
         run: cargo generate-lockfile
 
-      - name: Generate lockfile for systest
-        run: cargo generate-lockfile --manifest-path systest/Cargo.toml
-
       - name: Cache Cargo dependencies
         uses: actions/cache@v2
         with:
