@@ -78,6 +78,14 @@ jobs:
         with:
           rust-version: ${{ matrix.rust-version }}
 
+        # setup-rust-action turns panic messages in tests into GitHub
+        # annotations. Our test suite is running with --verbose, and prints out
+        # messages even for panics that we do expect. setup-rust-action can't
+        # know about this though, and floods the UI with annotations. This
+        # command disables annotations for tests.
+      - name: Disable GitHub Annotations
+        run: echo '::remove-matcher owner=cargo-test::'
+
       - name: Add appropriate target to Cargo
         run: rustup target add ${{ matrix.env.TARGET }}
         if: ${{ ! matrix.env.NO_ADD }}
