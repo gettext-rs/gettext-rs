@@ -1,3 +1,20 @@
+//! Macros that translate the message and then replace placeholders in it.
+//!
+//! You can think of these as `format!(gettext(msgid), value1, value2…)`, but please bear in mind
+//! that the only supported placeholder is `{}`. **You cannot use any of std::fmt goodies with
+//! these macros**. The only way to get around that is to pre-format the argument which you then
+//! insert into a translated string:
+//!
+//! ```rust,no_run
+//! # use gettextrs::*;
+//! let x = 42_u64;
+//! gettext!(
+//!     "In binary, {} is {}, but it's {} in hexadecimal",
+//!     x,
+//!     format!("{:b}", x),
+//!     format!("{:x}", x));
+//! ```
+
 /// This is an implementation detail for counting arguments in the gettext macros. Don't call this directly.
 #[macro_export]
 #[doc(hidden)]
@@ -10,8 +27,8 @@ macro_rules! count_args {
 #[macro_export]
 #[doc(hidden)]
 macro_rules! freplace {
-    ($input:expr, $($args:expr),+ $(,)?) => {{
-        let mut parts = $input.split("{}");
+    ($format:expr, $($args:expr),+ $(,)?) => {{
+        let mut parts = $format.split("{}");
         debug_assert_eq!(parts.clone().count() - 1, $crate::count_args!($($args),*), "Argument count has to match number of format directives ({{}})");
 
         let mut output = parts.next().unwrap_or_default().to_string();
@@ -22,75 +39,115 @@ macro_rules! freplace {
     }};
 }
 
-/// Like [gettext](fn.gettext.html), but allows for formatting.
+/// Like [`gettext`], but allows for formatting.
+///
+/// It calls [`gettext`] on `msgid`, and then replaces each occurrence of `{}` with the next value
+/// out of `args`.
+///
+/// [`gettext`]: fn.gettext.html
 #[macro_export]
 macro_rules! gettext {
-    ($format:expr, $($args:expr),+ $(,)?) => {{
-        let s = $crate::gettext($format);
-        $crate::freplace!(s, $($args),*)
+    ($msgid:expr, $($args:expr),+ $(,)?) => {{
+        let format = $crate::gettext($msgid);
+        $crate::freplace!(format, $($args),*)
     }};
 }
 
-/// Like [dgettext](fn.dgettext.html), but allows for formatting.
+/// Like [`dgettext`], but allows for formatting.
+///
+/// It calls [`dgettext`] on `domainname` and `msgid`, and then replaces each occurrence of `{}`
+/// with the next value out of `args`.
+///
+/// [`dgettext`]: fn.dgettext.html
 #[macro_export]
 macro_rules! dgettext {
-    ($domain:expr, $format:expr, $($args:expr),+ $(,)?) => {{
-        let s = $crate::dgettext($domain, $format);
-        $crate::freplace!(s, $($args),*)
+    ($domainname:expr, $msgid:expr, $($args:expr),+ $(,)?) => {{
+        let format = $crate::dgettext($domainname, $msgid);
+        $crate::freplace!(format, $($args),*)
     }};
 }
 
-/// Like [dcgettext](fn.dcgettext.html), but allows for formatting.
+/// Like [`dcgettext`], but allows for formatting.
+///
+/// It calls [`dcgettext`] on `domainname`, `category`, and `msgid`, and then replaces each
+/// occurrence of `{}` with the next value out of `args`.
+///
+/// [`dcgettext`]: fn.dcgettext.html
 #[macro_export]
 macro_rules! dcgettext {
-    ($domain:expr, $category:expr, $format:expr, $($args:expr),+ $(,)?) => {{
-        let s = $crate::dcgettext($domain, $format, $category);
-        $crate::freplace!(s, $($args),*)
+    ($domainname:expr, $category:expr, $msgid:expr, $($args:expr),+ $(,)?) => {{
+        let format = $crate::dcgettext($domainname, $msgid, $category);
+        $crate::freplace!(format, $($args),*)
     }};
 }
 
-/// Like [ngettext](fn.ngettext.html), but allows for formatting.
+/// Like [`ngettext`], but allows for formatting.
+///
+/// It calls [`ngettext`] on `msgid`, `msgid_plural`, and `n`, and then replaces each occurrence of
+/// `{}` with the next value out of `args`.
+///
+/// [`ngettext`]: fn.ngettext.html
 #[macro_export]
 macro_rules! ngettext {
-    ($singular:expr, $plural:expr, $n:expr, $($args:expr),+ $(,)?) => {{
-        let s = $crate::ngettext($singular, $plural, $n);
-        $crate::freplace!(s, $($args),*)
+    ($msgid:expr, $msgid_plural:expr, $n:expr, $($args:expr),+ $(,)?) => {{
+        let format = $crate::ngettext($msgid, $msgid_plural, $n);
+        $crate::freplace!(format, $($args),*)
     }}
 }
 
-/// Like [dngettext](fn.dngettext.html), but allows for formatting.
+/// Like [`dngettext`], but allows for formatting.
+///
+/// It calls [`dngettext`] on `domainname`, `msgid`, `msgid_plural`, and `n`, and then replaces
+/// each occurrence of `{}` with the next value out of `args`.
+///
+/// [`dngettext`]: fn.dngettext.html
 #[macro_export]
 macro_rules! dngettext {
-    ($domain:expr, $singular:expr, $plural:expr, $n:expr, $($args:expr),+ $(,)?) => {{
-        let s = $crate::dngettext($domain, $singular, $plural, $n);
-        $crate::freplace!(s, $($args),*)
+    ($domainname:expr, $msgid:expr, $msgid_plural:expr, $n:expr, $($args:expr),+ $(,)?) => {{
+        let format = $crate::dngettext($domainname, $msgid, $msgid_plural, $n);
+        $crate::freplace!(format, $($args),*)
     }}
 }
 
-/// Like [dcngettext](fn.dcngettext.html), but allows for formatting.
+/// Like [`dcngettext`], but allows for formatting.
+///
+/// It calls [`dcngettext`] on `domainname`, `category`, `msgid`, `msgid_plural`, and `n`, and then
+/// replaces each occurrence of `{}` with the next value out of `args`.
+///
+/// [`dcngettext`]: fn.dcngettext.html
 #[macro_export]
 macro_rules! dcngettext {
-    ($domain:expr, $category:expr, $singular:expr, $plural:expr, $n:expr, $($args:expr),+ $(,)?) => {{
-        let s = $crate::dcngettext($domain, $singular, $plural, $n, $category);
-        $crate::freplace!(s, $($args),*)
+    ($domainname:expr, $category:expr, $msgid:expr, $msgid_plural:expr, $n:expr, $($args:expr),+ $(,)?) => {{
+        let format = $crate::dcngettext($domainname, $msgid, $msgid_plural, $n, $category);
+        $crate::freplace!(format, $($args),*)
     }}
 }
 
-/// Like [pgettext](fn.pgettext.html), but allows for formatting.
+/// Like [`pgettext`], but allows for formatting.
+///
+/// It calls [`pgettext`] on `msgctxt` and `msgid`, and then replaces each occurrence of `{}` with
+/// the next value out of `args`.
+///
+/// [`pgettext`]: fn.pgettext.html
 #[macro_export]
 macro_rules! pgettext {
-    ($ctx:expr, $format:expr, $($args:expr),+ $(,)?) => {{
-        let s = $crate::pgettext($ctx, $format);
-        $crate::freplace!(s, $($args),*)
+    ($msgctxt:expr, $msgid:expr, $($args:expr),+ $(,)?) => {{
+        let format = $crate::pgettext($msgctxt, $msgid);
+        $crate::freplace!(format, $($args),*)
     }}
 }
 
-/// Like [npgettext](fn.npgettext.html), but allows for formatting.
+/// Like [`npgettext`], but allows for formatting.
+///
+/// It calls [`npgettext`] on `msgctxt`, `msgid`, `msgid_plural`, and `n`, and then replaces each
+/// occurrence of `{}` with the next value out of `args`.
+///
+/// [`npgettext`]: fn.npgettext.html
 #[macro_export]
 macro_rules! npgettext {
-    ($ctx:expr, $singular:expr, $plural:expr, $n:expr, $($args:expr),+ $(,)?) => {{
-        let s = $crate::npgettext($ctx, $singular, $plural, $n);
-        $crate::freplace!(s, $($args),*)
+    ($msgctxt:expr, $msgid:expr, $msgid_plural:expr, $n:expr, $($args:expr),+ $(,)?) => {{
+        let format = $crate::npgettext($msgctxt, $msgid, $msgid_plural, $n);
+        $crate::freplace!(format, $($args),*)
     }}
 }
 

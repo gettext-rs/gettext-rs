@@ -1,4 +1,4 @@
-//! # gettext C library FFI binding for Rust
+//! # Safe Rust bindings for gettext.
 //!
 //! Usage:
 //!
@@ -6,84 +6,74 @@
 //! use gettextrs::*;
 //!
 //! fn main() -> Result<(), Box<dyn std::error::Error>> {
+//!     // Specify the name of the .mo file to use.
 //!     textdomain("hellorust")?;
-//!     bindtextdomain("hellorust", "/usr/local/share/locale")?;
-//!
-//!     // It's sufficient to call any one of those two. See "UTF-8 is required" section below.
-//!     setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
+//!     // Ask gettext for UTF-8 strings. THIS CRATE CAN'T HANDLE NON-UTF-8 DATA!
 //!     bind_textdomain_codeset("hellorust", "UTF-8")?;
 //!
+//!     // You could also use `TextDomain` builder which calls `textdomain` and
+//!     // other functions for you:
+//!     //
+//!     // TextDomain::new("hellorust").init().unwrap();
+//!
+//!     // `gettext()` simultaneously marks a string for translation and translates
+//!     // it at runtime.
 //!     println!("Translated: {}", gettext("Hello, world!"));
+//!
+//!     // gettext supports plurals, i.e. you can have different messages depending
+//!     // on the number of items the message mentions. This even works for
+//!     // languages that have more than one plural form, like Russian or Czech.
 //!     println!("Singular: {}", ngettext("One thing", "Multiple things", 1));
 //!     println!("Plural: {}", ngettext("One thing", "Multiple things", 2));
-//!     println!("With placeholder: {}", gettext!("Hello, {}!",  "Example User"));
+//!
+//!     // gettext de-duplicates strings, i.e. the same string used multiple times
+//!     // will have a single entry in the PO and MO files. However, the same words
+//!     // might have different meaning depending on the context. To distinguish
+//!     // between different contexts, gettext accepts an additional string:
+//!     println!("With context: {}", pgettext("This is the context", "Hello, world!"));
+//!     println!(
+//!         "Plural with context: {}",
+//!         npgettext("This is the context", "One thing", "Multiple things", 2));
 //!
 //!     Ok(())
 //! }
 //! ```
 //!
-//! Alternatively, you can initialize the locale and text domain using the [`TextDomain`] builder.
-//! By default, a translation of the specified text domain in current language is searched in
-//! the system's data paths. See [`TextDomain`]'s documentation for other options.
-//!
-//! ```rust,no_run
-//! use gettextrs::TextDomain;
-//!
-//! TextDomain::new("hellorust")
-//!            .init()
-//!            .unwrap();
-//! ```
-//!
-//! [`TextDomain`]: struct.TextDomain.html
-//!
 //! ## UTF-8 is required
 //!
-//! By default, gettext converts results to the locale's codeset. Rust, on the other hand, uses
-//! UTF-8 regardless of the locale. There's no universal way to bridge that gap, so this crate
-//! doesn't even try. Instead, *you* have to do at least one of the following:
+//! By default, gettext converts results to the locale's codeset. Rust, on the other hand, always
+//! encodes strings to UTF-8. The best way to bridge this gap is to ask gettext to convert strings
+//! to UTF-8:
 //!
-//! 1. force gettext to encode its results into UTF-8, either by calling an appropriate function:
+//! ```rust,no_run
+//! # use gettextrs::*;
+//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
+//! bind_textdomain_codeset("hellorust", "UTF-8")?;
+//! # Ok(())
+//! # }
+//! ```
 //!
-//!     ```rust,no_run
-//!     # use gettextrs::*;
-//!     # fn main() -> Result<(), Box<dyn std::error::Error>> {
-//!     bind_textdomain_codeset("hellorust", "UTF-8")?;
-//!     # Ok(())
-//!     # }
-//!     ```
+//! ...or using [`TextDomain`] builder:
 //!
-//!     ...or using [`TextDomain`] builder:
+//! ```rust,no_run
+//! # use gettextrs::*;
+//! TextDomain::new("hellorust")
+//!     .codeset("UTF-8") // Optional, the builder does this by default
+//!     .init()
+//!     .unwrap();
+//! ```
 //!
-//!     ```rust,no_run
-//!     # use gettextrs::*;
-//!     TextDomain::new("hellorust")
-//!         .codeset("UTF-8") // Optional, the builder does this by default
-//!         .init()
-//!         .unwrap();
-//!     ```
+//! This crate doesn't do this for you because the encoding is a global setting; changing it can
+//! affect other gettext calls in your program, like calls in C or C++ parts of your binary.
 //!
-//! 2. change into a locale that uses UTF-8, either by calling an appropriate function:
+//! If you don't do this, calls to `gettext()` and other functions might panic when they encounter
+//! something that isn't UTF-8. They can also garble data as they interpret the other encoding as
+//! UTF-8.
 //!
-//!     ```rust,no_run
-//!     # use gettextrs::*;
-//!     setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-//!     // or just for messages:
-//!     setlocale(LocaleCategory::LcMessages, "en_US.UTF-8");
-//!     ```
-//!
-//!     ...or using [`TextDomain`] builder:
-//!
-//!     ```rust,no_run
-//!     # use gettextrs::*;
-//!     TextDomain::new("hellorust")
-//!         .locale("en_US.UTF-8")
-//!         .init()
-//!         .unwrap();
-//!     ```
-//!
-//! If you don't do any of that, calls to `gettext()` and other functions might panic when they
-//! encounter something that isn't UTF-8. They can also garble data as they interpret the other
-//! encoding as UTF-8.
+//! Another thing you could do is change the locale, e.g. `setlocale(LocaleCategory::LcAll,
+//! "fr_FR.UTF-8")`, but that would also hard-code the language, defeating the purpose of gettext:
+//! if you know the language in advance, you could just write all your strings in that language and
+//! be done with that.
 
 extern crate locale_config;
 
@@ -132,159 +122,188 @@ pub enum LocaleCategory {
     LcIdentification = 12,
 }
 
-/// Translate msgid to localized message from default domain.
+/// Translate msgid to localized message from the default domain.
+///
+/// For more information, see [gettext(3)][].
+///
+/// [gettext(3)]: https://www.man7.org/linux/man-pages/man3/gettext.3.html
 ///
 /// # Panics
 ///
 /// Panics if:
 ///
-/// * `s` contains an internal 0 byte, as such values can't be passed to the gettext's C API;
+/// * `msgid` contains an internal 0 byte, as such values can't be passed to the underlying C API;
 /// * the result is not in UTF-8 (see [this note](./index.html#utf-8-is-required)).
-pub fn gettext<T: Into<String>>(s: T) -> String {
-    let s = CString::new(s.into()).expect("`s` contains an internal 0 byte");
+pub fn gettext<T: Into<String>>(msgid: T) -> String {
+    let msgid = CString::new(msgid.into()).expect("`msgid` contains an internal 0 byte");
     unsafe {
-        CStr::from_ptr(ffi::gettext(s.as_ptr()))
+        CStr::from_ptr(ffi::gettext(msgid.as_ptr()))
             .to_str()
             .expect("gettext() returned invalid UTF-8")
             .to_owned()
     }
 }
 
-/// Translate msgid to localized message from specified domain.
+/// Translate msgid to localized message from the specified domain.
+///
+/// For more information, see [dgettext(3)][].
+///
+/// [dgettext(3)]: https://www.man7.org/linux/man-pages/man3/dgettext.3.html
 ///
 /// # Panics
 ///
 /// Panics if:
 ///
-/// * `domain` or `s` contain an internal 0 byte, as such values can't be passed to the gettext's
-///     C API;
+/// * `domainname` or `msgid` contain an internal 0 byte, as such values can't be passed to the
+///     underlying C API;
 /// * the result is not in UTF-8 (see [this note](./index.html#utf-8-is-required)).
-pub fn dgettext<T, U>(domain: T, s: U) -> String
+pub fn dgettext<T, U>(domainname: T, msgid: U) -> String
 where
     T: Into<String>,
     U: Into<String>,
 {
-    let domain = CString::new(domain.into()).expect("`domain` contains an internal 0 byte");
-    let s = CString::new(s.into()).expect("`s` contains an internal 0 byte");
+    let domainname = CString::new(domainname.into()).expect("`domainname` contains an internal 0 byte");
+    let msgid = CString::new(msgid.into()).expect("`msgid` contains an internal 0 byte");
     unsafe {
-        CStr::from_ptr(ffi::dgettext(domain.as_ptr(), s.as_ptr()))
+        CStr::from_ptr(ffi::dgettext(domainname.as_ptr(), msgid.as_ptr()))
             .to_str()
             .expect("dgettext() returned invalid UTF-8")
             .to_owned()
     }
 }
 
-/// Translate msgid to localized message from specified domain using custom locale category.
+/// Translate msgid to localized message from the specified domain using custom locale category.
+///
+/// For more information, see [dcgettext(3)][].
+///
+/// [dcgettext(3)]: https://www.man7.org/linux/man-pages/man3/dcgettext.3.html
 ///
 /// # Panics
 ///
 /// Panics if:
-/// * `domain` or `s` contain an internal 0 byte, as such values can't be passed to the gettext's
-///     C API;
+/// * `domainname` or `msgid` contain an internal 0 byte, as such values can't be passed to the
+///     underlying C API;
 /// * the result is not in UTF-8 (see [this note](./index.html#utf-8-is-required)).
-pub fn dcgettext<T, U>(domain: T, s: U, category: LocaleCategory) -> String
+pub fn dcgettext<T, U>(domainname: T, msgid: U, category: LocaleCategory) -> String
 where
     T: Into<String>,
     U: Into<String>,
 {
-    let domain = CString::new(domain.into()).expect("`domain` contains an internal 0 byte");
-    let s = CString::new(s.into()).expect("`s` contains an internal 0 byte");
+    let domainname = CString::new(domainname.into()).expect("`domainname` contains an internal 0 byte");
+    let msgid = CString::new(msgid.into()).expect("`msgid` contains an internal 0 byte");
     unsafe {
-        CStr::from_ptr(ffi::dcgettext(domain.as_ptr(), s.as_ptr(), category as i32))
+        CStr::from_ptr(ffi::dcgettext(domainname.as_ptr(), msgid.as_ptr(), category as i32))
             .to_str()
             .expect("dcgettext() returned invalid UTF-8")
             .to_owned()
     }
 }
 
-/// Translate msgid to localized message from default domain (with plural support).
+/// Translate msgid to localized message from the default domain (with plural support).
+///
+/// For more information, see [ngettext(3)][].
+///
+/// [ngettext(3)]: https://www.man7.org/linux/man-pages/man3/ngettext.3.html
 ///
 /// # Panics
 ///
 /// Panics if:
-/// * `singular` or `plural` contain an internal 0 byte, as such values can't be passed to the
-///     gettext's C API;
+/// * `msgid` or `msgid_plural` contain an internal 0 byte, as such values can't be passed to the
+///     underlying C API;
 /// * the result is not in UTF-8 (see [this note](./index.html#utf-8-is-required)).
-pub fn ngettext<T, S>(singular: T, plural : S, n : u32) -> String
+pub fn ngettext<T, S>(msgid: T, msgid_plural: S, n: u32) -> String
 where
     T: Into<String>,
     S: Into<String>,
 {
-    let singular = CString::new(singular.into()).expect("`singular` contains an internal 0 byte");
-    let plural = CString::new(plural.into()).expect("`plural` contains an internal 0 byte");
+    let msgid = CString::new(msgid.into()).expect("`msgid` contains an internal 0 byte");
+    let msgid_plural = CString::new(msgid_plural.into()).expect("`msgid_plural` contains an internal 0 byte");
     unsafe {
-        CStr::from_ptr(ffi::ngettext(singular.as_ptr(), plural.as_ptr(), n as c_ulong))
+        CStr::from_ptr(ffi::ngettext(msgid.as_ptr(), msgid_plural.as_ptr(), n as c_ulong))
             .to_str()
             .expect("ngettext() returned invalid UTF-8")
             .to_owned()
     }
 }
 
-/// Translate msgid to localized message from specified domain (with plural support).
+/// Translate msgid to localized message from the specified domain (with plural support).
+///
+/// For more information, see [dngettext(3)][].
+///
+/// [dngettext(3)]: https://www.man7.org/linux/man-pages/man3/dngettext.3.html
 ///
 /// # Panics
 ///
 /// Panics if:
-/// * `domain`, `singular`, or `plural` contain an internal 0 byte, as such values can't be passed
-///     to the gettext's C API;
+/// * `domainname`, `msgid`, or `msgid_plural` contain an internal 0 byte, as such values can't be
+///     passed to the underlying C API;
 /// * the result is not in UTF-8 (see [this note](./index.html#utf-8-is-required)).
-pub fn dngettext<T, U, V>(domain: T, singular: U, plural: V, n : u32) -> String
+pub fn dngettext<T, U, V>(domainname: T, msgid: U, msgid_plural: V, n: u32) -> String
 where
     T: Into<String>,
     U: Into<String>,
     V: Into<String>,
 {
-    let domain = CString::new(domain.into()).expect("`domain` contains an internal 0 byte");
-    let singular = CString::new(singular.into()).expect("`singular` contains an internal 0 byte");
-    let plural = CString::new(plural.into()).expect("`plural` contains an internal 0 byte");
+    let domainname = CString::new(domainname.into()).expect("`domainname` contains an internal 0 byte");
+    let msgid = CString::new(msgid.into()).expect("`msgid` contains an internal 0 byte");
+    let msgid_plural = CString::new(msgid_plural.into()).expect("`msgid_plural` contains an internal 0 byte");
     unsafe {
-        CStr::from_ptr(ffi::dngettext(domain.as_ptr(), singular.as_ptr(), plural.as_ptr(), n as c_ulong))
+        CStr::from_ptr(ffi::dngettext(domainname.as_ptr(), msgid.as_ptr(), msgid_plural.as_ptr(), n as c_ulong))
             .to_str()
             .expect("dngettext() returned invalid UTF-8")
             .to_owned()
     }
 }
 
-/// Translate msgid to localized message from specified domain using custom locale category (with plural support).
+/// Translate msgid to localized message from the specified domain using custom locale category
+/// (with plural support).
+///
+/// For more information, see [dcngettext(3)][].
+///
+/// [dcngettext(3)]: https://www.man7.org/linux/man-pages/man3/dcngettext.3.html
 ///
 /// # Panics
 ///
 /// Panics if:
-/// * `domain`, `singular`, or `plural` contain an internal 0 byte, as such values can't be passed
-///     to the gettext's C API;
+/// * `domainname`, `msgid`, or `msgid_plural` contain an internal 0 byte, as such values can't be
+///     passed to the underlying C API;
 /// * the result is not in UTF-8 (see [this note](./index.html#utf-8-is-required)).
-pub fn dcngettext<T, U, V>(domain: T, singular: U, plural: V, n : u32, category: LocaleCategory) -> String
+pub fn dcngettext<T, U, V>(domainname: T, msgid: U, msgid_plural: V, n : u32, category: LocaleCategory) -> String
 where
     T: Into<String>,
     U: Into<String>,
     V: Into<String>,
 {
-    let domain = CString::new(domain.into()).expect("`domain` contains an internal 0 byte");
-    let singular = CString::new(singular.into()).expect("`singular` contains an internal 0 byte");
-    let plural = CString::new(plural.into()).expect("`plural` contains an internal 0 byte");
+    let domainname = CString::new(domainname.into()).expect("`domainname` contains an internal 0 byte");
+    let msgid = CString::new(msgid.into()).expect("`msgid` contains an internal 0 byte");
+    let msgid_plural = CString::new(msgid_plural.into()).expect("`msgid_plural` contains an internal 0 byte");
     unsafe {
-        CStr::from_ptr(ffi::dcngettext(domain.as_ptr(), singular.as_ptr(), plural.as_ptr(), n as c_ulong, category as i32))
+        CStr::from_ptr(ffi::dcngettext(domainname.as_ptr(), msgid.as_ptr(), msgid_plural.as_ptr(), n as c_ulong, category as i32))
             .to_str()
             .expect("dcngettext() returned invalid UTF-8")
             .to_owned()
     }
 }
 
-/// Switch to specific text domain.
+/// Switch to the specific text domain.
 ///
 /// Returns the current domain, after possibly changing it. (There's no trailing 0 byte in the
 /// return value.)
 ///
 /// If you want to *get* current domain, rather than set it, use [`getters::current_textdomain`].
 ///
+/// For more information, see [textdomain(3)][].
+///
+/// [textdomain(3)]: https://www.man7.org/linux/man-pages/man3/textdomain.3.html
+///
 /// # Panics
 ///
-/// Panics if `domain` contains an internal 0 byte, as such values can't be passed to the gettext's
-/// C API.
-pub fn textdomain<T: Into<Vec<u8>>>(domain: T) -> Result<Vec<u8>, io::Error> {
-    let domain = CString::new(domain).expect("`domain` contains an internal 0 byte");
+/// Panics if `domainname` contains an internal 0 byte, as such values can't be passed to the
+/// underlying C API.
+pub fn textdomain<T: Into<Vec<u8>>>(domainname: T) -> Result<Vec<u8>, io::Error> {
+    let domainname = CString::new(domainname).expect("`domainname` contains an internal 0 byte");
     unsafe {
-        let result = ffi::textdomain(domain.as_ptr());
+        let result = ffi::textdomain(domainname.as_ptr());
         if result.is_null() {
             Err(io::Error::last_os_error())
         } else {
@@ -293,37 +312,41 @@ pub fn textdomain<T: Into<Vec<u8>>>(domain: T) -> Result<Vec<u8>, io::Error> {
     }
 }
 
-/// Bind text domain to some directory containing gettext MO files.
+/// Specify the directory that contains MO files for the given domain.
 ///
 /// Returns the current directory for given domain, after possibly changing it.
 ///
 /// If you want to *get* domain directory, rather than set it, use [`getters::domain_directory`].
 ///
+/// For more information, see [bindtextdomain(3)][].
+///
+/// [bindtextdomain(3)]: https://www.man7.org/linux/man-pages/man3/bindtextdomain.3.html
+///
 /// # Panics
 ///
-/// Panics if `domain` or `dir` contain an internal 0 byte, as such values can't be passed to the
-/// gettext's C API.
-pub fn bindtextdomain<T, U>(domain: T, dir: U) -> Result<PathBuf, io::Error>
+/// Panics if `domainname` or `dirname` contain an internal 0 byte, as such values can't be passed
+/// to the underlying C API.
+pub fn bindtextdomain<T, U>(domainname: T, dirname: U) -> Result<PathBuf, io::Error>
 where
     T: Into<Vec<u8>>,
     U: Into<PathBuf>,
 {
-    let domain = CString::new(domain).expect("`domain` contains an internal 0 byte");
-    let dir = dir.into().into_os_string();
+    let domainname = CString::new(domainname).expect("`domainname` contains an internal 0 byte");
+    let dirname = dirname.into().into_os_string();
 
     #[cfg(windows)]
     {
         use std::ffi::OsString;
         use std::os::windows::ffi::{OsStrExt, OsStringExt};
 
-        let mut dir: Vec<u16> = dir.encode_wide().collect();
-        if dir.contains(&0) {
-            panic!("`dir` contains an internal 0 byte");
+        let mut dirname: Vec<u16> = dirname.encode_wide().collect();
+        if dirname.contains(&0) {
+            panic!("`dirname` contains an internal 0 byte");
         }
         // Trailing zero to mark the end of the C string.
-        dir.push(0);
+        dirname.push(0);
         unsafe {
-            let mut ptr = ffi::wbindtextdomain(domain.as_ptr(), dir.as_ptr());
+            let mut ptr = ffi::wbindtextdomain(domainname.as_ptr(), dirname.as_ptr());
             if ptr.is_null() {
                 Err(io::Error::last_os_error())
             } else {
@@ -342,10 +365,10 @@ where
         use std::ffi::OsString;
         use std::os::unix::ffi::OsStringExt;
 
-        let dir = dir.into_vec();
-        let dir = CString::new(dir).expect("`dir` contains an internal 0 byte");
+        let dirname = dirname.into_vec();
+        let dirname = CString::new(dirname).expect("`dirname` contains an internal 0 byte");
         unsafe {
-            let result = ffi::bindtextdomain(domain.as_ptr(), dir.as_ptr());
+            let result = ffi::bindtextdomain(domainname.as_ptr(), dirname.as_ptr());
             if result.is_null() {
                 Err(io::Error::last_os_error())
             } else {
@@ -356,16 +379,20 @@ where
     }
 }
 
-/// Set current locale for translations.
+/// Set current locale.
 ///
 /// Returns an opaque string that describes the locale set. You can pass that string into
 /// `setlocale()` later to set the same local again. `None` means the call failed (the underlying
 /// API doesn't provide any details).
 ///
+/// For more information, see [setlocale(3)][].
+///
+/// [setlocale(3)]: https://www.man7.org/linux/man-pages/man3/setlocale.3.html
+///
 /// # Panics
 ///
-/// Panics if `locale` contains an internal 0 byte, as such values can't be passed to the gettext's
-/// C API.
+/// Panics if `locale` contains an internal 0 byte, as such values can't be passed to the
+/// underlying C API.
 pub fn setlocale<T: Into<Vec<u8>>>(category: LocaleCategory, locale: T) -> Option<Vec<u8>> {
     let c = CString::new(locale).expect("`locale` contains an internal 0 byte");
     unsafe {
@@ -385,22 +412,26 @@ pub fn setlocale<T: Into<Vec<u8>>>(category: LocaleCategory, locale: T) -> Optio
 ///
 /// If you want to *get* current encoding, rather than set it, use [`getters::textdomain_codeset`].
 ///
+/// For more information, see [bind_textdomain_codeset(3)][].
+///
+/// [bind_textdomain_codeset(3)]: https://www.man7.org/linux/man-pages/man3/bind_textdomain_codeset.3.html
+///
 /// # Panics
 ///
 /// Panics if:
-/// * `domain` or `codeset` contain an internal 0 byte, as such values can't be passed to the
-///     gettext's C API;
+/// * `domainname` or `codeset` contain an internal 0 byte, as such values can't be passed to the
+///     underlying C API;
 /// * the result is not in UTF-8 (which shouldn't happen as the results should always be ASCII, as
 ///     they're just codeset names).
-pub fn bind_textdomain_codeset<T, U>(domain: T, codeset: U) -> Result<Option<String>, io::Error>
+pub fn bind_textdomain_codeset<T, U>(domainname: T, codeset: U) -> Result<Option<String>, io::Error>
 where
     T: Into<Vec<u8>>,
     U: Into<String>,
 {
-    let domain = CString::new(domain).expect("`domain` contains an internal 0 byte");
+    let domainname = CString::new(domainname).expect("`domainname` contains an internal 0 byte");
     let codeset = CString::new(codeset.into()).expect("`codeset` contains an internal 0 byte");
     unsafe {
-        let result = ffi::bind_textdomain_codeset(domain.as_ptr(), codeset.as_ptr());
+        let result = ffi::bind_textdomain_codeset(domainname.as_ptr(), codeset.as_ptr());
         if result.is_null() {
             let error = io::Error::last_os_error();
             if let Some(0) = error.raw_os_error() {
@@ -421,72 +452,72 @@ where
 
 static CONTEXT_SEPARATOR: char = '\x04';
 
-fn build_context_id(ctx: &str, s: &str) -> String {
-    format!("{}{}{}", ctx, CONTEXT_SEPARATOR, s)
+fn build_context_id(ctxt: &str, msgid: &str) -> String {
+    format!("{}{}{}", ctxt, CONTEXT_SEPARATOR, msgid)
 }
 
-fn panic_on_zero_in_ctx(string: &str) {
-    if string.contains('\0') {
-        panic!("`ctx` contains an internal 0 byte");
+fn panic_on_zero_in_ctxt(msgctxt: &str) {
+    if msgctxt.contains('\0') {
+        panic!("`msgctxt` contains an internal 0 byte");
     }
 }
 
-/// Translate msgid to localized message from default domain (with context support).
+/// Translate msgid to localized message from the default domain (with context support).
 ///
 /// # Panics
 ///
 /// Panics if:
-/// * `ctx` or `s` contain an internal 0 byte, as such values can't be passed to the gettext's
-///     C API;
+/// * `msgctxt` or `msgid` contain an internal 0 byte, as such values can't be passed to the
+///     underlying C API;
 /// * the result is not in UTF-8 (see [this note](./index.html#utf-8-is-required)).
-pub fn pgettext<T, U>(ctx: T, s: U) -> String
+pub fn pgettext<T, U>(msgctxt: T, msgid: U) -> String
 where
     T: Into<String>,
     U: Into<String>,
 {
-    let ctx = ctx.into();
-    panic_on_zero_in_ctx(&ctx);
+    let msgctxt = msgctxt.into();
+    panic_on_zero_in_ctxt(&msgctxt);
 
-    let msgid = s.into();
-    let text = build_context_id(&ctx, &msgid);
+    let msgid = msgid.into();
+    let text = build_context_id(&msgctxt, &msgid);
 
-    let trans = gettext(text);
-    if trans.contains(CONTEXT_SEPARATOR as char) {
+    let translation = gettext(text);
+    if translation.contains(CONTEXT_SEPARATOR as char) {
         return gettext(msgid);
     }
 
-    trans
+    translation
 }
 
-/// Translate msgid to localized message from default domain (with plural support and context
+/// Translate msgid to localized message from the default domain (with plural support and context
 /// support).
 ///
 /// # Panics
 ///
 /// Panics if:
-/// * `ctx`, `singular`, or `plural` contain an internal 0 byte, as such values can't be passed to
-///     the gettext's C API;
+/// * `msgctxt`, `msgid`, or `msgid_plural` contain an internal 0 byte, as such values can't be
+///     passed to the underlying C API;
 /// * the result is not in UTF-8 (see [this note](./index.html#utf-8-is-required)).
-pub fn npgettext<T, U, V>(ctx: T, singular: U, plural: V, n: u32) -> String
+pub fn npgettext<T, U, V>(msgctxt: T, msgid: U, msgid_plural: V, n: u32) -> String
 where
     T: Into<String>,
     U: Into<String>,
     V: Into<String>,
 {
-    let ctx = ctx.into();
-    panic_on_zero_in_ctx(&ctx);
+    let msgctxt = msgctxt.into();
+    panic_on_zero_in_ctxt(&msgctxt);
 
-    let singular_msgid = singular.into();
-    let plural_msgid = plural.into();
-    let singular_ctx = build_context_id(&ctx, &singular_msgid);
-    let plural_ctx = build_context_id(&ctx, &plural_msgid);
+    let singular_msgid = msgid.into();
+    let plural_msgid = msgid_plural.into();
+    let singular_ctxt = build_context_id(&msgctxt, &singular_msgid);
+    let plural_ctxt = build_context_id(&msgctxt, &plural_msgid);
 
-    let trans = ngettext(singular_ctx, plural_ctx, n);
-    if trans.contains(CONTEXT_SEPARATOR as char) {
+    let translation = ngettext(singular_ctxt, plural_ctxt, n);
+    if translation.contains(CONTEXT_SEPARATOR as char) {
         return ngettext(singular_msgid, plural_msgid, n);
     }
 
-    trans
+    translation
 }
 
 #[cfg(test)]
@@ -536,98 +567,98 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "`s` contains an internal 0 byte")]
+    #[should_panic(expected = "`msgid` contains an internal 0 byte")]
     fn gettext_panics() {
         gettext("input string\0");
     }
 
     #[test]
-    #[should_panic(expected = "`domain` contains an internal 0 byte")]
-    fn dgettext_panics_on_zero_in_domain() {
+    #[should_panic(expected = "`domainname` contains an internal 0 byte")]
+    fn dgettext_panics_on_zero_in_domainname() {
         dgettext("hello\0world!", "hi");
     }
 
     #[test]
-    #[should_panic(expected = "`s` contains an internal 0 byte")]
-    fn dgettext_panics_on_zero_in_s() {
+    #[should_panic(expected = "`msgid` contains an internal 0 byte")]
+    fn dgettext_panics_on_zero_in_msgid() {
         dgettext("hello world", "another che\0ck");
     }
 
     #[test]
-    #[should_panic(expected = "`domain` contains an internal 0 byte")]
-    fn dcgettext_panics_on_zero_in_domain() {
+    #[should_panic(expected = "`domainname` contains an internal 0 byte")]
+    fn dcgettext_panics_on_zero_in_domainname() {
         dcgettext("a diff\0erent input", "hello", LocaleCategory::LcAll);
     }
 
     #[test]
-    #[should_panic(expected = "`s` contains an internal 0 byte")]
-    fn dcgettext_panics_on_zero_in_s() {
+    #[should_panic(expected = "`msgid` contains an internal 0 byte")]
+    fn dcgettext_panics_on_zero_in_msgid() {
         dcgettext("world", "yet \0 another\0 one", LocaleCategory::LcMessages);
     }
 
     #[test]
-    #[should_panic(expected = "`singular` contains an internal 0 byte")]
-    fn ngettext_panics_on_zero_in_singular() {
+    #[should_panic(expected = "`msgid` contains an internal 0 byte")]
+    fn ngettext_panics_on_zero_in_msgid() {
         ngettext("singular\0form", "plural form", 10);
     }
 
     #[test]
-    #[should_panic(expected = "`plural` contains an internal 0 byte")]
-    fn ngettext_panics_on_zero_in_plural() {
+    #[should_panic(expected = "`msgid_plural` contains an internal 0 byte")]
+    fn ngettext_panics_on_zero_in_msgid_plural() {
         ngettext("singular form", "plural\0form", 0);
     }
 
     #[test]
-    #[should_panic(expected = "`domain` contains an internal 0 byte")]
-    fn dngettext_panics_on_zero_in_domain() {
+    #[should_panic(expected = "`domainname` contains an internal 0 byte")]
+    fn dngettext_panics_on_zero_in_domainname() {
         dngettext("do\0main", "one", "many", 0);
     }
 
     #[test]
-    #[should_panic(expected = "`singular` contains an internal 0 byte")]
-    fn dngettext_panics_on_zero_in_singular() {
+    #[should_panic(expected = "`msgid` contains an internal 0 byte")]
+    fn dngettext_panics_on_zero_in_msgid() {
         dngettext("domain", "just a\0 single one", "many", 100);
     }
 
     #[test]
-    #[should_panic(expected = "`plural` contains an internal 0 byte")]
-    fn dngettext_panics_on_zero_in_plural() {
+    #[should_panic(expected = "`msgid_plural` contains an internal 0 byte")]
+    fn dngettext_panics_on_zero_in_msgid_plural() {
         dngettext("d", "1", "many\0many\0many more", 10000);
     }
 
     #[test]
-    #[should_panic(expected = "`domain` contains an internal 0 byte")]
-    fn dcngettext_panics_on_zero_in_domain() {
+    #[should_panic(expected = "`domainname` contains an internal 0 byte")]
+    fn dcngettext_panics_on_zero_in_domainname() {
         dcngettext("doma\0in", "singular", "plural", 42, LocaleCategory::LcCType);
     }
 
     #[test]
-    #[should_panic(expected = "`singular` contains an internal 0 byte")]
-    fn dcngettext_panics_on_zero_in_singular() {
+    #[should_panic(expected = "`msgid` contains an internal 0 byte")]
+    fn dcngettext_panics_on_zero_in_msgid() {
         dcngettext("domain", "\0ne", "plural", 13, LocaleCategory::LcNumeric);
     }
 
     #[test]
-    #[should_panic(expected = "`plural` contains an internal 0 byte")]
-    fn dcngettext_panics_on_zero_in_plural() {
+    #[should_panic(expected = "`msgid_plural` contains an internal 0 byte")]
+    fn dcngettext_panics_on_zero_in_msgid_plural() {
         dcngettext("d-o-m-a-i-n", "one", "a\0few", 0, LocaleCategory::LcTime);
     }
 
     #[test]
-    #[should_panic(expected = "`domain` contains an internal 0 byte")]
-    fn textdomain_panics_on_zero_in_domain() {
+    #[should_panic(expected = "`domainname` contains an internal 0 byte")]
+    fn textdomain_panics_on_zero_in_domainname() {
         textdomain("this is \0 my domain").unwrap();
     }
 
     #[test]
-    #[should_panic(expected = "`domain` contains an internal 0 byte")]
-    fn bindtextdomain_panics_on_zero_in_domain() {
+    #[should_panic(expected = "`domainname` contains an internal 0 byte")]
+    fn bindtextdomain_panics_on_zero_in_domainname() {
         bindtextdomain("\0bind this", "/usr/share/locale").unwrap();
     }
 
     #[test]
-    #[should_panic(expected = "`dir` contains an internal 0 byte")]
-    fn bindtextdomain_panics_on_zero_in_dir() {
+    #[should_panic(expected = "`dirname` contains an internal 0 byte")]
+    fn bindtextdomain_panics_on_zero_in_dirname() {
         bindtextdomain("my_domain", "/opt/locales\0").unwrap();
     }
 
@@ -638,8 +669,8 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "`domain` contains an internal 0 byte")]
-    fn bind_textdomain_codeset_panics_on_zero_in_domain() {
+    #[should_panic(expected = "`domainname` contains an internal 0 byte")]
+    fn bind_textdomain_codeset_panics_on_zero_in_domainname() {
         bind_textdomain_codeset("doma\0in", "UTF-8").unwrap();
     }
 
@@ -650,32 +681,32 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "`ctx` contains an internal 0 byte")]
-    fn pgettext_panics_on_zero_in_ctx() {
+    #[should_panic(expected = "`msgctxt` contains an internal 0 byte")]
+    fn pgettext_panics_on_zero_in_msgctxt() {
         pgettext("context\0", "string");
     }
 
     #[test]
-    #[should_panic(expected = "`s` contains an internal 0 byte")]
-    fn pgettext_panics_on_zero_in_s() {
+    #[should_panic(expected = "`msgid` contains an internal 0 byte")]
+    fn pgettext_panics_on_zero_in_msgid() {
         pgettext("ctx", "a message\0to be translated");
     }
 
     #[test]
-    #[should_panic(expected = "`ctx` contains an internal 0 byte")]
-    fn npgettext_panics_on_zero_in_ctx() {
+    #[should_panic(expected = "`msgctxt` contains an internal 0 byte")]
+    fn npgettext_panics_on_zero_in_msgctxt() {
         npgettext("c\0tx", "singular", "plural", 0);
     }
 
     #[test]
-    #[should_panic(expected = "`singular` contains an internal 0 byte")]
-    fn npgettext_panics_on_zero_in_singular() {
+    #[should_panic(expected = "`msgid` contains an internal 0 byte")]
+    fn npgettext_panics_on_zero_in_msgid() {
         npgettext("ctx", "sing\0ular", "many many more", 135626);
     }
 
     #[test]
-    #[should_panic(expected = "`plural` contains an internal 0 byte")]
-    fn npgettext_panics_on_zero_in_plural() {
+    #[should_panic(expected = "`msgid_plural` contains an internal 0 byte")]
+    fn npgettext_panics_on_zero_in_msgid_plural() {
         npgettext("context", "uno", "one \0fewer", 10585);
     }
 }
