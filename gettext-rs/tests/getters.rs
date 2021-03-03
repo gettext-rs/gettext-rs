@@ -2,7 +2,7 @@ extern crate gettextrs;
 #[macro_use]
 extern crate lazy_static;
 
-use gettextrs::{*, getters::*};
+use gettextrs::{getters::*, *};
 use std::sync::Mutex;
 
 lazy_static! {
@@ -19,7 +19,10 @@ fn test_current_textdomain() {
     assert_eq!(current_textdomain().unwrap(), "just_testing".as_bytes());
 
     textdomain("test_current_textdomain").unwrap();
-    assert_eq!(current_textdomain().unwrap(), "test_current_textdomain".as_bytes());
+    assert_eq!(
+        current_textdomain().unwrap(),
+        "test_current_textdomain".as_bytes()
+    );
 }
 
 #[test]
@@ -51,8 +54,14 @@ fn test_textdomain_codeset() {
     }
 
     bind_textdomain_codeset(TEXTDOMAIN, "C").unwrap();
-    assert_eq!(textdomain_codeset(TEXTDOMAIN).unwrap(), Some("C".to_string()));
+    assert_eq!(
+        textdomain_codeset(TEXTDOMAIN).unwrap(),
+        Some("C".to_string())
+    );
 
     bind_textdomain_codeset(TEXTDOMAIN, "UTF-8").unwrap();
-    assert_eq!(textdomain_codeset(TEXTDOMAIN).unwrap(), Some("UTF-8".to_string()));
+    assert_eq!(
+        textdomain_codeset(TEXTDOMAIN).unwrap(),
+        Some("UTF-8".to_string())
+    );
 }

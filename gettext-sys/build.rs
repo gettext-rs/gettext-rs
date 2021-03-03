@@ -24,24 +24,23 @@ fn env(name: &str) -> Option<String> {
 
 fn get_windows_gnu_root() -> String {
     // attempt to find the installation directory for the gnu distribution
-    env("MSYSTEM_PREFIX").or_else(||
-        env("MINGW_PREFIX")
-    ).or_else(|| {
-        // AppVeyor env doesn't declare any usable prefix
-        let arch = if env::var("TARGET").unwrap().contains("x86_64") {
-            "64"
-        } else {
-            "32"
-        };
-        let root_test = PathBuf::from(format!("C:/msys64/mingw{}", arch));
-        if root_test.is_dir() {
-            Some(root_test.to_str().unwrap().to_owned())
-        } else {
-            None
-        }
-    }).unwrap_or_else(||
-        fail("Failed to get gnu installation root dir")
-    )
+    env("MSYSTEM_PREFIX")
+        .or_else(|| env("MINGW_PREFIX"))
+        .or_else(|| {
+            // AppVeyor env doesn't declare any usable prefix
+            let arch = if env::var("TARGET").unwrap().contains("x86_64") {
+                "64"
+            } else {
+                "32"
+            };
+            let root_test = PathBuf::from(format!("C:/msys64/mingw{}", arch));
+            if root_test.is_dir() {
+                Some(root_test.to_str().unwrap().to_owned())
+            } else {
+                None
+            }
+        })
+        .unwrap_or_else(|| fail("Failed to get gnu installation root dir"))
 }
 
 fn posix_path(path: &Path) -> String {
@@ -62,22 +61,22 @@ fn posix_path(path: &Path) -> String {
 }
 
 fn check_dependencies(required_programs: Vec<&str>) {
-    let command = |x| { 
+    let command = |x| {
         let status = Command::new("sh")
             .arg("-c")
             .arg(format!("command -v {}", x))
             .status()
             .expect("failed to excute process");
-        
+
         if status.success() {
             "".to_owned()
         } else {
             format!(" {},", x)
-        }      
+        }
     };
 
     let errors: String = required_programs.iter().map(|x| command(x)).collect();
-    
+
     if !errors.is_empty() {
         fail(&format!("The following programs were not found:{}", errors));
     }
@@ -141,10 +140,12 @@ fn main() {
             println!("cargo:rustc-link-lib=dylib=intl");
         }
 
-        return
-    } else if let (Some(bin), Some(lib), Some(include)) =
-        (env("GETTEXT_BIN_DIR"), env("GETTEXT_LIB_DIR"), env("GETTEXT_INCLUDE_DIR"))
-    {
+        return;
+    } else if let (Some(bin), Some(lib), Some(include)) = (
+        env("GETTEXT_BIN_DIR"),
+        env("GETTEXT_LIB_DIR"),
+        env("GETTEXT_INCLUDE_DIR"),
+    ) {
         println!("cargo:rustc-link-search=native={}", lib);
         if env("GETTEXT_STATIC").is_some() {
             println!("cargo:rustc-link-lib=static=intl");
@@ -155,7 +156,7 @@ fn main() {
         println!("cargo:bin={}", bin);
         println!("cargo:lib={}", lib);
         println!("cargo:include={}", include);
-        return
+        return;
     }
 
     let host = env::var("HOST").unwrap();
@@ -182,10 +183,10 @@ fn main() {
 
     let mut cmd = Command::new("tar");
     cmd.current_dir(&build_dir.join("gettext"))
-       .arg("xJf")
-       .arg(&src.join("gettext-0.21.tar.xz"))
-       .arg("--strip-components")
-       .arg("1");
+        .arg("xJf")
+        .arg(&src.join("gettext-0.21.tar.xz"))
+        .arg("--strip-components")
+        .arg("1");
     if host.contains("windows") {
         // tar confuses local path with a remote resource because of ':'
         cmd.arg("--force-local");
@@ -194,11 +195,11 @@ fn main() {
 
     let mut cmd = Command::new("sh");
     cmd.env("CC", compiler.path())
-       .env("CFLAGS", cflags)
-       .env("LD", &which("ld").unwrap())
-       .env("VERBOSE", "1")
-       .current_dir(&build_dir.join("build"))
-       .arg(&posix_path(&build_dir.join("gettext").join("configure")));
+        .env("CFLAGS", cflags)
+        .env("LD", &which("ld").unwrap())
+        .env("VERBOSE", "1")
+        .current_dir(&build_dir.join("build"))
+        .arg(&posix_path(&build_dir.join("gettext").join("configure")));
 
     cmd.arg("--without-emacs");
     cmd.arg("--disable-java");
@@ -220,8 +221,7 @@ fn main() {
 
     cmd.arg(format!("--prefix={}", &posix_path(&build_dir)));
 
-    if target != host &&
-       (!target.contains("windows") || !host.contains("windows")) {
+    if target != host && (!target.contains("windows") || !host.contains("windows")) {
         // NOTE GNU terminology
         // BUILD = machine where we are (cross) compiling curl
         // HOST = machine where the compiled curl will be used
@@ -238,21 +238,25 @@ fn main() {
         }
     }
     run(&mut cmd, "sh");
-    run(make()
-                .arg(&format!("-j{}", env::var("NUM_JOBS").unwrap()))
-                .current_dir(&build_dir.join("build")), "make");
-    run(make()
-                .arg("install")
-                .current_dir(&build_dir.join("build")), "make");
+    run(
+        make()
+            .arg(&format!("-j{}", env::var("NUM_JOBS").unwrap()))
+            .current_dir(&build_dir.join("build")),
+        "make",
+    );
+    run(
+        make().arg("install").current_dir(&build_dir.join("build")),
+        "make",
+    );
 
     let dst = PathBuf::from(env::var_os("OUT_DIR").unwrap());
     let mut cmd = Command::new("cp");
     cmd.current_dir(&build_dir)
-       .arg("-r")
-       .arg(&build_dir.join("bin"))
-       .arg(&build_dir.join("include"))
-       .arg(&build_dir.join("lib"))
-       .arg(&dst);
+        .arg("-r")
+        .arg(&build_dir.join("bin"))
+        .arg(&build_dir.join("include"))
+        .arg(&build_dir.join("lib"))
+        .arg(&dst);
     run(&mut cmd, "cp");
 
     println!("cargo:rustc-link-lib=static=intl");
@@ -263,7 +267,10 @@ fn main() {
     println!("cargo:root={}", dst.display());
 
     if target.contains("windows") {
-        println!("cargo:rustc-link-search=native={}/lib", &get_windows_gnu_root());
+        println!(
+            "cargo:rustc-link-search=native={}/lib",
+            &get_windows_gnu_root()
+        );
         println!("cargo:rustc-link-lib=dylib=iconv");
     }
 }
@@ -273,13 +280,18 @@ fn run(cmd: &mut Command, program: &str) {
     let status = match cmd.status() {
         Ok(status) => status,
         Err(ref e) if e.kind() == ErrorKind::NotFound => {
-            fail(&format!("failed to execute command: {}\nis `{}` not installed?",
-                          e, program));
+            fail(&format!(
+                "failed to execute command: {}\nis `{}` not installed?",
+                e, program
+            ));
         }
         Err(e) => fail(&format!("failed to execute command: {}", e)),
     };
     if !status.success() {
-        fail(&format!("command did not execute successfully, got: {}", status));
+        fail(&format!(
+            "command did not execute successfully, got: {}",
+            status
+        ));
     }
 }
 
@@ -290,18 +302,22 @@ fn fail(s: &str) -> ! {
 fn which(cmd: &str) -> Option<PathBuf> {
     let cmd = format!("{}{}", cmd, env::consts::EXE_SUFFIX);
     let paths = env::var_os("PATH").unwrap();
-    env::split_paths(&paths).map(|p| p.join(&cmd)).find(|p| {
-        fs::metadata(p).is_ok()
-    })
+    env::split_paths(&paths)
+        .map(|p| p.join(&cmd))
+        .find(|p| fs::metadata(p).is_ok())
 }
 
 fn make() -> Command {
-    let cmd = if cfg!(target_os = "freebsd") {"gmake"} else {"make"};
+    let cmd = if cfg!(target_os = "freebsd") {
+        "gmake"
+    } else {
+        "make"
+    };
     let mut cmd = Command::new(cmd);
     // We're using the MSYS make which doesn't work with the mingw32-make-style
     // MAKEFLAGS, so remove that from the env if present.
     if cfg!(windows) {
         cmd.env_remove("MAKEFLAGS").env_remove("MFLAGS");
     }
-    return cmd
+    return cmd;
 }

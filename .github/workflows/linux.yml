@@ -1,6 +1,10 @@
 name: Build & test on Linux
 
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "0 0 * * 5" # At 00:00 every Friday
 
 jobs:
   build_and_test_linux:
@@ -78,6 +82,14 @@ jobs:
         with:
           rust-version: ${{ matrix.rust-version }}
 
+        # setup-rust-action turns panic messages in tests into GitHub
+        # annotations. Our test suite is running with --verbose, and prints out
+        # messages even for panics that we do expect. setup-rust-action can't
+        # know about this though, and floods the UI with annotations. This
+        # command disables annotations for tests.
+      - name: Disable GitHub Annotations
+        run: echo '::remove-matcher owner=cargo-test::'
+
       - name: Add appropriate target to Cargo
         run: rustup target add ${{ matrix.env.TARGET }}
         if: ${{ ! matrix.env.NO_ADD }}
@@ -87,9 +99,6 @@ jobs:
 
       - name: Generate lockfile
         run: cargo generate-lockfile
-
-      - name: Generate lockfile for systest
-        run: cargo generate-lockfile --manifest-path systest/Cargo.toml
 
       - name: Cache Cargo dependencies
         uses: actions/cache@v2
