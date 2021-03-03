@@ -163,7 +163,8 @@ where
     T: Into<String>,
     U: Into<String>,
 {
-    let domainname = CString::new(domainname.into()).expect("`domainname` contains an internal 0 byte");
+    let domainname =
+        CString::new(domainname.into()).expect("`domainname` contains an internal 0 byte");
     let msgid = CString::new(msgid.into()).expect("`msgid` contains an internal 0 byte");
     unsafe {
         CStr::from_ptr(ffi::dgettext(domainname.as_ptr(), msgid.as_ptr()))
@@ -190,13 +191,18 @@ where
     T: Into<String>,
     U: Into<String>,
 {
-    let domainname = CString::new(domainname.into()).expect("`domainname` contains an internal 0 byte");
+    let domainname =
+        CString::new(domainname.into()).expect("`domainname` contains an internal 0 byte");
     let msgid = CString::new(msgid.into()).expect("`msgid` contains an internal 0 byte");
     unsafe {
-        CStr::from_ptr(ffi::dcgettext(domainname.as_ptr(), msgid.as_ptr(), category as i32))
-            .to_str()
-            .expect("dcgettext() returned invalid UTF-8")
-            .to_owned()
+        CStr::from_ptr(ffi::dcgettext(
+            domainname.as_ptr(),
+            msgid.as_ptr(),
+            category as i32,
+        ))
+        .to_str()
+        .expect("dcgettext() returned invalid UTF-8")
+        .to_owned()
     }
 }
 
@@ -218,12 +224,17 @@ where
     S: Into<String>,
 {
     let msgid = CString::new(msgid.into()).expect("`msgid` contains an internal 0 byte");
-    let msgid_plural = CString::new(msgid_plural.into()).expect("`msgid_plural` contains an internal 0 byte");
+    let msgid_plural =
+        CString::new(msgid_plural.into()).expect("`msgid_plural` contains an internal 0 byte");
     unsafe {
-        CStr::from_ptr(ffi::ngettext(msgid.as_ptr(), msgid_plural.as_ptr(), n as c_ulong))
-            .to_str()
-            .expect("ngettext() returned invalid UTF-8")
-            .to_owned()
+        CStr::from_ptr(ffi::ngettext(
+            msgid.as_ptr(),
+            msgid_plural.as_ptr(),
+            n as c_ulong,
+        ))
+        .to_str()
+        .expect("ngettext() returned invalid UTF-8")
+        .to_owned()
     }
 }
 
@@ -245,14 +256,21 @@ where
     U: Into<String>,
     V: Into<String>,
 {
-    let domainname = CString::new(domainname.into()).expect("`domainname` contains an internal 0 byte");
+    let domainname =
+        CString::new(domainname.into()).expect("`domainname` contains an internal 0 byte");
     let msgid = CString::new(msgid.into()).expect("`msgid` contains an internal 0 byte");
-    let msgid_plural = CString::new(msgid_plural.into()).expect("`msgid_plural` contains an internal 0 byte");
+    let msgid_plural =
+        CString::new(msgid_plural.into()).expect("`msgid_plural` contains an internal 0 byte");
     unsafe {
-        CStr::from_ptr(ffi::dngettext(domainname.as_ptr(), msgid.as_ptr(), msgid_plural.as_ptr(), n as c_ulong))
-            .to_str()
-            .expect("dngettext() returned invalid UTF-8")
-            .to_owned()
+        CStr::from_ptr(ffi::dngettext(
+            domainname.as_ptr(),
+            msgid.as_ptr(),
+            msgid_plural.as_ptr(),
+            n as c_ulong,
+        ))
+        .to_str()
+        .expect("dngettext() returned invalid UTF-8")
+        .to_owned()
     }
 }
 
@@ -269,20 +287,34 @@ where
 /// * `domainname`, `msgid`, or `msgid_plural` contain an internal 0 byte, as such values can't be
 ///     passed to the underlying C API;
 /// * the result is not in UTF-8 (see [this note](./index.html#utf-8-is-required)).
-pub fn dcngettext<T, U, V>(domainname: T, msgid: U, msgid_plural: V, n : u32, category: LocaleCategory) -> String
+pub fn dcngettext<T, U, V>(
+    domainname: T,
+    msgid: U,
+    msgid_plural: V,
+    n: u32,
+    category: LocaleCategory,
+) -> String
 where
     T: Into<String>,
     U: Into<String>,
     V: Into<String>,
 {
-    let domainname = CString::new(domainname.into()).expect("`domainname` contains an internal 0 byte");
+    let domainname =
+        CString::new(domainname.into()).expect("`domainname` contains an internal 0 byte");
     let msgid = CString::new(msgid.into()).expect("`msgid` contains an internal 0 byte");
-    let msgid_plural = CString::new(msgid_plural.into()).expect("`msgid_plural` contains an internal 0 byte");
+    let msgid_plural =
+        CString::new(msgid_plural.into()).expect("`msgid_plural` contains an internal 0 byte");
     unsafe {
-        CStr::from_ptr(ffi::dcngettext(domainname.as_ptr(), msgid.as_ptr(), msgid_plural.as_ptr(), n as c_ulong, category as i32))
-            .to_str()
-            .expect("dcngettext() returned invalid UTF-8")
-            .to_owned()
+        CStr::from_ptr(ffi::dcngettext(
+            domainname.as_ptr(),
+            msgid.as_ptr(),
+            msgid_plural.as_ptr(),
+            n as c_ulong,
+            category as i32,
+        ))
+        .to_str()
+        .expect("dcngettext() returned invalid UTF-8")
+        .to_owned()
     }
 }
 
@@ -374,7 +406,9 @@ where
                 Err(io::Error::last_os_error())
             } else {
                 let result = CStr::from_ptr(result);
-                Ok(PathBuf::from(OsString::from_vec(result.to_bytes().to_vec())))
+                Ok(PathBuf::from(OsString::from_vec(
+                    result.to_bytes().to_vec(),
+                )))
             }
         }
     }
@@ -436,13 +470,12 @@ where
         if result.is_null() {
             let error = io::Error::last_os_error();
             if let Some(0) = error.raw_os_error() {
-                return Ok(None)
+                return Ok(None);
             } else {
-                return Err(error)
+                return Err(error);
             }
         } else {
-            let result =
-                CStr::from_ptr(result)
+            let result = CStr::from_ptr(result)
                 .to_str()
                 .expect("`bind_textdomain_codeset()` returned non-UTF-8 string")
                 .to_owned();
@@ -542,8 +575,14 @@ mod tests {
         bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
         textdomain("hellorust").unwrap();
 
-        assert_eq!("Hello, world!", ngettext("Hello, world!", "Hello, worlds!", 1));
-        assert_eq!("Hello, worlds!", ngettext("Hello, world!", "Hello, worlds!", 2));
+        assert_eq!(
+            "Hello, world!",
+            ngettext("Hello, world!", "Hello, worlds!", 1)
+        );
+        assert_eq!(
+            "Hello, worlds!",
+            ngettext("Hello, world!", "Hello, worlds!", 2)
+        );
     }
 
     #[test]
@@ -563,8 +602,14 @@ mod tests {
         bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
         textdomain("hellorust").unwrap();
 
-        assert_eq!("Hello, world!", npgettext("context", "Hello, world!", "Hello, worlds!", 1));
-        assert_eq!("Hello, worlds!", npgettext("context", "Hello, world!", "Hello, worlds!", 2));
+        assert_eq!(
+            "Hello, world!",
+            npgettext("context", "Hello, world!", "Hello, worlds!", 1)
+        );
+        assert_eq!(
+            "Hello, worlds!",
+            npgettext("context", "Hello, world!", "Hello, worlds!", 2)
+        );
     }
 
     #[test]
@@ -630,7 +675,13 @@ mod tests {
     #[test]
     #[should_panic(expected = "`domainname` contains an internal 0 byte")]
     fn dcngettext_panics_on_zero_in_domainname() {
-        dcngettext("doma\0in", "singular", "plural", 42, LocaleCategory::LcCType);
+        dcngettext(
+            "doma\0in",
+            "singular",
+            "plural",
+            42,
+            LocaleCategory::LcCType,
+        );
     }
 
     #[test]

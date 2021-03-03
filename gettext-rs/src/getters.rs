@@ -83,7 +83,9 @@ pub fn domain_directory<T: Into<Vec<u8>>>(domainname: T) -> Result<PathBuf, io::
                 Err(io::Error::last_os_error())
             } else {
                 let result = CStr::from_ptr(result);
-                Ok(PathBuf::from(OsString::from_vec(result.to_bytes().to_vec())))
+                Ok(PathBuf::from(OsString::from_vec(
+                    result.to_bytes().to_vec(),
+                )))
             }
         }
     }
@@ -114,13 +116,12 @@ pub fn textdomain_codeset<T: Into<Vec<u8>>>(domainname: T) -> Result<Option<Stri
         if result.is_null() {
             let error = io::Error::last_os_error();
             if let Some(0) = error.raw_os_error() {
-                return Ok(None)
+                return Ok(None);
             } else {
-                return Err(error)
+                return Err(error);
             }
         } else {
-            let result =
-                CStr::from_ptr(result)
+            let result = CStr::from_ptr(result)
                 .to_str()
                 .expect("`bind_textdomain_codeset()` returned non-UTF-8 string")
                 .to_owned();

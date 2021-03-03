@@ -31,10 +31,16 @@ impl fmt::Display for TextDomainError {
 
         match self {
             InvalidLocale(locale) => write!(f, r#"Locale "{}" is invalid."#, locale),
-            TranslationNotFound(language) => write!(f, "Translations not found for language {}.", language),
+            TranslationNotFound(language) => {
+                write!(f, "Translations not found for language {}.", language)
+            }
             TextDomainCallFailed(inner) => write!(f, "The call to textdomain() failed: {}", inner),
-            BindTextDomainCallFailed(inner) => write!(f, "The call to bindtextdomain() failed: {}", inner),
-            BindTextDomainCodesetCallFailed(inner) => write!(f, "The call to bind_textdomain_codeset() failed: {}", inner),
+            BindTextDomainCallFailed(inner) => {
+                write!(f, "The call to bindtextdomain() failed: {}", inner)
+            }
+            BindTextDomainCodesetCallFailed(inner) => {
+                write!(f, "The call to bind_textdomain_codeset() failed: {}", inner)
+            }
         }
     }
 }
@@ -376,18 +382,15 @@ impl TextDomain {
                         })
                 }
             })
-            .map_or(
-                Err(TextDomainError::TranslationNotFound(lang)),
-                |path| {
-                    let result = setlocale(locale_category, req_locale);
-                    bindtextdomain(domainname.clone(), path.join("locale"))
-                        .map_err(TextDomainError::BindTextDomainCallFailed)?;
-                    bind_textdomain_codeset(domainname.clone(), codeset)
-                        .map_err(TextDomainError::BindTextDomainCodesetCallFailed)?;
-                    textdomain(domainname).map_err(TextDomainError::TextDomainCallFailed)?;
-                    Ok(result)
-                },
-            )
+            .map_or(Err(TextDomainError::TranslationNotFound(lang)), |path| {
+                let result = setlocale(locale_category, req_locale);
+                bindtextdomain(domainname.clone(), path.join("locale"))
+                    .map_err(TextDomainError::BindTextDomainCallFailed)?;
+                bind_textdomain_codeset(domainname.clone(), codeset)
+                    .map_err(TextDomainError::BindTextDomainCodesetCallFailed)?;
+                textdomain(domainname).map_err(TextDomainError::TextDomainCallFailed)?;
+                Ok(result)
+            })
     }
 }
 
