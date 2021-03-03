@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 - 2021-03-03
 
 ### Added
 - Documentation on when functions will panic (Alexander Batischev)
