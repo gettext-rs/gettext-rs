@@ -12,7 +12,6 @@ if [ -z "$NO_RUN" ]; then
     cargo test --target $TARGET --verbose -- --nocapture
     cargo run --manifest-path systest/Cargo.toml --target $TARGET -vv
     cargo doc --no-deps --target $TARGET
-    cargo doc --no-deps -p gettext-sys --target $TARGET
 fi
 
 if [ -n "$FEATURES" ]
