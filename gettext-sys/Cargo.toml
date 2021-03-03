@@ -1,12 +1,17 @@
 [package]
 name = "gettext-sys"
-description = "Gettext raw FFI bindings"
+description = "Raw FFI bindings for gettext"
 license = "MIT"
 version = "0.21.0"
 authors = ["Brian Olsen <brian@maven-group.org>"]
 build = "build.rs"
 links = "gettext"
 readme = "README.md"
+documentation = "https://docs.rs/gettext-sys/"
+homepage = "https://github.com/Koka/gettext-rs"
+repository = "https://github.com/Koka/gettext-rs"
+edition = "2015"
+keywords = ["gettext", "binding", "ffi", "i18n", "l10n"]
 
 [lib]
 path = "lib.rs"
