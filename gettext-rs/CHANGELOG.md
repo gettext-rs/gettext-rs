@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.7.0 - 2021-04-25
+
+### Changed
+- If `XDG_DATA_DIRS` environment variable is not set, or is empty, `TextDomain`
+    builder defaults to "/usr/local/share/:/usr/share/" instead of current
+    directory. This is in line with XDG base directory specification. (Alexander
+    Batischev)
+
+
+
 ## 0.6.0 - 2021-03-03
 
 ### Added
