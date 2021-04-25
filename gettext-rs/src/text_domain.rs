@@ -83,7 +83,8 @@ impl error::Error for TextDomainError {
 ///
 /// 1. Paths added using the [`prepend`] function.
 /// 1. Paths from the `XDG_DATA_DIRS` environment variable, except if the function
-/// [`skip_system_data_paths`] was invoked. If `XDG_DATA_DIRS` is not defined, current path is used.
+/// [`skip_system_data_paths`] was invoked. If `XDG_DATA_DIRS` is not set, or is empty, the default
+/// of "/usr/local/share/:/usr/share/" is used.
 /// 1. Paths added using the [`push`] function.
 ///
 /// For each `path` in the search paths, the following subdirectories are scanned:
@@ -337,7 +338,7 @@ impl TextDomain {
 
         // Get paths from system data dirs if requested so
         let sys_data_paths_str = if !self.skip_system_data_paths {
-            env::var("XDG_DATA_DIRS").unwrap_or(".".to_owned())
+            get_system_data_paths()
         } else {
             "".to_owned()
         };
@@ -350,37 +351,29 @@ impl TextDomain {
             .chain(self.post_paths.into_iter())
             .find(|path| {
                 let locale_path = path.join("locale");
-                locale_path.is_dir() && {
-                    // path contains a `locale` directory
-                    // search for sub directories matching `lang*`
-                    // and see if we can find a translation file for the `textdomain`
-                    // under `path/locale/lang*/LC_MESSAGES/`
-                    let locale_path = &locale_path;
-                    fs::read_dir(locale_path)
-                        .ok()
-                        .map_or(false, |mut entry_iter| {
-                            entry_iter
-                                .by_ref()
-                                .find(|entry_res| {
-                                    entry_res.as_ref().ok().map_or(false, |entry| {
-                                        entry.file_type().ok().map_or(false, |file_type| {
-                                            file_type.is_dir()
-                                                && entry.file_name().to_str().map_or(
-                                                    false,
-                                                    |entry_name| {
-                                                        entry_name.starts_with(&lang)
-                                                            && locale_path
-                                                                .join(entry_name)
-                                                                .join(&mo_rel_path)
-                                                                .exists()
-                                                    },
-                                                )
-                                        })
-                                    })
-                                })
-                                .is_some()
-                        })
+                if !locale_path.is_dir() {
+                    return false;
                 }
+
+                // path contains a `locale` directory
+                // search for sub directories matching `lang*`
+                // and see if we can find a translation file for the `textdomain`
+                // under `path/locale/lang*/LC_MESSAGES/`
+                if let Ok(entry_iter) = fs::read_dir(&locale_path) {
+                    return entry_iter
+                        .filter_map(|entry_res| entry_res.ok())
+                        .filter(|entry| matches!(entry.file_type().map(|ft| ft.is_dir()), Ok(true)))
+                        .any(|entry| {
+                            if let Some(entry_name) = entry.file_name().to_str() {
+                                return entry_name.starts_with(&lang)
+                                    && locale_path.join(entry_name).join(&mo_rel_path).exists();
+                            }
+
+                            false
+                        });
+                }
+
+                false
             })
             .map_or(Err(TextDomainError::TranslationNotFound(lang)), |path| {
                 let result = setlocale(locale_category, req_locale);
@@ -391,6 +384,20 @@ impl TextDomain {
                 textdomain(domainname).map_err(TextDomainError::TextDomainCallFailed)?;
                 Ok(result)
             })
+    }
+}
+
+fn get_system_data_paths() -> String {
+    static DEFAULT: &str = "/usr/local/share/:/usr/share/";
+
+    if let Ok(dirs) = env::var("XDG_DATA_DIRS") {
+        if dirs.is_empty() {
+            DEFAULT.to_owned()
+        } else {
+            dirs
+        }
+    } else {
+        DEFAULT.to_owned()
     }
 }
 
@@ -414,10 +421,7 @@ impl fmt::Debug for TextDomain {
             .field("pre_paths", &self.pre_paths);
 
         if !self.skip_system_data_paths {
-            debug_struct.field(
-                "using system data paths",
-                &env::var("XDG_DATA_DIRS").unwrap_or("".to_owned()),
-            );
+            debug_struct.field("using system data paths", &get_system_data_paths());
         }
 
         debug_struct.field("post_paths", &self.post_paths).finish()
