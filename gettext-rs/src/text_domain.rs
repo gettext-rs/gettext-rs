@@ -83,7 +83,8 @@ impl error::Error for TextDomainError {
 ///
 /// 1. Paths added using the [`prepend`] function.
 /// 1. Paths from the `XDG_DATA_DIRS` environment variable, except if the function
-/// [`skip_system_data_paths`] was invoked. If `XDG_DATA_DIRS` is not defined, current path is used.
+/// [`skip_system_data_paths`] was invoked. If `XDG_DATA_DIRS` is not set, or is empty, the default
+/// of "/usr/local/share/:/usr/share/" is used.
 /// 1. Paths added using the [`push`] function.
 ///
 /// For each `path` in the search paths, the following subdirectories are scanned:
@@ -337,7 +338,7 @@ impl TextDomain {
 
         // Get paths from system data dirs if requested so
         let sys_data_paths_str = if !self.skip_system_data_paths {
-            env::var("XDG_DATA_DIRS").unwrap_or(".".to_owned())
+            get_system_data_paths()
         } else {
             "".to_owned()
         };
@@ -386,6 +387,20 @@ impl TextDomain {
     }
 }
 
+fn get_system_data_paths() -> String {
+    static DEFAULT: &str = "/usr/local/share/:/usr/share/";
+
+    if let Ok(dirs) = env::var("XDG_DATA_DIRS") {
+        if dirs.is_empty() {
+            DEFAULT.to_owned()
+        } else {
+            dirs
+        }
+    } else {
+        DEFAULT.to_owned()
+    }
+}
+
 impl fmt::Debug for TextDomain {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         let mut debug_struct = fmt.debug_struct("TextDomain");
@@ -406,10 +421,7 @@ impl fmt::Debug for TextDomain {
             .field("pre_paths", &self.pre_paths);
 
         if !self.skip_system_data_paths {
-            debug_struct.field(
-                "using system data paths",
-                &env::var("XDG_DATA_DIRS").unwrap_or("".to_owned()),
-            );
+            debug_struct.field("using system data paths", &get_system_data_paths());
         }
 
         debug_struct.field("post_paths", &self.post_paths).finish()
