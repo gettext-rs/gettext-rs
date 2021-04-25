@@ -350,37 +350,29 @@ impl TextDomain {
             .chain(self.post_paths.into_iter())
             .find(|path| {
                 let locale_path = path.join("locale");
-                locale_path.is_dir() && {
-                    // path contains a `locale` directory
-                    // search for sub directories matching `lang*`
-                    // and see if we can find a translation file for the `textdomain`
-                    // under `path/locale/lang*/LC_MESSAGES/`
-                    let locale_path = &locale_path;
-                    fs::read_dir(locale_path)
-                        .ok()
-                        .map_or(false, |mut entry_iter| {
-                            entry_iter
-                                .by_ref()
-                                .find(|entry_res| {
-                                    entry_res.as_ref().ok().map_or(false, |entry| {
-                                        entry.file_type().ok().map_or(false, |file_type| {
-                                            file_type.is_dir()
-                                                && entry.file_name().to_str().map_or(
-                                                    false,
-                                                    |entry_name| {
-                                                        entry_name.starts_with(&lang)
-                                                            && locale_path
-                                                                .join(entry_name)
-                                                                .join(&mo_rel_path)
-                                                                .exists()
-                                                    },
-                                                )
-                                        })
-                                    })
-                                })
-                                .is_some()
-                        })
+                if !locale_path.is_dir() {
+                    return false;
                 }
+
+                // path contains a `locale` directory
+                // search for sub directories matching `lang*`
+                // and see if we can find a translation file for the `textdomain`
+                // under `path/locale/lang*/LC_MESSAGES/`
+                if let Ok(entry_iter) = fs::read_dir(&locale_path) {
+                    return entry_iter
+                        .filter_map(|entry_res| entry_res.ok())
+                        .filter(|entry| matches!(entry.file_type().map(|ft| ft.is_dir()), Ok(true)))
+                        .any(|entry| {
+                            if let Some(entry_name) = entry.file_name().to_str() {
+                                return entry_name.starts_with(&lang)
+                                    && locale_path.join(entry_name).join(&mo_rel_path).exists();
+                            }
+
+                            false
+                        });
+                }
+
+                false
             })
             .map_or(Err(TextDomainError::TranslationNotFound(lang)), |path| {
                 let result = setlocale(locale_category, req_locale);
