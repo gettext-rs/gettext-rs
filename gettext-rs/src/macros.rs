@@ -15,10 +15,20 @@ fn freplace(format: &str, args: &[&str]) -> String {
     output
 }
 
-/// Like [`gettext`], but allows for formatting.
+/// Unlike [`gettext`] function, you can use this macro for both singular and plural forms,
+/// with or without specifying domain and category. It also replaces each occurence of `{}` with
+/// next value within `[args]`.
 ///
-/// It calls [`gettext`] on `msgid`, and then replaces each occurrence of `{}` with the next value
-/// out of `args`.
+/// To translate singular string — just put `msgid` in string literal, like so:
+/// `gettext!("Hello, world!")`
+/// If using formatter — keep amount of arguments the same as `{}`s:
+/// `gettext!("Hello, {}!. How are {}?", ["World", "you"])`
+/// Note, that it only supports `{}` for now.
+/// To use plural from — you have to specify `msgid`, `msgid_plural` and number we're talking about:
+/// `gettext!("I have {} apple", "I have {} apples", 5, [&5.to_string()])`
+/// To specify domain and/or category — add them at the biginning, like so:
+/// `gettext!(domain = "foo", category = "bar", ...)`
+///
 ///
 /// [`gettext`]: fn.gettext.html
 #[macro_export]
