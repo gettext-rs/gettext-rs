@@ -1,27 +1,18 @@
 //! Macros that translate the message and then replace placeholders in it.
 
-/// This is an implementation detail for counting arguments in the gettext macros. Don't call this directly.
-#[macro_export]
-#[doc(hidden)]
-macro_rules! count_args {
-    () => { 0 };
-    ($_e: expr $(, $rest: expr)*) => { 1 + $crate::count_args!($($rest),*) }
-}
-
 /// This is an implementation detail for replacing arguments in the gettext macros. Don't call this directly.
-#[macro_export]
 #[doc(hidden)]
-macro_rules! freplace {
-    ($format:expr, $($args:expr),+ $(,)?) => {{
-        let mut parts = $format.split("{}");
-        debug_assert_eq!(parts.clone().count() - 1, $crate::count_args!($($args),*), "Argument count has to match number of format directives ({{}})");
+#[allow(dead_code)]
+fn freplace(format: &str, args: &[&str]) -> String {
+    let mut parts = format.split("{}");
+    debug_assert_eq!(parts.clone().count() - 1, args.len(), "Argument count has to match number of format directives ({{}})");
 
-        let mut output = parts.next().unwrap_or_default().to_string();
-        $(
-            output += &format!("{}{}", $args, &parts.next().expect("Argument count has to match number of format directives ({})"));
-        )*
-        output
-    }};
+    let mut output = parts.next().unwrap_or_default().to_string();
+    for (arg, part) in args.into_iter().zip(parts) {
+        output += &format!("{}{}", arg, part);
+    }
+
+    output
 }
 
 /// Like [`gettext`], but allows for formatting.
@@ -34,7 +25,7 @@ macro_rules! freplace {
 macro_rules! gettext {
     ($msgid:expr, $($args:expr),+ $(,)?) => {{
         let format = $crate::gettext($msgid);
-        $crate::freplace!(format, $($args),*)
+        $crate::macros::freplace(&format, &[$($args),*])
     }};
 }
 
@@ -48,7 +39,7 @@ macro_rules! gettext {
 macro_rules! dgettext {
     ($domainname:expr, $msgid:expr, $($args:expr),+ $(,)?) => {{
         let format = $crate::dgettext($domainname, $msgid);
-        $crate::freplace!(format, $($args),*)
+        $crate::macros::freplace(&format, &[$($args),*])
     }};
 }
 
@@ -62,7 +53,7 @@ macro_rules! dgettext {
 macro_rules! dcgettext {
     ($domainname:expr, $category:expr, $msgid:expr, $($args:expr),+ $(,)?) => {{
         let format = $crate::dcgettext($domainname, $msgid, $category);
-        $crate::freplace!(format, $($args),*)
+        $crate::macros::freplace(&format, &[$($args),*])
     }};
 }
 
@@ -76,7 +67,7 @@ macro_rules! dcgettext {
 macro_rules! ngettext {
     ($msgid:expr, $msgid_plural:expr, $n:expr, $($args:expr),+ $(,)?) => {{
         let format = $crate::ngettext($msgid, $msgid_plural, $n);
-        $crate::freplace!(format, $($args),*)
+        $crate::macros::freplace(&format, &[$($args),*])
     }}
 }
 
@@ -90,7 +81,7 @@ macro_rules! ngettext {
 macro_rules! dngettext {
     ($domainname:expr, $msgid:expr, $msgid_plural:expr, $n:expr, $($args:expr),+ $(,)?) => {{
         let format = $crate::dngettext($domainname, $msgid, $msgid_plural, $n);
-        $crate::freplace!(format, $($args),*)
+        $crate::macros::freplace(&format, &[$($args),*])
     }}
 }
 
@@ -104,7 +95,7 @@ macro_rules! dngettext {
 macro_rules! dcngettext {
     ($domainname:expr, $category:expr, $msgid:expr, $msgid_plural:expr, $n:expr, $($args:expr),+ $(,)?) => {{
         let format = $crate::dcngettext($domainname, $msgid, $msgid_plural, $n, $category);
-        $crate::freplace!(format, $($args),*)
+        $crate::macros::freplace(&format, &[$($args),*])
     }}
 }
 
@@ -118,7 +109,7 @@ macro_rules! dcngettext {
 macro_rules! pgettext {
     ($msgctxt:expr, $msgid:expr, $($args:expr),+ $(,)?) => {{
         let format = $crate::pgettext($msgctxt, $msgid);
-        $crate::freplace!(format, $($args),*)
+        $crate::macros::freplace(&format, &[$($args),*])
     }}
 }
 
@@ -132,7 +123,7 @@ macro_rules! pgettext {
 macro_rules! npgettext {
     ($msgctxt:expr, $msgid:expr, $msgid_plural:expr, $n:expr, $($args:expr),+ $(,)?) => {{
         let format = $crate::npgettext($msgctxt, $msgid, $msgid_plural, $n);
-        $crate::freplace!(format, $($args),*)
+        $crate::macros::freplace(&format, &[$($args),*])
     }}
 }
 
