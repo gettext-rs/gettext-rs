@@ -28,31 +28,54 @@ macro_rules! gettext {
         $crate::macros::freplace(&format, &[$($args),*])
     }};
 
+    (domain = $domainname:expr, category = $category:expr, $msgid:expr, $msgid_plural:expr, $n:expr) => {
+        $crate::dcngettext($domainname, $msgid, $msgid_plural, $n, $category)
+    };
+
     (domain = $domainname:expr, category = $category:expr, $msgid:expr, [$($args:expr),+]) => {{
         let format = $crate::dcgettext($domainname, $msgid, $category);
         $crate::macros::freplace(&format, &[$($args),*])
     }};
+
+    (domain = $domainname:expr, category = $category:expr, $msgid:expr) => {
+        $crate::dcgettext($domainname, $msgid, $category)
+    };
 
     (domain = $domainname:expr, $msgid:expr, $msgid_plural:expr, $n:expr, [$($args:expr),+]) => {{
         let format = $crate::dngettext($domainname, $msgid, $msgid_plural, $n);
         $crate::macros::freplace(&format, &[$($args),*])
     }};
 
+    (domain = $domainname:expr, $msgid:expr, $msgid_plural:expr, $n:expr) => {
+        $crate::dngettext($domainname, $msgid, $msgid_plural, $n)
+    };
+
     (domain = $domainname:expr, $msgid:expr, [$($args:expr),+]) => {{
         let format = $crate::dgettext($domainname, $msgid);
         $crate::macros::freplace(&format, &[$($args),*])
     }};
 
+    (domain = $domainname:expr, $msgid:expr) => {
+        $crate::dgettext($domainname, $msgid)
+    };
 
     ($msgid:expr, $msgid_plural:expr, $n:expr, [$($args:expr),+]) => {{
         let format = $crate::ngettext($msgid, $msgid_plural, $n);
         $crate::macros::freplace(&format, &[$($args),*])
     }};
 
+    ($msgid:expr, $msgid_plural:expr, $n:expr) => {
+        $crate::ngettext($msgid, $msgid_plural, $n)
+    };
+
     ($msgid:expr, [$($args:expr),+]) => {{
         let format = $crate::gettext($msgid);
         $crate::macros::freplace(&format, &[$($args),*])
     }};
+
+    ($msgid:expr) => {
+        $crate::gettext($msgid)
+    };
 }
 
 /// Like [`pgettext`], but allows for formatting.
@@ -86,6 +109,43 @@ macro_rules! npgettext {
 #[cfg(test)]
 mod test {
     use crate::*;
+    use super::freplace;
+
+    #[test]
+    fn freplace_works_correctly() {
+        assert_eq!(
+            freplace("No params", &[]),
+            "No params"
+        );
+        assert_eq!(
+            freplace("Middle {} param", &["working"]),
+            "Middle working param"
+        );
+        assert_eq!(
+            freplace("{} working param", &["Beginning"]),
+            "Beginning working param"
+        );
+        assert_eq!(
+            freplace("Working param {}", &["at the end"]),
+            "Working param at the end"
+        );
+        assert_eq!(
+            freplace("{} param, {} param, and param {}", &["First", "second", "at the end"]),
+            "First param, second param, and param at the end"
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "Argument count has to match number of format directives")]
+    fn freplace_panics_too_many_args() {
+        freplace("No params", &["But there is one"]);
+    }
+
+    #[test]
+    #[should_panic(expected = "Argument count has to match number of format directives")]
+    fn freplace_panics_no_args() {
+        freplace("{} params", &[]);
+    }
 
     #[test]
     fn gettext_singular() {
@@ -95,12 +155,13 @@ mod test {
         textdomain("hellorust").unwrap();
 
         assert_eq!(
-            gettext!("Hello, {}!", ["world"]),
+            gettext!("Hello, world!"),
             "Hello, world!"
         );
+
         assert_eq!(
-            gettext!("Hello, {} {}!", ["small", "world"]),
-            "Hello, small world!"
+            gettext!("Hello, {}!", ["world"]),
+            "Hello, world!"
         );
     }
 
@@ -110,6 +171,15 @@ mod test {
 
         bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
         textdomain("hellorust").unwrap();
+
+        assert_eq!(
+            gettext!("Singular!", "Multiple!", 1),
+            "Singular!"
+        );
+        assert_eq!(
+            gettext!("Singular!", "Multiple!", 2),
+            "Multiple!"
+        );
 
         assert_eq!(
             gettext!("Singular {}!", "Multiple {}!", 1, ["Worlds"]),
@@ -128,6 +198,11 @@ mod test {
         bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
 
         assert_eq!(
+            gettext!(domain = "hellorust", "Hello, world!"),
+            "Hello, world!"
+        );
+
+        assert_eq!(
             gettext!(domain = "hellorust", "Hello, {}!", ["world"]),
             "Hello, world!"
         );
@@ -138,6 +213,19 @@ mod test {
         setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
 
         bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+
+        assert_eq!(
+            gettext!(domain = "hellrust",
+                "Singular!", "Multiple!", 1
+            ),
+            "Singular!"
+        );
+        assert_eq!(
+            gettext!(domain = "hellrust",
+                "Singular!", "Multiple!", 2
+            ),
+            "Multiple!"
+        );
 
         assert_eq!(
             gettext!(domain = "hellrust",
@@ -161,6 +249,13 @@ mod test {
 
         assert_eq!(
             gettext!(domain = "hellorust", category = LocaleCategory::LcAll,
+                "Hello, world!"
+            ),
+            "Hello, world!"
+        );
+
+        assert_eq!(
+            gettext!(domain = "hellorust", category = LocaleCategory::LcAll,
                 "Hello, {}!", ["world"]
             ),
             "Hello, world!"
@@ -175,15 +270,28 @@ mod test {
 
         assert_eq!(
             gettext!(domain = "hellorust", category = LocaleCategory::LcAll,
-                "Singular {}", "Multiple {}", 1, ["World"]
+                "Singular!", "Multiple!", 1
             ),
-            "Singular World",
+            "Singular!",
         );
         assert_eq!(
             gettext!(domain = "hellorust", category = LocaleCategory::LcAll,
-                "Singular {}", "Multiple {}", 2, ["World"]
+                "Singular!", "Multiple!", 2
             ),
-            "Multiple World",
+            "Multiple!",
+        );
+
+        assert_eq!(
+            gettext!(domain = "hellorust", category = LocaleCategory::LcAll,
+                "Singular {}!", "Multiple {}!", 1, ["World"]
+            ),
+            "Singular World!",
+        );
+        assert_eq!(
+            gettext!(domain = "hellorust", category = LocaleCategory::LcAll,
+                "Singular {}!", "Multiple {}!", 2, ["World"]
+            ),
+            "Multiple World!",
         );
     }
 
