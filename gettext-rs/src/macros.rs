@@ -23,80 +23,36 @@ fn freplace(format: &str, args: &[&str]) -> String {
 /// [`gettext`]: fn.gettext.html
 #[macro_export]
 macro_rules! gettext {
-    ($msgid:expr, $($args:expr),+ $(,)?) => {{
-        let format = $crate::gettext($msgid);
+    (domain = $domainname:expr, category = $category:expr, $msgid:expr, $msgid_plural:expr, $n:expr, [$($args:expr),+]) => {{
+        let format = $crate::dcngettext($domainname, $msgid, $msgid_plural, $n, $category);
         $crate::macros::freplace(&format, &[$($args),*])
     }};
-}
 
-/// Like [`dgettext`], but allows for formatting.
-///
-/// It calls [`dgettext`] on `domainname` and `msgid`, and then replaces each occurrence of `{}`
-/// with the next value out of `args`.
-///
-/// [`dgettext`]: fn.dgettext.html
-#[macro_export]
-macro_rules! dgettext {
-    ($domainname:expr, $msgid:expr, $($args:expr),+ $(,)?) => {{
-        let format = $crate::dgettext($domainname, $msgid);
-        $crate::macros::freplace(&format, &[$($args),*])
-    }};
-}
-
-/// Like [`dcgettext`], but allows for formatting.
-///
-/// It calls [`dcgettext`] on `domainname`, `category`, and `msgid`, and then replaces each
-/// occurrence of `{}` with the next value out of `args`.
-///
-/// [`dcgettext`]: fn.dcgettext.html
-#[macro_export]
-macro_rules! dcgettext {
-    ($domainname:expr, $category:expr, $msgid:expr, $($args:expr),+ $(,)?) => {{
+    (domain = $domainname:expr, category = $category:expr, $msgid:expr, [$($args:expr),+]) => {{
         let format = $crate::dcgettext($domainname, $msgid, $category);
         $crate::macros::freplace(&format, &[$($args),*])
     }};
-}
 
-/// Like [`ngettext`], but allows for formatting.
-///
-/// It calls [`ngettext`] on `msgid`, `msgid_plural`, and `n`, and then replaces each occurrence of
-/// `{}` with the next value out of `args`.
-///
-/// [`ngettext`]: fn.ngettext.html
-#[macro_export]
-macro_rules! ngettext {
-    ($msgid:expr, $msgid_plural:expr, $n:expr, $($args:expr),+ $(,)?) => {{
-        let format = $crate::ngettext($msgid, $msgid_plural, $n);
-        $crate::macros::freplace(&format, &[$($args),*])
-    }}
-}
-
-/// Like [`dngettext`], but allows for formatting.
-///
-/// It calls [`dngettext`] on `domainname`, `msgid`, `msgid_plural`, and `n`, and then replaces
-/// each occurrence of `{}` with the next value out of `args`.
-///
-/// [`dngettext`]: fn.dngettext.html
-#[macro_export]
-macro_rules! dngettext {
-    ($domainname:expr, $msgid:expr, $msgid_plural:expr, $n:expr, $($args:expr),+ $(,)?) => {{
+    (domain = $domainname:expr, $msgid:expr, $msgid_plural:expr, $n:expr, [$($args:expr),+]) => {{
         let format = $crate::dngettext($domainname, $msgid, $msgid_plural, $n);
         $crate::macros::freplace(&format, &[$($args),*])
-    }}
-}
+    }};
 
-/// Like [`dcngettext`], but allows for formatting.
-///
-/// It calls [`dcngettext`] on `domainname`, `category`, `msgid`, `msgid_plural`, and `n`, and then
-/// replaces each occurrence of `{}` with the next value out of `args`.
-///
-/// [`dcngettext`]: fn.dcngettext.html
-#[macro_export]
-macro_rules! dcngettext {
-    ($domainname:expr, $category:expr, $msgid:expr, $msgid_plural:expr, $n:expr, $($args:expr),+ $(,)?) => {{
-        let format = $crate::dcngettext($domainname, $msgid, $msgid_plural, $n, $category);
+    (domain = $domainname:expr, $msgid:expr, [$($args:expr),+]) => {{
+        let format = $crate::dgettext($domainname, $msgid);
         $crate::macros::freplace(&format, &[$($args),*])
-    }}
+    }};
+
+
+    ($msgid:expr, $msgid_plural:expr, $n:expr, [$($args:expr),+]) => {{
+        let format = $crate::ngettext($msgid, $msgid_plural, $n);
+        $crate::macros::freplace(&format, &[$($args),*])
+    }};
+
+    ($msgid:expr, [$($args:expr),+]) => {{
+        let format = $crate::gettext($msgid);
+        $crate::macros::freplace(&format, &[$($args),*])
+    }};
 }
 
 /// Like [`pgettext`], but allows for formatting.
@@ -132,29 +88,102 @@ mod test {
     use crate::*;
 
     #[test]
-    fn test_gettext_macro() {
+    fn gettext_singular() {
         setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
 
         bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
         textdomain("hellorust").unwrap();
 
-        assert_eq!(gettext!("Hello, {}!", "world"), "Hello, world!");
         assert_eq!(
-            gettext!("Hello, {} {}!", "small", "world"),
+            gettext!("Hello, {}!", ["world"]),
+            "Hello, world!"
+        );
+        assert_eq!(
+            gettext!("Hello, {} {}!", ["small", "world"]),
             "Hello, small world!"
         );
     }
 
     #[test]
-    fn test_ngettext_macro() {
+    fn gettext_plural() {
         setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
 
         bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
         textdomain("hellorust").unwrap();
 
         assert_eq!(
-            ngettext!("Singular {}!", "Multiple {}!", 2, "Worlds"),
+            gettext!("Singular {}!", "Multiple {}!", 1, ["Worlds"]),
+            "Singular Worlds!"
+        );
+        assert_eq!(
+            gettext!("Singular {}!", "Multiple {}!", 2, ["Worlds"]),
             "Multiple Worlds!"
+        );
+    }
+
+    #[test]
+    fn gettext_domain_singular() {
+        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
+
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+
+        assert_eq!(
+            gettext!(domain = "hellorust", "Hello, {}!", ["world"]),
+            "Hello, world!"
+        );
+    }
+
+    #[test]
+    fn gettext_domain_plural() {
+        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
+
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+
+        assert_eq!(
+            gettext!(domain = "hellrust",
+                "Singular {}!", "Multiple {}!", 1, ["World"]
+            ),
+            "Singular World!"
+        );
+        assert_eq!(
+            gettext!(domain = "hellrust",
+                "Singular {}!", "Multiple {}!", 2, ["World"]
+            ),
+            "Multiple World!"
+        );
+    }
+
+    #[test]
+    fn gettext_domain_category_singular() {
+        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
+
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+
+        assert_eq!(
+            gettext!(domain = "hellorust", category = LocaleCategory::LcAll,
+                "Hello, {}!", ["world"]
+            ),
+            "Hello, world!"
+        );
+    }
+
+    #[test]
+    fn gettext_domain_category_plural() {
+        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
+
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+
+        assert_eq!(
+            gettext!(domain = "hellorust", category = LocaleCategory::LcAll,
+                "Singular {}", "Multiple {}", 1, ["World"]
+            ),
+            "Singular World",
+        );
+        assert_eq!(
+            gettext!(domain = "hellorust", category = LocaleCategory::LcAll,
+                "Singular {}", "Multiple {}", 2, ["World"]
+            ),
+            "Multiple World",
         );
     }
 
@@ -181,58 +210,4 @@ mod test {
         );
     }
 
-    #[test]
-    fn test_dgettext_macro() {
-        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-
-        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
-
-        assert_eq!(
-            "Hello, world!",
-            dgettext!("hellorust", "Hello, {}!", "world")
-        );
-    }
-
-    #[test]
-    fn test_dcgettext_macro() {
-        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-
-        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
-
-        assert_eq!(
-            "Hello, world!",
-            dcgettext!("hellorust", LocaleCategory::LcAll, "Hello, {}!", "world")
-        );
-    }
-
-    #[test]
-    fn test_dcngettext_macro() {
-        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-
-        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
-
-        assert_eq!(
-            "Singular World",
-            dcngettext!(
-                "hellorust",
-                LocaleCategory::LcAll,
-                "Singular {}",
-                "Multiple {}",
-                1,
-                "World"
-            )
-        )
-    }
-
-    #[test]
-    fn test_dngettext_macro() {
-        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-
-        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
-
-        assert_eq!(
-            "Singular World!",
-            dngettext!("hellrust", "Singular {}!", "Multiple {}!", 1, "World")
-        )
-    }
 }
