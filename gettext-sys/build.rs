@@ -1,5 +1,5 @@
 extern crate cc;
-extern crate tempfile;
+extern crate temp_dir;
 
 use std::env;
 use std::ffi::OsString;
@@ -7,7 +7,7 @@ use std::fs;
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use tempfile::tempdir;
+use temp_dir::TempDir;
 
 fn env(name: &str) -> Option<String> {
     let prefix = env::var("TARGET").unwrap().to_uppercase().replace("-", "_");
@@ -161,7 +161,7 @@ fn main() {
 
     let host = env::var("HOST").unwrap();
     let src = env::current_dir().unwrap();
-    let build_dir = tempdir().unwrap();
+    let build_dir = TempDir::new().unwrap();
     let build_dir = build_dir.path();
 
     let cfg = cc::Build::new();
