@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.21.1 - 2021-07-16
+
+### Changed
+- Dependency on `tempdir` is replaced by dependency on `temp-dir`, which is way
+    more lightweight (Amrit Brar)
+
+
+
 ## 0.21.0 - 2021-03-03
 
 ### Added

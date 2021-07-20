@@ -2,7 +2,7 @@
 name = "gettext-sys"
 description = "Raw FFI bindings for gettext"
 license = "MIT"
-version = "0.21.0"
+version = "0.21.1"
 authors = ["Brian Olsen <brian@maven-group.org>"]
 build = "build.rs"
 links = "gettext"
@@ -21,4 +21,4 @@ gettext-system = []
 
 [build-dependencies]
 cc = "1.0"
-tempfile = "3"
+temp-dir = "0.1.11"
