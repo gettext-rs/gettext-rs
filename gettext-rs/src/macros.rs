@@ -4,7 +4,7 @@
 /// Don't call this directly.
 #[doc(hidden)]
 #[allow(dead_code)]
-pub fn rt_format<T: std::fmt::Display>(msgstr: &str, arg: T, pat: &str) -> String {
+pub fn rt_format<T: std::fmt::Display>(msgstr: &str, pat: &str, arg: T) -> String {
     match msgstr.split_once(pat) {
         Some((pre, suf)) => { format!("{}{}{}", pre, arg, suf) }
         None => {
@@ -19,12 +19,16 @@ pub fn rt_format<T: std::fmt::Display>(msgstr: &str, arg: T, pat: &str) -> Strin
 #[macro_export]
 #[doc(hidden)]
 macro_rules! rt_format {
-	( $msgstr:expr, $pat:expr, ) => {
+	( $msgstr:expr, $pat:expr, ) => {{
+        debug_assert!(
+            !$msgstr.contains("{}"),
+            "There are fewer arguments than format directives"
+        );
 		$msgstr
-	};
+	}};
 	( $msgstr:expr, $pat:expr, $arg:expr $(, $rest: expr)* ) => {{
 		$crate::rt_format!(
-            $crate::macros::rt_format(&$msgstr, $arg, $pat),
+            $crate::macros::rt_format(&$msgstr, $pat, $arg),
             $pat,
             $($rest),*
         )
@@ -38,8 +42,8 @@ macro_rules! rt_format {
 ///
 /// # Panics
 ///
-/// When building the `dev` profile,
-/// it panics if the number of arguments doesn't match the number of format directives.
+/// If compiled with debug assertions enabled (as in "dev" profile),
+/// will panic if the number of arguments doesn't match the number of format directives.
 ///
 /// [`gettext`]: fn.gettext.html
 #[macro_export]
@@ -48,14 +52,11 @@ macro_rules! gettext {
         $crate::gettext($msgid)
     };
     ( $msgid:expr, $($args:expr),+ $(,)? ) => {{
-        let mut msgstr = $crate::gettext($msgid);
-        msgstr = $crate::rt_format!(msgstr, "{}", $($args),+);
-        debug_assert!(
-            !msgstr.contains("{}"),
-            "There are less arguments than format directives"
-        );
-
-        msgstr
+        $crate::rt_format!(
+            $crate::gettext($msgid),
+            "{}",
+            $($args),+
+        )
     }};
 }
 
@@ -66,8 +67,8 @@ macro_rules! gettext {
 ///
 /// # Panics
 ///
-/// When building the `dev` profile,
-/// it panics if the number of arguments doesn't match the number of format directives.
+/// If compiled with debug assertions enabled (as in "dev" profile),
+/// will panic if the number of arguments doesn't match the number of format directives.
 ///
 /// [`dgettext`]: fn.dgettext.html
 #[macro_export]
@@ -76,14 +77,11 @@ macro_rules! dgettext {
         $crate::dgettext($domainname, $msgid)
     };
     ( $domainname:expr, $msgid:expr, $($args:expr),+ $(,)? ) => {{
-        let mut msgstr = $crate::dgettext($domainname, $msgid);
-        msgstr = $crate::rt_format!(msgstr, "{}", $($args),+);
-        debug_assert!(
-            !msgstr.contains("{}"),
-            "There are less arguments than format directives"
-        );
-
-        msgstr
+        $crate::rt_format!(
+            $crate::dgettext($domainname, $msgid),
+            "{}",
+            $($args),+
+        )
     }};
 }
 
@@ -94,8 +92,8 @@ macro_rules! dgettext {
 ///
 /// # Panics
 ///
-/// When building the `dev` profile,
-/// it panics if the number of arguments doesn't match the number of format directives.
+/// If compiled with debug assertions enabled (as in "dev" profile),
+/// will panic if the number of arguments doesn't match the number of format directives.
 ///
 /// [`dcgettext`]: fn.dcgettext.html
 #[macro_export]
@@ -104,14 +102,11 @@ macro_rules! dcgettext {
         $crate::dcgettext($domainname, $msgid, $category)
     };
     ( $domainname:expr, $category:expr, $msgid:expr, $($args:expr),+ $(,)? ) => {{
-        let mut msgstr = $crate::dcgettext($domainname, $msgid, $category);
-        msgstr = $crate::rt_format!(msgstr, "{}", $($args),+);
-        debug_assert!(
-            !msgstr.contains("{}"),
-            "There are less arguments than format directives"
-        );
-
-        msgstr
+        $crate::rt_format!(
+            $crate::dcgettext($domainname, $msgid, $category),
+            "{}",
+            $($args),+
+        )
     }};
 }
 
@@ -122,8 +117,8 @@ macro_rules! dcgettext {
 ///
 /// # Panics
 ///
-/// When building the `dev` profile,
-/// it panics if the number of arguments doesn't match the number of format directives.
+/// If compiled with debug assertions enabled (as in "dev" profile),
+/// will panic if the number of arguments doesn't match the number of format directives.
 ///
 /// [`ngettext`]: fn.ngettext.html
 #[macro_export]
@@ -133,16 +128,10 @@ macro_rules! ngettext {
     };
     ( $msgid:expr, $msgid_plural:expr, $n:expr, $($args:expr),+ $(,)? ) => {{
         let mut msgstr = $crate::ngettext($msgid, $msgid_plural, $n);
-        if msgstr.contains("{n}") == true {
-            msgstr = $crate::macros::rt_format(&msgstr, $n, "{n}");
+        if msgstr.contains("{n}") {
+            msgstr = $crate::macros::rt_format(&msgstr, "{n}", $n);
         }
-        msgstr = $crate::rt_format!(msgstr, "{}", $($args),+);
-        debug_assert!(
-            !msgstr.contains("{}"),
-            "There are less arguments than format directives"
-        );
-
-        msgstr
+        $crate::rt_format!(msgstr, "{}", $($args),+)
     }};
 }
 
@@ -153,8 +142,8 @@ macro_rules! ngettext {
 ///
 /// # Panics
 ///
-/// When building the `dev` profile,
-/// it panics if the number of arguments doesn't match the number of format directives.
+/// If compiled with debug assertions enabled (as in "dev" profile),
+/// will panic if the number of arguments doesn't match the number of format directives.
 ///
 /// [`dngettext`]: fn.dngettext.html
 #[macro_export]
@@ -164,16 +153,10 @@ macro_rules! dngettext {
     };
     ( $domainname:expr, $msgid:expr, $msgid_plural:expr, $n:expr, $($args:expr),+ $(,)? ) => {{
         let mut msgstr = $crate::dngettext($domainname, $msgid, $msgid_plural, $n);
-        if msgstr.contains("{n}") == true {
-            msgstr = $crate::macros::rt_format(&msgstr, $n, "{n}");
+        if msgstr.contains("{n}") {
+            msgstr = $crate::macros::rt_format(&msgstr, "{n}", $n);
         }
-        msgstr = $crate::rt_format!(msgstr, "{}", $($args),+);
-        debug_assert!(
-            !msgstr.contains("{}"),
-            "There are less arguments than format directives"
-        );
-
-        msgstr
+        $crate::rt_format!(msgstr, "{}", $($args),+)
     }};
 }
 
@@ -184,8 +167,8 @@ macro_rules! dngettext {
 ///
 /// # Panics
 ///
-/// When building the `dev` profile,
-/// it panics if the number of arguments doesn't match the number of format directives.
+/// If compiled with debug assertions enabled (as in "dev" profile),
+/// will panic if the number of arguments doesn't match the number of format directives.
 ///
 /// [`dcngettext`]: fn.dcngettext.html
 #[macro_export]
@@ -195,16 +178,10 @@ macro_rules! dcngettext {
     };
     ( $domainname:expr, $category:expr, $msgid:expr, $msgid_plural:expr, $n:expr, $($args:expr),+ $(,)? ) => {{
         let mut msgstr = $crate::dcngettext($domainname, $msgid, $msgid_plural, $n, $category);
-        if msgstr.contains("{n}") == true {
-            msgstr = $crate::macros::rt_format(&msgstr, $n, "{n}");
+        if msgstr.contains("{n}") {
+            msgstr = $crate::macros::rt_format(&msgstr, "{n}", $n);
         }
-        msgstr = $crate::rt_format!(msgstr, "{}", $($args),+);
-        debug_assert!(
-            !msgstr.contains("{}"),
-            "There are less arguments than format directives"
-        );
-
-        msgstr
+        $crate::rt_format!(msgstr, "{}", $($args),+)
     }};
 }
 
@@ -215,8 +192,8 @@ macro_rules! dcngettext {
 ///
 /// # Panics
 ///
-/// When building the `dev` profile,
-/// it panics if the number of arguments doesn't match the number of format directives.
+/// If compiled with debug assertions enabled (as in "dev" profile),
+/// will panic if the number of arguments doesn't match the number of format directives.
 ///
 /// [`pgettext`]: fn.pgettext.html
 #[macro_export]
@@ -225,14 +202,11 @@ macro_rules! pgettext {
         $crate::pgettext($msgctxt, $msgid)
     };
     ( $msgctxt:expr, $msgid:expr, $($args:expr),+ $(,)? ) => {{
-        let mut msgstr = $crate::pgettext($msgctxt, $msgid);
-        msgstr = $crate::rt_format!(msgstr, "{}", $($args),+);
-        debug_assert!(
-            !msgstr.contains("{}"),
-            "There are less arguments than format directives"
-        );
-
-        msgstr
+        $crate::rt_format!(
+            $crate::pgettext($msgctxt, $msgid),
+            "{}",
+            $($args),+
+        )
     }};
 }
 
@@ -243,8 +217,8 @@ macro_rules! pgettext {
 ///
 /// # Panics
 ///
-/// When building the `dev` profile,
-/// it panics if the number of arguments doesn't match the number of format directives.
+/// If compiled with debug assertions enabled (as in "dev" profile),
+/// will panic if the number of arguments doesn't match the number of format directives.
 ///
 /// [`npgettext`]: fn.npgettext.html
 #[macro_export]
@@ -254,80 +228,61 @@ macro_rules! npgettext {
     };
     ( $msgctxt:expr, $msgid:expr, $msgid_plural:expr, $n:expr, $($args:expr),+ $(,)? ) => {{
         let mut msgstr = $crate::npgettext($msgctxt, $msgid, $msgid_plural, $n);
-        if msgstr.contains("{n}") == true {
-            msgstr = $crate::macros::rt_format(&msgstr, $n, "{n}");
+        if msgstr.contains("{n}") {
+            msgstr = $crate::macros::rt_format(&msgstr, "{n}", $n);
         }
-        msgstr = $crate::rt_format!(msgstr, "{}", $($args),+);
-        debug_assert!(
-            !msgstr.contains("{}"),
-            "There are less arguments than format directives"
-        );
-
-        msgstr
+        $crate::rt_format!(msgstr, "{}", $($args),+)
     }};
 }
 
 #[cfg(test)]
 mod test {
     use crate::*;
-    use std::panic::catch_unwind;
 
     #[test]
-    fn no_formatting() {
+    fn gettext_no_formatting() {
         setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
         bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
-        {
-            textdomain("hellorust").unwrap();
+        textdomain("hellorust").unwrap();
 
-            assert_eq!(
-                gettext!("Hello, World!"),
-                "Hello, World!"
-            );
-            assert_eq!(
-                ngettext!(
-                    "There is one result",
-                    "There are few results",
-                    2
-                ),
-                "There are few results"
-            );
-            assert_eq!(
-                pgettext!("context",
-                    "Hello, World!"
-                ),
-                "Hello, World!"
-            );
-            assert_eq!(
-                npgettext!("context",
-                    "There is one result",
-                    "There are few results",
-                    2
-                ),
-                "There are few results"
-            );
-        };
+        assert_eq!(
+            gettext!("Hello, World!"),
+            "Hello, World!"
+        );
+    }
+
+    #[test]
+    fn dgettext_no_formatting() {
+        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+
         assert_eq!(
             dgettext!("hellorust",
-                "Hello, World!"
-            ),
+                "Hello, World!"),
             "Hello, World!"
         );
-        assert_eq!(
-            dngettext!("hellorust",
-                "There is one result",
-                "There are few results",
-                2
-            ),
-            "There are few results"
-        );
+    }
+
+    #[test]
+    fn dcgettext_no_formatting() {
+        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+
         assert_eq!(
             dcgettext!("hellorust", LocaleCategory::LcAll,
-                "Hello, World!"
-            ),
+                "Hello, World!"),
             "Hello, World!"
         );
+    }
+
+    #[test]
+    fn ngettext_no_formatting() {
+        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+        textdomain("hellorust").unwrap();
+
         assert_eq!(
-            dcngettext!("hellorust", LocaleCategory::LcAll,
+            ngettext!(
                 "There is one result",
                 "There are few results",
                 2
@@ -337,45 +292,122 @@ mod test {
     }
 
     #[test]
-    fn basic_formatting() {
+    fn dngettext_no_formatting() {
         setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
         bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
-        {
-            textdomain("hellorust").unwrap();
 
-            assert_eq!(
-                gettext!("Hello, {}! {}", "World", "UwU"),
-                "Hello, World! UwU"
-            );
-            assert_eq!(
-                ngettext!(
-                    "There is one \"{}\" in text! {}",
-                    "There are few \"{}\" in text! {}",
-                    2, "UwU", "OwO"
-                ),
-                "There are few \"UwU\" in text! OwO"
-            );
-            assert_eq!(
-                pgettext!("context",
-                    "Hello, {}! {}", "World", "UwU"
-                ),
-                "Hello, World! UwU"
-            );
-            assert_eq!(
-                npgettext!("context",
-                    "There is one \"{}\" in text! {}",
-                    "There are few \"{}\" in text! {}",
-                    2, "UwU", "OwO"
-                ),
-                "There are few \"UwU\" in text! OwO"
-            );
-        };
         assert_eq!(
-            dgettext!("hellorust",
-                "Hello, {}! {}", "World", "UwU"
+            dngettext!("hellorust",
+                "There is one result",
+                "There are few results",
+                2
             ),
+            "There are few results"
+        );
+    }
+
+    #[test]
+    fn dcngettext_no_formatting() {
+        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+
+        assert_eq!(
+            dcngettext!("hellorust", LocaleCategory::LcAll,
+                "There is one result",
+                "There are few results",
+                2
+            ),
+            "There are few results"
+        );
+    }
+
+    #[test]
+    fn pgettext_no_formatting() {
+        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+        textdomain("hellorust").unwrap();
+
+        assert_eq!(
+            pgettext!("context",
+                "Hello, World!"),
+            "Hello, World!"
+        );
+    }
+
+    #[test]
+    fn npgettext_no_formatting() {
+        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+        textdomain("hellorust").unwrap();
+
+        assert_eq!(
+            npgettext!("context",
+                "There is one result",
+                "There are few results",
+                2
+            ),
+            "There are few results"
+        );
+    }
+
+
+    #[test]
+    fn gettext_basic_formatting() {
+        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+        textdomain("hellorust").unwrap();
+
+        assert_eq!(
+            gettext!("Hello, {}! {}", "World", "UwU"),
             "Hello, World! UwU"
         );
+    }
+
+    #[test]
+    fn dgettext_basic_formatting() {
+        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+
+        assert_eq!(
+            dgettext!("hellorust",
+                "Hello, {}! {}", "World", "UwU"),
+            "Hello, World! UwU"
+        );
+    }
+
+    #[test]
+    fn dcgettext_basic_formatting() {
+        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+
+        assert_eq!(
+            dcgettext!("hellorust", LocaleCategory::LcAll,
+                "Hello, {}! {}", "World", "UwU"),
+            "Hello, World! UwU"
+        );
+    }
+
+    #[test]
+    fn ngettext_basic_formatting() {
+        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+        textdomain("hellorust").unwrap();
+
+        assert_eq!(
+            ngettext!(
+                "There is one \"{}\" in text! {}",
+                "There are few \"{}\" in text! {}",
+                2, "UwU", "OwO"
+            ),
+            "There are few \"UwU\" in text! OwO"
+        );
+    }
+
+    #[test]
+    fn dngettext_basic_formatting() {
+        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+
         assert_eq!(
             dngettext!("hellorust",
                 "There is one \"{}\" in text! {}",
@@ -384,12 +416,13 @@ mod test {
             ),
             "There are few \"UwU\" in text! OwO"
         );
-        assert_eq!(
-            dcgettext!("hellorust", LocaleCategory::LcAll,
-                "Hello, {}! {}", "World", "UwU"
-            ),
-            "Hello, World! UwU"
-        );
+    }
+
+    #[test]
+    fn dcngettext_basic_formatting() {
+        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+
         assert_eq!(
             dcngettext!("hellorust", LocaleCategory::LcAll,
                 "There is one \"{}\" in text! {}",
@@ -401,258 +434,274 @@ mod test {
     }
 
     #[test]
-    fn less_arguments_than_parameters() {
+    fn pgettext_basic_formatting() {
         setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
         bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
-        {
-            textdomain("hellorust").unwrap();
+        textdomain("hellorust").unwrap();
 
-            match catch_unwind(|| {
-                gettext!("Hello, {}! {}", "World")
-            }) {
-                Ok(msgstr) => { assert_eq!(msgstr, "Hello, World! {}") }
-                Err(cause) => {
-                    assert_eq!(
-                        cause.downcast_ref::<&str>().unwrap(),
-                        &"There are less arguments than format directives"
-                    );
-                }
-            }
-
-            match catch_unwind(|| {
-                ngettext!(
-                    "There is one \"{}\" in text! {}",
-                    "There are few \"{}\" in text! {}",
-                    2, "UwU"
-                )
-            }) {
-                Ok(msgstr) => { assert_eq!(msgstr, "There are few \"UwU\" in text! {}") }
-                Err(cause) => {
-                    assert_eq!(
-                        cause.downcast_ref::<&str>().unwrap(),
-                        &"There are less arguments than format directives"
-                    );
-                }
-            }
-
-            match catch_unwind(|| {
-                pgettext!("context",
-                    "Hello, {}! {}", "World"
-                )
-            }) {
-                Ok(msgstr) => { assert_eq!(msgstr, "Hello, World! {}") }
-                Err(cause) => {
-                    assert_eq!(
-                        cause.downcast_ref::<&str>().unwrap(),
-                        &"There are less arguments than format directives"
-                    );
-                }
-            }
-
-            match catch_unwind(|| {
-                npgettext!("context",
-                    "There is one \"{}\" in text! {}",
-                    "There are few \"{}\" in text! {}",
-                    2, "UwU"
-                )
-            }) {
-                Ok(msgstr) => { assert_eq!(msgstr, "There are few \"UwU\" in text! {}") }
-                Err(cause) => {
-                    assert_eq!(
-                        cause.downcast_ref::<&str>().unwrap(),
-                        &"There are less arguments than format directives"
-                    );
-                }
-            }
-        };
-
-        match catch_unwind(|| {
-            dgettext!("hellorust",
-                "Hello, {}! {}", "World"
-            )
-        }) {
-            Ok(msgstr) => { assert_eq!(msgstr, "Hello, World! {}") }
-            Err(cause) => {
-                assert_eq!(
-                    cause.downcast_ref::<&str>().unwrap(),
-                    &"There are less arguments than format directives"
-                );
-            }
-        }
-
-        match catch_unwind(|| {
-            dngettext!("hellorust",
-                "There is one \"{}\" in text! {}",
-                "There are few \"{}\" in text! {}",
-                2, "UwU"
-            )
-        }) {
-            Ok(msgstr) => { assert_eq!(msgstr, "There are few \"UwU\" in text! {}") }
-            Err(cause) => {
-                assert_eq!(
-                    cause.downcast_ref::<&str>().unwrap(),
-                    &"There are less arguments than format directives"
-                );
-            }
-        }
-
-        match catch_unwind(|| {
-            dcgettext!("hellorust", LocaleCategory::LcAll,
-                "Hello, {}! {}", "World"
-            )
-        }) {
-            Ok(msgstr) => { assert_eq!(msgstr, "Hello, World! {}") }
-            Err(cause) => {
-                assert_eq!(
-                    cause.downcast_ref::<&str>().unwrap(),
-                    &"There are less arguments than format directives"
-                );
-            }
-        }
-
-        match catch_unwind(|| {
-            dcngettext!("hellorust", LocaleCategory::LcAll,
-                "There is one \"{}\" in text! {}",
-                "There are few \"{}\" in text! {}",
-                2, "UwU"
-            )
-        }) {
-            Ok(msgstr) => { assert_eq!(msgstr, "There are few \"UwU\" in text! {}") }
-            Err(cause) => {
-                assert_eq!(
-                    cause.downcast_ref::<&str>().unwrap(),
-                    &"There are less arguments than format directives"
-                );
-            }
-        }
+        assert_eq!(
+            pgettext!("context",
+                "Hello, {}! {}", "World", "UwU"),
+            "Hello, World! UwU"
+        );
     }
 
     #[test]
-    fn more_arguments_than_parameters() {
+    fn npgettext_basic_formatting() {
         setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
         bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
-        {
-            textdomain("hellorust").unwrap();
+        textdomain("hellorust").unwrap();
 
-            match catch_unwind(|| {
-                gettext!("Hello, {}!", "World", "UwU")
-            }) {
-                Ok(msgstr) => { assert_eq!(msgstr, "Hello, World!") }
-                Err(cause) => {
-                    assert_eq!(
-                        cause.downcast_ref::<&str>().unwrap(),
-                        &"There are more arguments than format directives"
-                    );
-                }
-            }
+        assert_eq!(
+            npgettext!("context",
+                "There is one \"{}\" in text! {}",
+                "There are few \"{}\" in text! {}",
+                2, "UwU", "OwO"
+            ),
+            "There are few \"UwU\" in text! OwO"
+        );
+    }
 
-            match catch_unwind(|| {
-                ngettext!(
-                    "There is one \"{}\" in text!",
-                    "There are few \"{}\" in text!",
-                    2, "UwU", "OwO"
-                )
-            }) {
-                Ok(msgstr) => { assert_eq!(msgstr, "There are few \"UwU\" in text!") }
-                Err(cause) => {
-                    assert_eq!(
-                        cause.downcast_ref::<&str>().unwrap(),
-                        &"There are more arguments than format directives"
-                    );
-                }
-            }
 
-            match catch_unwind(|| {
-                pgettext!("context",
-                    "Hello, {}!", "World", "UwU"
-                )
-            }) {
-                Ok(msgstr) => { assert_eq!(msgstr, "Hello, World!") }
-                Err(cause) => {
-                    assert_eq!(
-                        cause.downcast_ref::<&str>().unwrap(),
-                        &"There are more arguments than format directives"
-                    );
-                }
-            }
+    #[test]
+    #[cfg_attr(debug_assertions, should_panic="There are fewer arguments than format directives")]
+    fn gettext_fewer_arguments_than_parameters() {
+        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+        textdomain("hellorust").unwrap();
 
-            match catch_unwind(|| {
-                npgettext!("context",
-                    "There is one \"{}\" in text!",
-                    "There are few \"{}\" in text!",
-                    2, "UwU", "OwO"
-                )
-            }) {
-                Ok(msgstr) => { assert_eq!(msgstr, "There are few \"UwU\" in text!") }
-                Err(cause) => {
-                    assert_eq!(
-                        cause.downcast_ref::<&str>().unwrap(),
-                        &"There are more arguments than format directives"
-                    );
-                }
-            }
-        };
+        assert_eq!(
+            gettext!("Hello, {}! {}", "World"),
+            "Hello, World! {}"
+        );
+    }
 
-        match catch_unwind(|| {
+    #[test]
+    #[cfg_attr(debug_assertions, should_panic="There are fewer arguments than format directives")]
+    fn dgettext_fewer_arguments_than_parameters() {
+        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+
+        assert_eq!(
             dgettext!("hellorust",
-                "Hello, {}!", "World", "UwU"
-            )
-        }) {
-            Ok(msgstr) => { assert_eq!(msgstr, "Hello, World!") }
-            Err(cause) => {
-                assert_eq!(
-                    cause.downcast_ref::<&str>().unwrap(),
-                    &"There are more arguments than format directives"
-                );
-            }
-        }
+                "Hello, {}! {}", "World"),
+            "Hello, World! {}"
+        );
+    }
 
-        match catch_unwind(|| {
+    #[test]
+    #[cfg_attr(debug_assertions, should_panic="There are fewer arguments than format directives")]
+    fn dcgettext_fewer_arguments_than_parameters() {
+        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+
+        assert_eq!(
+            dcgettext!("hellorust", LocaleCategory::LcAll,
+                "Hello, {}! {}", "World"),
+            "Hello, World! {}"
+        );
+    }
+
+    #[test]
+    #[cfg_attr(debug_assertions, should_panic="There are fewer arguments than format directives")]
+    fn ngettext_fewer_arguments_than_parameters() {
+        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+        textdomain("hellorust").unwrap();
+
+        assert_eq!(
+            ngettext!(
+                "There is one \"{}\" in text! {}",
+                "There are few \"{}\" in text! {}",
+                2, "UwU"
+            ),
+            "There are few \"UwU\" in text! {}"
+        );
+    }
+
+    #[test]
+    #[cfg_attr(debug_assertions, should_panic="There are fewer arguments than format directives")]
+    fn dngettext_fewer_arguments_than_parameters() {
+        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+
+        assert_eq!(
+            dngettext!("hellorust",
+                "There is one \"{}\" in text! {}",
+                "There are few \"{}\" in text! {}",
+                2, "UwU"
+            ),
+            "There are few \"UwU\" in text! {}"
+        );
+    }
+
+    #[test]
+    #[cfg_attr(debug_assertions, should_panic="There are fewer arguments than format directives")]
+    fn dcngettext_fewer_arguments_than_parameters() {
+        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+
+        assert_eq!(
+            dcngettext!("hellorust", LocaleCategory::LcAll,
+                "There is one \"{}\" in text! {}",
+                "There are few \"{}\" in text! {}",
+                2, "UwU"
+            ),
+            "There are few \"UwU\" in text! {}"
+        );
+    }
+
+    #[test]
+    #[cfg_attr(debug_assertions, should_panic="There are fewer arguments than format directives")]
+    fn pgettext_fewer_arguments_than_parameters() {
+        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+        textdomain("hellorust").unwrap();
+
+        assert_eq!(
+            pgettext!("context",
+                "Hello, {}! {}", "World"),
+            "Hello, World! {}"
+        );
+    }
+
+    #[test]
+    #[cfg_attr(debug_assertions, should_panic="There are fewer arguments than format directives")]
+    fn npgettext_fewer_arguments_than_parameters() {
+        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+        textdomain("hellorust").unwrap();
+
+        assert_eq!(
+            npgettext!("context",
+                "There is one \"{}\" in text! {}",
+                "There are few \"{}\" in text! {}",
+                2, "UwU"
+            ),
+            "There are few \"UwU\" in text! {}"
+        );
+    }
+
+
+    #[test]
+    #[cfg_attr(debug_assertions, should_panic="There are more arguments than format directives")]
+    fn gettext_more_arguments_than_parameters() {
+        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+        textdomain("hellorust").unwrap();
+
+        assert_eq!(
+            gettext!("Hello, {}!", "World", "UwU"),
+            "Hello, World!"
+        );
+    }
+
+    #[test]
+    #[cfg_attr(debug_assertions, should_panic="There are more arguments than format directives")]
+    fn dgettext_more_arguments_than_parameters() {
+        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+
+        assert_eq!(
+            dgettext!("hellorust",
+                "Hello, {}!", "World", "UwU"),
+            "Hello, World!"
+        );
+    }
+
+    #[test]
+    #[cfg_attr(debug_assertions, should_panic="There are more arguments than format directives")]
+    fn dcgettext_more_arguments_than_parameters() {
+        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+
+        assert_eq!(
+            dcgettext!("hellorust", LocaleCategory::LcAll,
+                "Hello, {}!", "World", "UwU"),
+            "Hello, World!"
+        );
+    }
+
+    #[test]
+    #[cfg_attr(debug_assertions, should_panic="There are more arguments than format directives")]
+    fn ngettext_more_arguments_than_parameters() {
+        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+        textdomain("hellorust").unwrap();
+
+        assert_eq!(
+            ngettext!(
+                "There is one \"{}\" in text!",
+                "There are few \"{}\" in text!",
+                2, "UwU", "OwO"
+            ),
+            "There are few \"UwU\" in text!"
+        );
+    }
+
+    #[test]
+    #[cfg_attr(debug_assertions, should_panic="There are more arguments than format directives")]
+    fn dngettext_more_arguments_than_parameters() {
+        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+
+        assert_eq!(
             dngettext!("hellorust",
                 "There is one \"{}\" in text!",
                 "There are few \"{}\" in text!",
                 2, "UwU", "OwO"
-            )
-        }) {
-            Ok(msgstr) => { assert_eq!(msgstr, "There are few \"UwU\" in text!") }
-            Err(cause) => {
-                assert_eq!(
-                    cause.downcast_ref::<&str>().unwrap(),
-                    &"There are more arguments than format directives"
-                );
-            }
-        }
+            ),
+            "There are few \"UwU\" in text!"
+        );
+    }
 
-        match catch_unwind(|| {
-            dcgettext!("hellorust", LocaleCategory::LcAll,
-                "Hello, {}!", "World", "UwU"
-            )
-        }) {
-            Ok(msgstr) => { assert_eq!(msgstr, "Hello, World!") }
-            Err(cause) => {
-                assert_eq!(
-                    cause.downcast_ref::<&str>().unwrap(),
-                    &"There are more arguments than format directives"
-                );
-            }
-        }
+    #[test]
+    #[cfg_attr(debug_assertions, should_panic="There are more arguments than format directives")]
+    fn dcngettext_more_arguments_than_parameters() {
+        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
 
-        match catch_unwind(|| {
+        assert_eq!(
             dcngettext!("hellorust", LocaleCategory::LcAll,
                 "There is one \"{}\" in text!",
                 "There are few \"{}\" in text!",
                 2, "UwU", "OwO"
-            )
-        }) {
-            Ok(msgstr) => { assert_eq!(msgstr, "There are few \"UwU\" in text!") }
-            Err(cause) => {
-                assert_eq!(
-                    cause.downcast_ref::<&str>().unwrap(),
-                    &"There are more arguments than format directives"
-                );
-            }
-        }
+            ),
+            "There are few \"UwU\" in text!"
+        );
     }
+
+    #[test]
+    #[cfg_attr(debug_assertions, should_panic="There are more arguments than format directives")]
+    fn pgettext_more_arguments_than_parameters() {
+        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+        textdomain("hellorust").unwrap();
+
+        assert_eq!(
+            pgettext!("context",
+                "Hello, {}!", "World", "UwU"),
+            "Hello, World!"
+        );
+    }
+
+    #[test]
+    #[cfg_attr(debug_assertions, should_panic="There are more arguments than format directives")]
+    fn npgettext_more_arguments_than_parameters() {
+        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+        textdomain("hellorust").unwrap();
+
+        assert_eq!(
+            npgettext!("context",
+                "There is one \"{}\" in text!",
+                "There are few \"{}\" in text!",
+                2, "UwU", "OwO"
+            ),
+            "There are few \"UwU\" in text!"
+        );
+    }
+
 
     #[test]
     fn special_n_formatting() {
@@ -695,73 +744,86 @@ mod test {
         );
     }
 
+
     #[test]
-    fn trailing_comma() {
+    fn gettext_trailing_comma() {
         setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
         bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
-        {
-            textdomain("hellorust").unwrap();
+        textdomain("hellorust").unwrap();
 
-            assert_eq!(
-                gettext!("Hello, World!",),
-                "Hello, World!"
-            );
-            assert_eq!(
-                ngettext!(
-                    "There is one result",
-                    "There are few results",
-                    2,
-                ),
-                "There are few results"
-            );
-            assert_eq!(
-                pgettext!("context",
-                    "Hello, World!",
-                ),
-                "Hello, World!"
-            );
-            assert_eq!(
-                npgettext!("context",
-                    "There is one result",
-                    "There are few results",
-                    2,
-                ),
-                "There are few results"
-            );
+        assert_eq!(
+            gettext!("Hello, World!",),
+            "Hello, World!"
+        );
+        assert_eq!(
+            gettext!("Hello, {}! {}", "World", "UwU",),
+            "Hello, World! UwU"
+        );
+    }
 
-            assert_eq!(
-                gettext!("Hello, {}! {}", "World", "UwU",),
-                "Hello, World! UwU"
-            );
-            assert_eq!(
-                ngettext!(
-                    "There is one \"{}\" in text! {}",
-                    "There are few \"{}\" in text! {}",
-                    2, "UwU", "OwO",
-                ),
-                "There are few \"UwU\" in text! OwO"
-            );
-            assert_eq!(
-                pgettext!("context",
-                    "Hello, {}! {}", "World", "UwU",
-                ),
-                "Hello, World! UwU"
-            );
-            assert_eq!(
-                npgettext!("context",
-                    "There is one \"{}\" in text! {}",
-                    "There are few \"{}\" in text! {}",
-                    2, "UwU", "OwO",
-                ),
-                "There are few \"UwU\" in text! OwO"
-            );
-        };
+    #[test]
+    fn dgettext_trailing_comma() {
+        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+
         assert_eq!(
             dgettext!("hellorust",
-                "Hello, World!",
-            ),
-            "Hello, World!",
+                "Hello, World!",),
+            "Hello, World!"
         );
+        assert_eq!(
+            dgettext!("hellorust",
+                "Hello, {}! {}", "World", "UwU",),
+            "Hello, World! UwU"
+        );
+    }
+
+    #[test]
+    fn dcgettext_trailing_comma() {
+        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+
+        assert_eq!(
+            dcgettext!("hellorust", LocaleCategory::LcAll,
+                "Hello, World!"),
+            "Hello, World!"
+        );
+        assert_eq!(
+            dcgettext!("hellorust", LocaleCategory::LcAll,
+                "Hello, {}! {}", "World", "UwU",),
+            "Hello, World! UwU"
+        );
+    }
+
+    #[test]
+    fn ngettext_trailing_comma() {
+        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+        textdomain("hellorust").unwrap();
+
+        assert_eq!(
+            ngettext!(
+                "There is one result",
+                "There are few results",
+                2,
+            ),
+            "There are few results"
+        );
+        assert_eq!(
+            ngettext!(
+                "There is one \"{}\" in text! {}",
+                "There are few \"{}\" in text! {}",
+                2, "UwU", "OwO",
+            ),
+            "There are few \"UwU\" in text! OwO"
+        );
+    }
+
+    #[test]
+    fn dngettext_trailing_comma() {
+        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+
         assert_eq!(
             dngettext!("hellorust",
                 "There is one result",
@@ -770,21 +832,6 @@ mod test {
             ),
             "There are few results"
         );
-        assert_eq!(
-            dcgettext!("hellorust", LocaleCategory::LcAll,
-                "Hello, World!",
-            ),
-            "Hello, World!"
-        );
-        assert_eq!(
-            dcngettext!("hellorust", LocaleCategory::LcAll,
-                "There is one result",
-                "There are few results",
-                2,
-            ),
-            "There are few results"
-        );
-
         assert_eq!(
             dngettext!("hellorust",
                 "There is one \"{}\" in text! {}",
@@ -793,14 +840,65 @@ mod test {
             ),
             "There are few \"UwU\" in text! OwO"
         );
+    }
+
+    #[test]
+    fn dcngettext_trailing_comma() {
+        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+
         assert_eq!(
-            dcgettext!("hellorust", LocaleCategory::LcAll,
-                "Hello, {}! {}", "World", "UwU",
+            dcngettext!("hellorust", LocaleCategory::LcAll,
+                "There is one result",
+                "There are few results",
+                2,
             ),
-            "Hello, World! UwU"
+            "There are few results"
         );
         assert_eq!(
             dcngettext!("hellorust", LocaleCategory::LcAll,
+                "There is one \"{}\" in text! {}",
+                "There are few \"{}\" in text! {}",
+                2, "UwU", "OwO",
+            ),
+            "There are few \"UwU\" in text! OwO"
+        );
+    }
+
+    #[test]
+    fn pgettext_trailing_comma() {
+        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+        textdomain("hellorust").unwrap();
+
+        assert_eq!(
+            pgettext!("context",
+                "Hello, World!",),
+            "Hello, World!"
+        );
+        assert_eq!(
+            pgettext!("context",
+                "Hello, {}! {}", "World", "UwU",),
+            "Hello, World! UwU"
+        );
+    }
+
+    #[test]
+    fn npgettext_trailing_comma() {
+        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+        textdomain("hellorust").unwrap();
+
+        assert_eq!(
+            npgettext!("context",
+                "There is one result",
+                "There are few results",
+                2,
+            ),
+            "There are few results"
+        );
+        assert_eq!(
+            npgettext!("context",
                 "There is one \"{}\" in text! {}",
                 "There are few \"{}\" in text! {}",
                 2, "UwU", "OwO",
