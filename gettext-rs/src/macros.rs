@@ -113,7 +113,7 @@ macro_rules! dcgettext {
 /// Like [`ngettext`], but allows for formatting.
 ///
 /// It calls [`ngettext`] on `msgid`, `msgid_plural`, and `n`, and then replaces each occurrence of
-/// `{}` with the next value out of `args`.
+/// `{}` with the next value out of `args`, and `{n}` with `n`.
 ///
 /// # Panics
 ///
@@ -123,12 +123,16 @@ macro_rules! dcgettext {
 /// [`ngettext`]: fn.ngettext.html
 #[macro_export]
 macro_rules! ngettext {
-    ( $msgid:expr, $msgid_plural:expr, $n:expr $(,)? ) => {
-        $crate::ngettext($msgid, $msgid_plural, $n)
-    };
+    ( $msgid:expr, $msgid_plural:expr, $n:expr $(,)? ) => {{
+        let mut msgstr = $crate::ngettext($msgid, $msgid_plural, $n);
+        while msgstr.contains("{n}") {
+            msgstr = $crate::macros::rt_format(&msgstr, "{n}", $n);
+        }
+        msgstr
+    }};
     ( $msgid:expr, $msgid_plural:expr, $n:expr, $($args:expr),+ $(,)? ) => {{
         let mut msgstr = $crate::ngettext($msgid, $msgid_plural, $n);
-        if msgstr.contains("{n}") {
+        while msgstr.contains("{n}") {
             msgstr = $crate::macros::rt_format(&msgstr, "{n}", $n);
         }
         $crate::rt_format!(msgstr, "{}", $($args),+)
@@ -138,7 +142,7 @@ macro_rules! ngettext {
 /// Like [`dngettext`], but allows for formatting.
 ///
 /// It calls [`dngettext`] on `domainname`, `msgid`, `msgid_plural`, and `n`, and then replaces
-/// each occurrence of `{}` with the next value out of `args`.
+/// each occurrence of `{}` with the next value out of `args`, and `{n}` with `n`.
 ///
 /// # Panics
 ///
@@ -148,12 +152,16 @@ macro_rules! ngettext {
 /// [`dngettext`]: fn.dngettext.html
 #[macro_export]
 macro_rules! dngettext {
-    ( $domainname:expr, $msgid:expr, $msgid_plural:expr, $n:expr $(,)? ) => {
-        $crate::dngettext($domainname, $msgid, $msgid_plural, $n)
-    };
+    ( $domainname:expr, $msgid:expr, $msgid_plural:expr, $n:expr $(,)? ) => {{
+        let mut msgstr = $crate::dngettext($domainname, $msgid, $msgid_plural, $n);
+        while msgstr.contains("{n}") {
+            msgstr = $crate::macros::rt_format(&msgstr, "{n}", $n);
+        }
+        msgstr
+    }};
     ( $domainname:expr, $msgid:expr, $msgid_plural:expr, $n:expr, $($args:expr),+ $(,)? ) => {{
         let mut msgstr = $crate::dngettext($domainname, $msgid, $msgid_plural, $n);
-        if msgstr.contains("{n}") {
+        while msgstr.contains("{n}") {
             msgstr = $crate::macros::rt_format(&msgstr, "{n}", $n);
         }
         $crate::rt_format!(msgstr, "{}", $($args),+)
@@ -163,7 +171,7 @@ macro_rules! dngettext {
 /// Like [`dcngettext`], but allows for formatting.
 ///
 /// It calls [`dcngettext`] on `domainname`, `category`, `msgid`, `msgid_plural`, and `n`, and then
-/// replaces each occurrence of `{}` with the next value out of `args`.
+/// replaces each occurrence of `{}` with the next value out of `args`, and `{n}` with `n`.
 ///
 /// # Panics
 ///
@@ -173,12 +181,17 @@ macro_rules! dngettext {
 /// [`dcngettext`]: fn.dcngettext.html
 #[macro_export]
 macro_rules! dcngettext {
-    ( $domainname:expr, $category:expr, $msgid:expr, $msgid_plural:expr, $n:expr $(,)? ) => {
-        $crate::dcngettext($domainname, $msgid, $msgid_plural, $n, $category)
-    };
-    ( $domainname:expr, $category:expr, $msgid:expr, $msgid_plural:expr, $n:expr, $($args:expr),+ $(,)? ) => {{
+    ( $domainname:expr, $category:expr, $msgid:expr, $msgid_plural:expr, $n:expr $(,)? ) => {{
         let mut msgstr = $crate::dcngettext($domainname, $msgid, $msgid_plural, $n, $category);
-        if msgstr.contains("{n}") {
+        while msgstr.contains("{n}") {
+            msgstr = $crate::macros::rt_format(&msgstr, "{n}", $n);
+        }
+        msgstr
+    }};
+    ( $domainname:expr, $category:expr,
+      $msgid:expr, $msgid_plural:expr, $n:expr, $($args:expr),+ $(,)? ) => {{
+        let mut msgstr = $crate::dcngettext($domainname, $msgid, $msgid_plural, $n, $category);
+        while msgstr.contains("{n}") {
             msgstr = $crate::macros::rt_format(&msgstr, "{n}", $n);
         }
         $crate::rt_format!(msgstr, "{}", $($args),+)
@@ -213,7 +226,7 @@ macro_rules! pgettext {
 /// Like [`npgettext`], but allows for formatting.
 ///
 /// It calls [`npgettext`] on `msgctxt`, `msgid`, `msgid_plural`, and `n`, and then replaces each
-/// occurrence of `{}` with the next value out of `args`.
+/// occurrence of `{}` with the next value out of `args`, and `{n}` with `n`.
 ///
 /// # Panics
 ///
@@ -223,12 +236,16 @@ macro_rules! pgettext {
 /// [`npgettext`]: fn.npgettext.html
 #[macro_export]
 macro_rules! npgettext {
-    ( $msgctxt:expr, $msgid:expr, $msgid_plural:expr, $n:expr $(,)? ) => {
-        $crate::npgettext($msgctxt, $msgid, $msgid_plural, $n)
-    };
+    ( $msgctxt:expr, $msgid:expr, $msgid_plural:expr, $n:expr $(,)? ) => {{
+        let mut msgstr = $crate::npgettext($msgctxt, $msgid, $msgid_plural, $n);
+        while msgstr.contains("{n}") {
+            msgstr = $crate::macros::rt_format(&msgstr, "{n}", $n);
+        }
+        msgstr
+    }};
     ( $msgctxt:expr, $msgid:expr, $msgid_plural:expr, $n:expr, $($args:expr),+ $(,)? ) => {{
         let mut msgstr = $crate::npgettext($msgctxt, $msgid, $msgid_plural, $n);
-        if msgstr.contains("{n}") {
+        while msgstr.contains("{n}") {
             msgstr = $crate::macros::rt_format(&msgstr, "{n}", $n);
         }
         $crate::rt_format!(msgstr, "{}", $($args),+)
@@ -704,43 +721,96 @@ mod test {
 
 
     #[test]
-    fn special_n_formatting() {
+    fn ngettext_special_n_formatting() {
         setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
         bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
-        {
-            textdomain("hellorust").unwrap();
-            assert_eq!(
-                ngettext!(
-                    "There is {n} \"{}\" in text!",
-                    "There are {n} \"{}\" in text!",
-                    2, "UwU"
-                ),
-                "There are 2 \"UwU\" in text!"
-            );
-            assert_eq!(
-                npgettext!("context",
-                    "There is {n} \"{}\" in text!",
-                    "There are {n} \"{}\" in text!",
-                    2, "UwU"
-                ),
-                "There are 2 \"UwU\" in text!"
-            );
-        };
+        textdomain("hellorust").unwrap();
+
+        assert_eq!(
+            ngettext!(
+                "There is {n} apple! Only {n}!",
+                "There are {n} apples! Only {n}!",
+                2
+            ),
+            "There are 2 apples! Only 2!"
+        );
+        assert_eq!(
+            ngettext!(
+                "There is {n} \"{}\" in text! Only {n}!",
+                "There are {n} \"{}\" in text! Only {n}!",
+                2, "UwU"
+            ),
+            "There are 2 \"UwU\" in text! Only 2!"
+        );
+    }
+
+    #[test]
+    fn dngettext_special_n_formatting() {
+        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+
         assert_eq!(
             dngettext!("hellorust",
-                    "There is {n} \"{}\" in text!",
-                    "There are {n} \"{}\" in text!",
-                    2, "UwU"
-                ),
-            "There are 2 \"UwU\" in text!"
+                "There is {n} apple! Only {n}!",
+                "There are {n} apples! Only {n}!",
+                2
+            ),
+            "There are 2 apples! Only 2!"
+        );
+        assert_eq!(
+            dngettext!("hellorust",
+                "There is {n} \"{}\" in text! Only {n}!",
+                "There are {n} \"{}\" in text! Only {n}!",
+                2, "UwU"
+            ),
+            "There are 2 \"UwU\" in text! Only 2!"
+        );
+    }
+
+    #[test]
+    fn dcngettext_special_n_formatting() {
+        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+
+        assert_eq!(
+            dcngettext!("hellorust", LocaleCategory::LcAll,
+                "There is {n} apple! Only {n}!",
+                "There are {n} apples! Only {n}!",
+                2
+            ),
+            "There are 2 apples! Only 2!"
         );
         assert_eq!(
             dcngettext!("hellorust", LocaleCategory::LcAll,
-                    "There is {n} \"{}\" in text!",
-                    "There are {n} \"{}\" in text!",
-                    2, "UwU"
-                ),
-            "There are 2 \"UwU\" in text!"
+                "There is {n} \"{}\" in text! Only {n}!",
+                "There are {n} \"{}\" in text! Only {n}!",
+                2, "UwU"
+            ),
+            "There are 2 \"UwU\" in text! Only 2!"
+        );
+    }
+
+    #[test]
+    fn npgettext_special_n_formatting() {
+        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
+        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+        textdomain("hellorust").unwrap();
+
+        assert_eq!(
+            npgettext!("context",
+                "There is {n} apple! Only {n}!",
+                "There are {n} apples! Only {n}!",
+                2
+            ),
+            "There are 2 apples! Only 2!"
+        );
+        assert_eq!(
+            npgettext!("context",
+                "There is {n} \"{}\" in text! Only {n}!",
+                "There are {n} \"{}\" in text! Only {n}!",
+                2, "UwU"
+            ),
+            "There are 2 \"UwU\" in text! Only 2!"
         );
     }
 
