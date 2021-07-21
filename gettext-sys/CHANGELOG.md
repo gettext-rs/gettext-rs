@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.21.2 - 2021-07-21
+
+### Fixed
+- Build failure on some systems which put libraries into "lib64" directory (#73)
+    (Alexander Batischev)
+
+
+
 ## 0.21.1 - 2021-07-16
 
 ### Changed
