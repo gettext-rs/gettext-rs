@@ -736,6 +736,22 @@ mod test {
         );
         assert_eq!(
             ngettext!(
+                "There is one apple! Only one!",
+                "There are {n} apples! Only {n}!",
+                1
+            ),
+            "There is one apple! Only one!"
+        );
+        assert_eq!(
+            ngettext!(
+                "There is one apple! Only one!",
+                "There are {n} apples! Only {n}!",
+                2
+            ),
+            "There are 2 apples! Only 2!"
+        );
+        assert_eq!(
+            ngettext!(
                 "There is {n} \"{}\" in text! Only {n}!",
                 "There are {n} \"{}\" in text! Only {n}!",
                 2, "UwU"
@@ -752,6 +768,22 @@ mod test {
         assert_eq!(
             dngettext!("hellorust",
                 "There is {n} apple! Only {n}!",
+                "There are {n} apples! Only {n}!",
+                2
+            ),
+            "There are 2 apples! Only 2!"
+        );
+        assert_eq!(
+            dngettext!("hellorust",
+                "There is one apple! Only one!",
+                "There are {n} apples! Only {n}!",
+                1
+            ),
+            "There is one apple! Only one!"
+        );
+        assert_eq!(
+            dngettext!("hellorust",
+                "There is one apple! Only one!",
                 "There are {n} apples! Only {n}!",
                 2
             ),
@@ -782,6 +814,22 @@ mod test {
         );
         assert_eq!(
             dcngettext!("hellorust", LocaleCategory::LcAll,
+                "There is one apple! Only one!",
+                "There are {n} apples! Only {n}!",
+                1
+            ),
+            "There is one apple! Only one!"
+        );
+        assert_eq!(
+            dcngettext!("hellorust", LocaleCategory::LcAll,
+                "There is one apple! Only one!",
+                "There are {n} apples! Only {n}!",
+                2
+            ),
+            "There are 2 apples! Only 2!"
+        );
+        assert_eq!(
+            dcngettext!("hellorust", LocaleCategory::LcAll,
                 "There is {n} \"{}\" in text! Only {n}!",
                 "There are {n} \"{}\" in text! Only {n}!",
                 2, "UwU"
@@ -799,6 +847,22 @@ mod test {
         assert_eq!(
             npgettext!("context",
                 "There is {n} apple! Only {n}!",
+                "There are {n} apples! Only {n}!",
+                2
+            ),
+            "There are 2 apples! Only 2!"
+        );
+        assert_eq!(
+            npgettext!("context",
+                "There is one apple! Only one!",
+                "There are {n} apples! Only {n}!",
+                1
+            ),
+            "There is one apple! Only one!"
+        );
+        assert_eq!(
+            npgettext!("context",
+                "There is one apple! Only one!",
                 "There are {n} apples! Only {n}!",
                 2
             ),
