@@ -220,6 +220,7 @@ fn main() {
     }
 
     cmd.arg(format!("--prefix={}", &posix_path(&build_dir)));
+    cmd.arg(format!("--libdir={}", &posix_path(&build_dir.join("lib"))));
 
     if target != host && (!target.contains("windows") || !host.contains("windows")) {
         // NOTE GNU terminology

@@ -2,8 +2,8 @@
 name = "gettext-sys"
 description = "Raw FFI bindings for gettext"
 license = "MIT"
-version = "0.21.1"
-authors = ["Brian Olsen <brian@maven-group.org>"]
+version = "0.21.2"
+authors = ["Brian Olsen <brian@maven-group.org>", "Alexander Batischev <eual.jp@gmail.com>"]
 build = "build.rs"
 links = "gettext"
 readme = "README.md"
