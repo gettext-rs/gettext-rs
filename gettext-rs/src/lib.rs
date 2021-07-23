@@ -87,7 +87,7 @@ use std::io;
 use std::os::raw::c_ulong;
 use std::path::PathBuf;
 
-mod macros;
+pub mod macros;
 mod text_domain;
 pub use text_domain::{TextDomain, TextDomainError};
 pub mod getters;
