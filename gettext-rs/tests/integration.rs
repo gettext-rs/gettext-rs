@@ -1,40 +1,223 @@
 extern crate gettextrs;
+#[macro_use]
+extern crate lazy_static;
 
-use gettextrs::*;
+use gettextrs::{getters::*, *};
 
-#[test]
-fn gettext_no_formatting() {
-    setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-    bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
-    textdomain("hellorust").unwrap();
+lazy_static! {
+    // These tests work with global resource, that is set up here once,
+    // and shouldn't be modified in tests.
+    static ref SETUP: () = {
+        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
 
-    assert_eq!(gettext!("Hello, World!"), "Hello, World!");
+        bindtextdomain("bound_domain", "/usr/local/share/locale").unwrap();
+
+        bindtextdomain("initialized_domain", "/usr/local/share/locale").unwrap();
+        textdomain("initialized_domain").unwrap();
+
+        bind_textdomain_codeset("c_domain", "C").unwrap();
+        bind_textdomain_codeset("utf-8_domain", "UTF-8").unwrap();
+    };
 }
 
 #[test]
-fn dgettext_no_formatting() {
-    setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-    bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
-
-    assert_eq!(dgettext!("hellorust", "Hello, World!"), "Hello, World!");
-}
-
-#[test]
-fn dcgettext_no_formatting() {
-    setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-    bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+fn current_textdomain_works() {
+    let _ = *SETUP;
 
     assert_eq!(
-        dcgettext!("hellorust", LocaleCategory::LcAll, "Hello, World!"),
+        current_textdomain().unwrap(),
+        "initialized_domain".as_bytes()
+    );
+}
+
+#[test]
+fn domain_directory_works() {
+    let _ = *SETUP;
+
+    use std::path::PathBuf;
+
+    assert_eq!(
+        domain_directory("bound_domain").unwrap(),
+        PathBuf::from("/usr/local/share/locale")
+    );
+}
+
+#[test]
+fn test_textdomain_codeset() {
+    let _ = *SETUP;
+
+    assert_eq!(
+        textdomain_codeset("c_domain").unwrap(),
+        Some("C".to_string())
+    );
+
+    assert_eq!(
+        textdomain_codeset("utf-8_domain").unwrap(),
+        Some("UTF-8".to_string())
+    );
+}
+
+#[test]
+fn gettext_fn() {
+    let _ = *SETUP;
+
+    assert_eq!(gettext("Hello, World!"), "Hello, World!");
+}
+
+#[test]
+fn dgettext_fn() {
+    let _ = *SETUP;
+
+    assert_eq!(
+        current_textdomain().unwrap(),
+        "initialized_domain".as_bytes()
+    );
+
+    assert_eq!(dgettext("bound_domain", "Hello, World!"), "Hello, World!");
+}
+
+#[test]
+fn dcgettext_fn() {
+    let _ = *SETUP;
+
+    assert_eq!(
+        current_textdomain().unwrap(),
+        "initialized_domain".as_bytes()
+    );
+
+    assert_eq!(
+        dcgettext("bound_domain", "Hello, World!", LocaleCategory::LcAll),
         "Hello, World!"
     );
 }
 
 #[test]
-fn ngettext_no_formatting() {
-    setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-    bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
-    textdomain("hellorust").unwrap();
+fn pgettext_fn() {
+    let _ = *SETUP;
+
+    assert_eq!(
+        current_textdomain().unwrap(),
+        "initialized_domain".as_bytes()
+    );
+
+    assert_eq!(pgettext("context", "Hello, World!"), "Hello, World!");
+}
+
+#[test]
+fn ngettext_fn() {
+    let _ = *SETUP;
+
+    assert_eq!(
+        current_textdomain().unwrap(),
+        "initialized_domain".as_bytes()
+    );
+
+    assert_eq!(
+        ngettext("Hello, World!", "Hello, Worlds!", 1),
+        "Hello, World!"
+    );
+    assert_eq!(
+        ngettext("Hello, World!", "Hello, Worlds!", 2),
+        "Hello, Worlds!"
+    );
+}
+
+#[test]
+fn dngettext_fn() {
+    let _ = *SETUP;
+
+    assert_eq!(
+        current_textdomain().unwrap(),
+        "initialized_domain".as_bytes()
+    );
+
+    assert_eq!(
+        dngettext("bound_domain", "Hello, World!", "Hello, Worlds!", 1),
+        "Hello, World!"
+    );
+    assert_eq!(
+        dngettext("bound_domain", "Hello, World!", "Hello, Worlds!", 2),
+        "Hello, Worlds!"
+    );
+}
+
+#[test]
+fn dcngettext_fn() {
+    let _ = *SETUP;
+
+    assert_eq!(
+        current_textdomain().unwrap(),
+        "initialized_domain".as_bytes()
+    );
+
+    assert_eq!(
+        dcngettext(
+            "bound_domain",
+            "Hello, World!",
+            "Hello, Worlds!",
+            1,
+            LocaleCategory::LcAll
+        ),
+        "Hello, World!"
+    );
+    assert_eq!(
+        dcngettext(
+            "bound_domain",
+            "Hello, World!",
+            "Hello, Worlds!",
+            2,
+            LocaleCategory::LcAll
+        ),
+        "Hello, Worlds!"
+    );
+}
+
+#[test]
+fn npgettext_fn() {
+    let _ = *SETUP;
+
+    assert_eq!(
+        current_textdomain().unwrap(),
+        "initialized_domain".as_bytes()
+    );
+
+    assert_eq!(
+        npgettext("context", "Hello, World!", "Hello, Worlds!", 1),
+        "Hello, World!"
+    );
+    assert_eq!(
+        npgettext("context", "Hello, World!", "Hello, Worlds!", 2),
+        "Hello, Worlds!"
+    );
+}
+
+#[test]
+fn gettext_macro_no_formatting() {
+    let _ = *SETUP;
+
+    assert_eq!(gettext!("Hello, World!"), "Hello, World!");
+}
+
+#[test]
+fn dgettext_macro_no_formatting() {
+    let _ = *SETUP;
+
+    assert_eq!(dgettext!("bound_domain", "Hello, World!"), "Hello, World!");
+}
+
+#[test]
+fn dcgettext_macro_no_formatting() {
+    let _ = *SETUP;
+
+    assert_eq!(
+        dcgettext!("bound_domain", LocaleCategory::LcAll, "Hello, World!"),
+        "Hello, World!"
+    );
+}
+
+#[test]
+fn ngettext_macro_no_formatting() {
+    let _ = *SETUP;
 
     assert_eq!(
         ngettext!("There is one result", "There are few results", 2),
@@ -43,13 +226,12 @@ fn ngettext_no_formatting() {
 }
 
 #[test]
-fn dngettext_no_formatting() {
-    setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-    bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+fn dngettext_macro_no_formatting() {
+    let _ = *SETUP;
 
     assert_eq!(
         dngettext!(
-            "hellorust",
+            "bound_domain",
             "There is one result",
             "There are few results",
             2
@@ -59,13 +241,12 @@ fn dngettext_no_formatting() {
 }
 
 #[test]
-fn dcngettext_no_formatting() {
-    setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-    bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+fn dcngettext_macro_no_formatting() {
+    let _ = *SETUP;
 
     assert_eq!(
         dcngettext!(
-            "hellorust",
+            "bound_domain",
             LocaleCategory::LcAll,
             "There is one result",
             "There are few results",
@@ -76,19 +257,15 @@ fn dcngettext_no_formatting() {
 }
 
 #[test]
-fn pgettext_no_formatting() {
-    setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-    bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
-    textdomain("hellorust").unwrap();
+fn pgettext_macro_no_formatting() {
+    let _ = *SETUP;
 
     assert_eq!(pgettext!("context", "Hello, World!"), "Hello, World!");
 }
 
 #[test]
-fn npgettext_no_formatting() {
-    setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-    bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
-    textdomain("hellorust").unwrap();
+fn npgettext_macro_no_formatting() {
+    let _ = *SETUP;
 
     assert_eq!(
         npgettext!("context", "There is one result", "There are few results", 2),
@@ -97,10 +274,8 @@ fn npgettext_no_formatting() {
 }
 
 #[test]
-fn gettext_basic_formatting() {
-    setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-    bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
-    textdomain("hellorust").unwrap();
+fn gettext_macro_basic_formatting() {
+    let _ = *SETUP;
 
     assert_eq!(
         gettext!("Hello, {}! {}", "World", "UwU"),
@@ -109,24 +284,22 @@ fn gettext_basic_formatting() {
 }
 
 #[test]
-fn dgettext_basic_formatting() {
-    setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-    bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+fn dgettext_macro_basic_formatting() {
+    let _ = *SETUP;
 
     assert_eq!(
-        dgettext!("hellorust", "Hello, {}! {}", "World", "UwU"),
+        dgettext!("bound_domain", "Hello, {}! {}", "World", "UwU"),
         "Hello, World! UwU"
     );
 }
 
 #[test]
-fn dcgettext_basic_formatting() {
-    setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-    bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+fn dcgettext_macro_basic_formatting() {
+    let _ = *SETUP;
 
     assert_eq!(
         dcgettext!(
-            "hellorust",
+            "bound_domain",
             LocaleCategory::LcAll,
             "Hello, {}! {}",
             "World",
@@ -137,10 +310,8 @@ fn dcgettext_basic_formatting() {
 }
 
 #[test]
-fn ngettext_basic_formatting() {
-    setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-    bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
-    textdomain("hellorust").unwrap();
+fn ngettext_macro_basic_formatting() {
+    let _ = *SETUP;
 
     assert_eq!(
         ngettext!(
@@ -155,13 +326,12 @@ fn ngettext_basic_formatting() {
 }
 
 #[test]
-fn dngettext_basic_formatting() {
-    setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-    bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+fn dngettext_macro_basic_formatting() {
+    let _ = *SETUP;
 
     assert_eq!(
         dngettext!(
-            "hellorust",
+            "bound_domain",
             "There is one \"{}\" in text! {}",
             "There are few \"{}\" in text! {}",
             2,
@@ -173,13 +343,12 @@ fn dngettext_basic_formatting() {
 }
 
 #[test]
-fn dcngettext_basic_formatting() {
-    setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-    bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+fn dcngettext_macro_basic_formatting() {
+    let _ = *SETUP;
 
     assert_eq!(
         dcngettext!(
-            "hellorust",
+            "bound_domain",
             LocaleCategory::LcAll,
             "There is one \"{}\" in text! {}",
             "There are few \"{}\" in text! {}",
@@ -192,10 +361,8 @@ fn dcngettext_basic_formatting() {
 }
 
 #[test]
-fn pgettext_basic_formatting() {
-    setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-    bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
-    textdomain("hellorust").unwrap();
+fn pgettext_macro_basic_formatting() {
+    let _ = *SETUP;
 
     assert_eq!(
         pgettext!("context", "Hello, {}! {}", "World", "UwU"),
@@ -204,10 +371,8 @@ fn pgettext_basic_formatting() {
 }
 
 #[test]
-fn npgettext_basic_formatting() {
-    setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-    bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
-    textdomain("hellorust").unwrap();
+fn npgettext_macro_basic_formatting() {
+    let _ = *SETUP;
 
     assert_eq!(
         npgettext!(
@@ -227,10 +392,8 @@ fn npgettext_basic_formatting() {
     debug_assertions,
     should_panic = "There are fewer arguments than format directives"
 )]
-fn gettext_fewer_arguments_than_parameters() {
-    setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-    bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
-    textdomain("hellorust").unwrap();
+fn gettext_macro_fewer_arguments_than_parameters() {
+    let _ = *SETUP;
 
     assert_eq!(gettext!("Hello, {}! {}", "World"), "Hello, World! {}");
 }
@@ -240,12 +403,11 @@ fn gettext_fewer_arguments_than_parameters() {
     debug_assertions,
     should_panic = "There are fewer arguments than format directives"
 )]
-fn dgettext_fewer_arguments_than_parameters() {
-    setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-    bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+fn dgettext_macro_fewer_arguments_than_parameters() {
+    let _ = *SETUP;
 
     assert_eq!(
-        dgettext!("hellorust", "Hello, {}! {}", "World"),
+        dgettext!("bound_domain", "Hello, {}! {}", "World"),
         "Hello, World! {}"
     );
 }
@@ -255,12 +417,16 @@ fn dgettext_fewer_arguments_than_parameters() {
     debug_assertions,
     should_panic = "There are fewer arguments than format directives"
 )]
-fn dcgettext_fewer_arguments_than_parameters() {
-    setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-    bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+fn dcgettext_macro_fewer_arguments_than_parameters() {
+    let _ = *SETUP;
 
     assert_eq!(
-        dcgettext!("hellorust", LocaleCategory::LcAll, "Hello, {}! {}", "World"),
+        dcgettext!(
+            "bound_domain",
+            LocaleCategory::LcAll,
+            "Hello, {}! {}",
+            "World"
+        ),
         "Hello, World! {}"
     );
 }
@@ -270,10 +436,8 @@ fn dcgettext_fewer_arguments_than_parameters() {
     debug_assertions,
     should_panic = "There are fewer arguments than format directives"
 )]
-fn ngettext_fewer_arguments_than_parameters() {
-    setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-    bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
-    textdomain("hellorust").unwrap();
+fn ngettext_macro_fewer_arguments_than_parameters() {
+    let _ = *SETUP;
 
     assert_eq!(
         ngettext!(
@@ -291,13 +455,12 @@ fn ngettext_fewer_arguments_than_parameters() {
     debug_assertions,
     should_panic = "There are fewer arguments than format directives"
 )]
-fn dngettext_fewer_arguments_than_parameters() {
-    setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-    bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+fn dngettext_macro_fewer_arguments_than_parameters() {
+    let _ = *SETUP;
 
     assert_eq!(
         dngettext!(
-            "hellorust",
+            "bound_domain",
             "There is one \"{}\" in text! {}",
             "There are few \"{}\" in text! {}",
             2,
@@ -312,13 +475,12 @@ fn dngettext_fewer_arguments_than_parameters() {
     debug_assertions,
     should_panic = "There are fewer arguments than format directives"
 )]
-fn dcngettext_fewer_arguments_than_parameters() {
-    setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-    bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+fn dcngettext_macro_fewer_arguments_than_parameters() {
+    let _ = *SETUP;
 
     assert_eq!(
         dcngettext!(
-            "hellorust",
+            "bound_domain",
             LocaleCategory::LcAll,
             "There is one \"{}\" in text! {}",
             "There are few \"{}\" in text! {}",
@@ -334,10 +496,8 @@ fn dcngettext_fewer_arguments_than_parameters() {
     debug_assertions,
     should_panic = "There are fewer arguments than format directives"
 )]
-fn pgettext_fewer_arguments_than_parameters() {
-    setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-    bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
-    textdomain("hellorust").unwrap();
+fn pgettext_macro_fewer_arguments_than_parameters() {
+    let _ = *SETUP;
 
     assert_eq!(
         pgettext!("context", "Hello, {}! {}", "World"),
@@ -350,10 +510,8 @@ fn pgettext_fewer_arguments_than_parameters() {
     debug_assertions,
     should_panic = "There are fewer arguments than format directives"
 )]
-fn npgettext_fewer_arguments_than_parameters() {
-    setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-    bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
-    textdomain("hellorust").unwrap();
+fn npgettext_macro_fewer_arguments_than_parameters() {
+    let _ = *SETUP;
 
     assert_eq!(
         npgettext!(
@@ -372,10 +530,8 @@ fn npgettext_fewer_arguments_than_parameters() {
     debug_assertions,
     should_panic = "There are more arguments than format directives"
 )]
-fn gettext_more_arguments_than_parameters() {
-    setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-    bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
-    textdomain("hellorust").unwrap();
+fn gettext_macro_more_arguments_than_parameters() {
+    let _ = *SETUP;
 
     assert_eq!(gettext!("Hello, {}!", "World", "UwU"), "Hello, World!");
 }
@@ -385,12 +541,11 @@ fn gettext_more_arguments_than_parameters() {
     debug_assertions,
     should_panic = "There are more arguments than format directives"
 )]
-fn dgettext_more_arguments_than_parameters() {
-    setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-    bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+fn dgettext_macro_more_arguments_than_parameters() {
+    let _ = *SETUP;
 
     assert_eq!(
-        dgettext!("hellorust", "Hello, {}!", "World", "UwU"),
+        dgettext!("bound_domain", "Hello, {}!", "World", "UwU"),
         "Hello, World!"
     );
 }
@@ -400,13 +555,12 @@ fn dgettext_more_arguments_than_parameters() {
     debug_assertions,
     should_panic = "There are more arguments than format directives"
 )]
-fn dcgettext_more_arguments_than_parameters() {
-    setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-    bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+fn dcgettext_macro_more_arguments_than_parameters() {
+    let _ = *SETUP;
 
     assert_eq!(
         dcgettext!(
-            "hellorust",
+            "bound_domain",
             LocaleCategory::LcAll,
             "Hello, {}!",
             "World",
@@ -421,10 +575,8 @@ fn dcgettext_more_arguments_than_parameters() {
     debug_assertions,
     should_panic = "There are more arguments than format directives"
 )]
-fn ngettext_more_arguments_than_parameters() {
-    setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-    bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
-    textdomain("hellorust").unwrap();
+fn ngettext_macro_more_arguments_than_parameters() {
+    let _ = *SETUP;
 
     assert_eq!(
         ngettext!(
@@ -443,13 +595,12 @@ fn ngettext_more_arguments_than_parameters() {
     debug_assertions,
     should_panic = "There are more arguments than format directives"
 )]
-fn dngettext_more_arguments_than_parameters() {
-    setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-    bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+fn dngettext_macro_more_arguments_than_parameters() {
+    let _ = *SETUP;
 
     assert_eq!(
         dngettext!(
-            "hellorust",
+            "bound_domain",
             "There is one \"{}\" in text!",
             "There are few \"{}\" in text!",
             2,
@@ -465,13 +616,12 @@ fn dngettext_more_arguments_than_parameters() {
     debug_assertions,
     should_panic = "There are more arguments than format directives"
 )]
-fn dcngettext_more_arguments_than_parameters() {
-    setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-    bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+fn dcngettext_macro_more_arguments_than_parameters() {
+    let _ = *SETUP;
 
     assert_eq!(
         dcngettext!(
-            "hellorust",
+            "bound_domain",
             LocaleCategory::LcAll,
             "There is one \"{}\" in text!",
             "There are few \"{}\" in text!",
@@ -488,10 +638,8 @@ fn dcngettext_more_arguments_than_parameters() {
     debug_assertions,
     should_panic = "There are more arguments than format directives"
 )]
-fn pgettext_more_arguments_than_parameters() {
-    setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-    bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
-    textdomain("hellorust").unwrap();
+fn pgettext_macro_more_arguments_than_parameters() {
+    let _ = *SETUP;
 
     assert_eq!(
         pgettext!("context", "Hello, {}!", "World", "UwU"),
@@ -504,10 +652,8 @@ fn pgettext_more_arguments_than_parameters() {
     debug_assertions,
     should_panic = "There are more arguments than format directives"
 )]
-fn npgettext_more_arguments_than_parameters() {
-    setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-    bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
-    textdomain("hellorust").unwrap();
+fn npgettext_macro_more_arguments_than_parameters() {
+    let _ = *SETUP;
 
     assert_eq!(
         npgettext!(
@@ -523,10 +669,8 @@ fn npgettext_more_arguments_than_parameters() {
 }
 
 #[test]
-fn ngettext_special_n_formatting() {
-    setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-    bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
-    textdomain("hellorust").unwrap();
+fn ngettext_macro_special_n_formatting() {
+    let _ = *SETUP;
 
     assert_eq!(
         ngettext!(
@@ -564,13 +708,12 @@ fn ngettext_special_n_formatting() {
 }
 
 #[test]
-fn dngettext_special_n_formatting() {
-    setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-    bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+fn dngettext_macro_special_n_formatting() {
+    let _ = *SETUP;
 
     assert_eq!(
         dngettext!(
-            "hellorust",
+            "bound_domain",
             "There is {n} apple! Only {n}!",
             "There are {n} apples! Only {n}!",
             2
@@ -579,7 +722,7 @@ fn dngettext_special_n_formatting() {
     );
     assert_eq!(
         dngettext!(
-            "hellorust",
+            "bound_domain",
             "There is one apple! Only one!",
             "There are {n} apples! Only {n}!",
             1
@@ -588,7 +731,7 @@ fn dngettext_special_n_formatting() {
     );
     assert_eq!(
         dngettext!(
-            "hellorust",
+            "bound_domain",
             "There is one apple! Only one!",
             "There are {n} apples! Only {n}!",
             2
@@ -597,7 +740,7 @@ fn dngettext_special_n_formatting() {
     );
     assert_eq!(
         dngettext!(
-            "hellorust",
+            "bound_domain",
             "There is {n} \"{}\" in text! Only {n}!",
             "There are {n} \"{}\" in text! Only {n}!",
             2,
@@ -608,13 +751,12 @@ fn dngettext_special_n_formatting() {
 }
 
 #[test]
-fn dcngettext_special_n_formatting() {
-    setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-    bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+fn dcngettext_macro_special_n_formatting() {
+    let _ = *SETUP;
 
     assert_eq!(
         dcngettext!(
-            "hellorust",
+            "bound_domain",
             LocaleCategory::LcAll,
             "There is {n} apple! Only {n}!",
             "There are {n} apples! Only {n}!",
@@ -624,7 +766,7 @@ fn dcngettext_special_n_formatting() {
     );
     assert_eq!(
         dcngettext!(
-            "hellorust",
+            "bound_domain",
             LocaleCategory::LcAll,
             "There is one apple! Only one!",
             "There are {n} apples! Only {n}!",
@@ -634,7 +776,7 @@ fn dcngettext_special_n_formatting() {
     );
     assert_eq!(
         dcngettext!(
-            "hellorust",
+            "bound_domain",
             LocaleCategory::LcAll,
             "There is one apple! Only one!",
             "There are {n} apples! Only {n}!",
@@ -644,7 +786,7 @@ fn dcngettext_special_n_formatting() {
     );
     assert_eq!(
         dcngettext!(
-            "hellorust",
+            "bound_domain",
             LocaleCategory::LcAll,
             "There is {n} \"{}\" in text! Only {n}!",
             "There are {n} \"{}\" in text! Only {n}!",
@@ -656,10 +798,8 @@ fn dcngettext_special_n_formatting() {
 }
 
 #[test]
-fn npgettext_special_n_formatting() {
-    setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-    bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
-    textdomain("hellorust").unwrap();
+fn npgettext_macro_special_n_formatting() {
+    let _ = *SETUP;
 
     assert_eq!(
         npgettext!(
@@ -701,10 +841,8 @@ fn npgettext_special_n_formatting() {
 }
 
 #[test]
-fn gettext_trailing_comma() {
-    setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-    bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
-    textdomain("hellorust").unwrap();
+fn gettext_macro_trailing_comma() {
+    let _ = *SETUP;
 
     assert_eq!(gettext!("Hello, World!",), "Hello, World!");
     assert_eq!(
@@ -714,29 +852,27 @@ fn gettext_trailing_comma() {
 }
 
 #[test]
-fn dgettext_trailing_comma() {
-    setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-    bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+fn dgettext_macro_trailing_comma() {
+    let _ = *SETUP;
 
-    assert_eq!(dgettext!("hellorust", "Hello, World!",), "Hello, World!");
+    assert_eq!(dgettext!("bound_domain", "Hello, World!",), "Hello, World!");
     assert_eq!(
-        dgettext!("hellorust", "Hello, {}! {}", "World", "UwU",),
+        dgettext!("bound_domain", "Hello, {}! {}", "World", "UwU",),
         "Hello, World! UwU"
     );
 }
 
 #[test]
-fn dcgettext_trailing_comma() {
-    setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-    bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+fn dcgettext_macro_trailing_comma() {
+    let _ = *SETUP;
 
     assert_eq!(
-        dcgettext!("hellorust", LocaleCategory::LcAll, "Hello, World!"),
+        dcgettext!("bound_domain", LocaleCategory::LcAll, "Hello, World!"),
         "Hello, World!"
     );
     assert_eq!(
         dcgettext!(
-            "hellorust",
+            "bound_domain",
             LocaleCategory::LcAll,
             "Hello, {}! {}",
             "World",
@@ -747,10 +883,8 @@ fn dcgettext_trailing_comma() {
 }
 
 #[test]
-fn ngettext_trailing_comma() {
-    setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-    bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
-    textdomain("hellorust").unwrap();
+fn ngettext_macro_trailing_comma() {
+    let _ = *SETUP;
 
     assert_eq!(
         ngettext!("There is one result", "There are few results", 2,),
@@ -769,13 +903,12 @@ fn ngettext_trailing_comma() {
 }
 
 #[test]
-fn dngettext_trailing_comma() {
-    setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-    bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+fn dngettext_macro_trailing_comma() {
+    let _ = *SETUP;
 
     assert_eq!(
         dngettext!(
-            "hellorust",
+            "bound_domain",
             "There is one result",
             "There are few results",
             2,
@@ -784,7 +917,7 @@ fn dngettext_trailing_comma() {
     );
     assert_eq!(
         dngettext!(
-            "hellorust",
+            "bound_domain",
             "There is one \"{}\" in text! {}",
             "There are few \"{}\" in text! {}",
             2,
@@ -796,13 +929,12 @@ fn dngettext_trailing_comma() {
 }
 
 #[test]
-fn dcngettext_trailing_comma() {
-    setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-    bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
+fn dcngettext_macro_trailing_comma() {
+    let _ = *SETUP;
 
     assert_eq!(
         dcngettext!(
-            "hellorust",
+            "bound_domain",
             LocaleCategory::LcAll,
             "There is one result",
             "There are few results",
@@ -812,7 +944,7 @@ fn dcngettext_trailing_comma() {
     );
     assert_eq!(
         dcngettext!(
-            "hellorust",
+            "bound_domain",
             LocaleCategory::LcAll,
             "There is one \"{}\" in text! {}",
             "There are few \"{}\" in text! {}",
@@ -825,10 +957,8 @@ fn dcngettext_trailing_comma() {
 }
 
 #[test]
-fn pgettext_trailing_comma() {
-    setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-    bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
-    textdomain("hellorust").unwrap();
+fn pgettext_macro_trailing_comma() {
+    let _ = *SETUP;
 
     assert_eq!(pgettext!("context", "Hello, World!",), "Hello, World!");
     assert_eq!(
@@ -838,10 +968,8 @@ fn pgettext_trailing_comma() {
 }
 
 #[test]
-fn npgettext_trailing_comma() {
-    setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-    bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
-    textdomain("hellorust").unwrap();
+fn npgettext_macro_trailing_comma() {
+    let _ = *SETUP;
 
     assert_eq!(
         npgettext!("context", "There is one result", "There are few results", 2,),
