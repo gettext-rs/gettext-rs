@@ -93,6 +93,7 @@ fn main() {
             // gettext doesn't come with a pkg-config file
             let gnu_root = get_windows_gnu_root();
             println!("cargo:rustc-link-search=native={}/lib", &gnu_root);
+            println!("cargo:rustc-link-search=native={}/sys-root/mingw/lib", &gnu_root);
             println!("cargo:rustc-link-search=native={}/../usr/lib", &gnu_root);
             println!("cargo:rustc-link-lib=dylib=intl");
             // FIXME: should pthread support be optional?
@@ -270,6 +271,10 @@ fn main() {
     if target.contains("windows") {
         println!(
             "cargo:rustc-link-search=native={}/lib",
+            &get_windows_gnu_root()
+        );
+        println!(
+            "cargo:rustc-link-search=native={}/sys-root/mingw/lib",
             &get_windows_gnu_root()
         );
         println!("cargo:rustc-link-lib=dylib=iconv");
