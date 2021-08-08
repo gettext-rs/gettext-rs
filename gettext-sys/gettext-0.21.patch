@@ -1,0 +1,113 @@
+diff -ur /tmp/gettext-0.21/gettext-tools/configure ./gettext-tools/configure
+--- /tmp/gettext-0.21/gettext-tools/configure	2020-07-26 22:59:18.000000000 +0200
++++ ./gettext-tools/configure	2021-08-08 20:50:11.199799569 +0200
+@@ -16115,6 +16115,8 @@
+   ;;
+ esac
+ 
++archive_cmds_need_lc=no # Needed to cross-compile using MinGW anyway
++archive_cmds_need_lc_CXX=no # Needed to cross-compile using MinGW anyway
+ 
+ 
+ 
+diff -ur /tmp/gettext-0.21/gettext-tools/libgettextpo/Makefile.am ./gettext-tools/libgettextpo/Makefile.am
+--- /tmp/gettext-0.21/gettext-tools/libgettextpo/Makefile.am	2020-07-26 22:31:02.000000000 +0200
++++ ./gettext-tools/libgettextpo/Makefile.am	2021-08-07 12:37:42.423709109 +0200
+@@ -111,7 +111,7 @@
+ libgettextpo_la_LDFLAGS = \
+   -version-info $(LTV_CURRENT):$(LTV_REVISION):$(LTV_AGE) \
+   -rpath $(libdir) \
+-  @LTLIBINTL@ @LTLIBICONV@ -lc -no-undefined
++  @LTLIBINTL@ @LTLIBICONV@ -no-undefined
+ 
+ # Tell the mingw or Cygwin linker which symbols to export.
+ if WOE32DLL
+diff -ur /tmp/gettext-0.21/gettext-tools/libgettextpo/Makefile.in ./gettext-tools/libgettextpo/Makefile.in
+--- /tmp/gettext-0.21/gettext-tools/libgettextpo/Makefile.in	2020-07-26 23:04:58.000000000 +0200
++++ ./gettext-tools/libgettextpo/Makefile.in	2021-08-07 12:37:29.275805103 +0200
+@@ -2548,7 +2548,7 @@
+ libgettextpo_la_LIBADD = libgnu.la $(WOE32_LIBADD) $(LTLIBUNISTRING)
+ libgettextpo_la_LDFLAGS = -version-info \
+ 	$(LTV_CURRENT):$(LTV_REVISION):$(LTV_AGE) -rpath $(libdir) \
+-	@LTLIBINTL@ @LTLIBICONV@ -lc -no-undefined $(am__append_2) \
++	@LTLIBINTL@ @LTLIBICONV@ -no-undefined $(am__append_2) \
+ 	$(am__append_3) $(am__append_4)
+ @WOE32_FALSE@WOE32_LIBADD = 
+ @WOE32_TRUE@WOE32_LIBADD = libgettextpo.res.lo
+diff -ur /tmp/gettext-0.21/gettext-tools/src/Makefile.am ./gettext-tools/src/Makefile.am
+--- /tmp/gettext-0.21/gettext-tools/src/Makefile.am	2020-06-12 21:23:45.000000000 +0200
++++ ./gettext-tools/src/Makefile.am	2021-08-07 12:37:54.671619709 +0200
+@@ -316,7 +316,7 @@
+ # use iconv().
+ libgettextsrc_la_LDFLAGS = \
+   -release @VERSION@ \
+-  ../gnulib-lib/libgettextlib.la $(LTLIBUNISTRING) $(LT_LIBTEXTSTYLE) @LTLIBINTL@ @LTLIBICONV@ -lc -no-undefined
++  ../gnulib-lib/libgettextlib.la $(LTLIBUNISTRING) $(LT_LIBTEXTSTYLE) @LTLIBINTL@ @LTLIBICONV@ -no-undefined
+ 
+ # OS/2 does not support a DLL name longer than 8 characters.
+ if OS2
+diff -ur /tmp/gettext-0.21/gettext-tools/src/Makefile.in ./gettext-tools/src/Makefile.in
+--- /tmp/gettext-0.21/gettext-tools/src/Makefile.in	2020-07-26 23:04:59.000000000 +0200
++++ ./gettext-tools/src/Makefile.in	2021-08-07 12:37:48.671663500 +0200
+@@ -2743,7 +2743,7 @@
+ # use iconv().
+ libgettextsrc_la_LDFLAGS = -release @VERSION@ \
+ 	../gnulib-lib/libgettextlib.la $(LTLIBUNISTRING) \
+-	$(LT_LIBTEXTSTYLE) @LTLIBINTL@ @LTLIBICONV@ -lc -no-undefined \
++	$(LT_LIBTEXTSTYLE) @LTLIBINTL@ @LTLIBICONV@ -no-undefined \
+ 	$(am__append_3) $(am__append_5) $(am__append_7)
+ libgettextsrc_la_CPPFLAGS = $(AM_CPPFLAGS) $(INCXML) $(am__append_6)
+ 
+diff -ur /tmp/gettext-0.21/libtextstyle/configure ./libtextstyle/configure
+--- /tmp/gettext-0.21/libtextstyle/configure	2020-07-26 23:04:41.000000000 +0200
++++ ./libtextstyle/configure	2021-08-07 11:42:34.145134484 +0200
+@@ -39710,8 +39710,6 @@
+ 
+ ac_config_files="$ac_config_files tests/Makefile"
+ 
+-ac_config_files="$ac_config_files adhoc-tests/Makefile"
+-
+ cat >confcache <<\_ACEOF
+ # This file is a shell script that caches the results of configure
+ # tests run on this system so they can be shared between configure
+@@ -40907,7 +40905,6 @@
+     "lib/textstyle/version.h") CONFIG_FILES="$CONFIG_FILES lib/textstyle/version.h:lib/textstyle/version.in.h" ;;
+     "lib/textstyle/woe32dll.h") CONFIG_FILES="$CONFIG_FILES lib/textstyle/woe32dll.h:lib/textstyle/woe32dll.in.h" ;;
+     "tests/Makefile") CONFIG_FILES="$CONFIG_FILES tests/Makefile" ;;
+-    "adhoc-tests/Makefile") CONFIG_FILES="$CONFIG_FILES adhoc-tests/Makefile" ;;
+ 
+   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
+   esac
+diff -ur /tmp/gettext-0.21/libtextstyle/configure.ac ./libtextstyle/configure.ac
+--- /tmp/gettext-0.21/libtextstyle/configure.ac	2019-05-11 13:29:33.000000000 +0200
++++ ./libtextstyle/configure.ac	2021-08-07 11:44:00.836361022 +0200
+@@ -172,5 +172,4 @@
+ AC_CONFIG_FILES([lib/textstyle/version.h:lib/textstyle/version.in.h])
+ AC_CONFIG_FILES([lib/textstyle/woe32dll.h:lib/textstyle/woe32dll.in.h])
+ AC_CONFIG_FILES([tests/Makefile])
+-AC_CONFIG_FILES([adhoc-tests/Makefile])
+ AC_OUTPUT
+diff -ur /tmp/gettext-0.21/libtextstyle/Makefile.am ./libtextstyle/Makefile.am
+--- /tmp/gettext-0.21/libtextstyle/Makefile.am	2019-12-23 12:21:12.000000000 +0100
++++ ./libtextstyle/Makefile.am	2021-08-07 11:45:00.471829865 +0200
+@@ -20,7 +20,7 @@
+ ACLOCAL_AMFLAGS = -I m4 -I gnulib-m4
+ 
+ # The list of subdirectories containing Makefiles.
+-SUBDIRS = lib tests adhoc-tests doc
++SUBDIRS = lib tests doc
+ 
+ EXTRA_DIST = \
+   version.sh \
+diff -ur /tmp/gettext-0.21/libtextstyle/Makefile.in ./libtextstyle/Makefile.in
+--- /tmp/gettext-0.21/libtextstyle/Makefile.in	2020-07-26 23:04:42.000000000 +0200
++++ ./libtextstyle/Makefile.in	2021-08-07 11:44:34.672059572 +0200
+@@ -1540,7 +1540,7 @@
+ ACLOCAL_AMFLAGS = -I m4 -I gnulib-m4
+ 
+ # The list of subdirectories containing Makefiles.
+-SUBDIRS = lib tests adhoc-tests doc
++SUBDIRS = lib tests doc
+ 
+ # Allow users to use "gnulib-tool --update".
+ 
