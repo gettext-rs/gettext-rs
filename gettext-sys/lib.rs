@@ -26,7 +26,7 @@ extern "C" {
 
     pub fn bindtextdomain(domain: *const c_char, dir: *const c_char) -> *mut c_char;
     #[cfg(windows)]
-    pub fn wbindtextdomain(domain: *const c_char, dir: *const wchar_t) -> *mut wchar_t;
+    pub fn libintl_wbindtextdomain(domain: *const c_char, dir: *const wchar_t) -> *mut wchar_t;
 
     pub fn textdomain(domain: *const c_char) -> *mut c_char;
 
