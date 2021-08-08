@@ -99,8 +99,6 @@ fn main() {
             // FIXME: should pthread support be optional?
             // It is needed by `cargo test` while generating doc
             println!("cargo:rustc-link-lib=dylib=pthread");
-            println!("cargo:include={}/include", &gnu_root);
-            println!("cargo:include={}/sys-root/mingw/include", &gnu_root);
             println!("cargo:include={}/../usr/include", &gnu_root);
             return;
         }
