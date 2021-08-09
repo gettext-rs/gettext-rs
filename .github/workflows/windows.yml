@@ -40,8 +40,7 @@ jobs:
       - uses: hecrj/setup-rust-action@v1
         with:
           rust-version: ${{ matrix.rust-version }}
-          targets:
-            - ${{ matrix.env.TARGET }}
+          targets: ${{ matrix.env.TARGET }}
 
         # setup-rust-action turns panic messages in tests into GitHub
         # annotations. Our test suite is running with --verbose, and prints out
