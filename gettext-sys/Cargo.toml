@@ -21,4 +21,6 @@ gettext-system = []
 
 [build-dependencies]
 cc = "1.0"
+tar = "0.4"
 temp-dir = "0.1.11"
+xz2 = "0.1"

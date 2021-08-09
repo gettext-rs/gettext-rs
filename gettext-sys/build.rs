@@ -1,11 +1,12 @@
 extern crate cc;
+extern crate tar;
 extern crate temp_dir;
 
 use std::env;
 use std::ffi::OsString;
 use std::fs;
 use std::io::ErrorKind;
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 use std::process::Command;
 use temp_dir::TempDir;
 
@@ -181,17 +182,38 @@ fn main() {
         cflags.push("-DLIBXML_STATIC");
     }
 
-    let mut cmd = Command::new("tar");
-    cmd.current_dir(&build_dir.join("gettext"))
-        .arg("xJf")
-        .arg(&src.join("gettext-0.21.tar.xz"))
-        .arg("--strip-components")
-        .arg("1");
-    if host.contains("windows") {
-        // tar confuses local path with a remote resource because of ':'
-        cmd.arg("--force-local");
+    let mut archive = tar::Archive::new(xz2::read::XzDecoder::new(
+        std::fs::File::open(src.join("gettext-0.21.tar.xz")).expect("could not open file"),
+    ));
+    for entry in archive.entries().expect("could not extract archive") {
+        let mut entry = entry.expect("could not extract entry in archive");
+        let path = entry
+            .path()
+            .expect("invalid path in entry header in archive");
+
+        let mut file_dst = build_dir.join("gettext");
+        for part in path.components().skip(1) {
+            match part {
+                // Leading '/' characters, root paths, and '.'
+                // components are just ignored and treated as "empty
+                // components"
+                Component::Prefix(..) | Component::RootDir | Component::CurDir => continue,
+
+                // If any part of the filename is '..', then skip over
+                // unpacking the file to prevent directory traversal
+                // security issues.  See, e.g.: CVE-2001-1267,
+                // CVE-2002-0399, CVE-2005-1918, CVE-2007-4131
+                Component::ParentDir => {
+                    panic!("security risk detected in path: {}", path.display())
+                }
+
+                Component::Normal(part) => file_dst.push(part),
+            }
+        }
+        entry
+            .unpack(file_dst)
+            .expect("could not extract file in archive to destination");
     }
-    run(&mut cmd, "tar");
 
     let mut cmd = Command::new("sh");
     cmd.env("CC", compiler.path())
