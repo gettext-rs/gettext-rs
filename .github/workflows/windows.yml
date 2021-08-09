@@ -64,5 +64,9 @@ jobs:
             ~/.cargo/registry/cache
             ~/.cargo/registry/index
 
+      - name: Set TARGET environment variable
+        run: echo TARGET=${{ matrix.env.TARGET }} >> $GITHUB_ENV
+        if: ${{ matrix.env.TARGET }}
+
       - name: ./ci/run.sh
         run: sh ci/run.sh
