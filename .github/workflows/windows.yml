@@ -66,7 +66,7 @@ jobs:
 
       - run: |
          chcp 65001 #set code page to utf-8
-         echo ("TARGET=${{ matrix.env.TARGET }") >> $env:GITHUB_ENV
+         echo ("TARGET=${{ matrix.env.TARGET }}") >> $env:GITHUB_ENV
 
       - name: ./ci/run.sh
         run: sh ci/run.sh
