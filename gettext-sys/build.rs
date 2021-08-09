@@ -16,6 +16,26 @@ macro_rules! fail {
     };
 }
 
+macro_rules! run {
+    ($cmd:expr, $program:expr $(,)? ) => {{
+        println!("running: {:?}", $cmd);
+        let status = match $cmd.status() {
+            Ok(status) => status,
+            Err(ref e) if e.kind() == ErrorKind::NotFound => {
+                fail!(
+                    "failed to execute command: {}\nis `{}` not installed?",
+                    e,
+                    $program
+                );
+            }
+            Err(e) => fail!("failed to execute command: {}", e),
+        };
+        if !status.success() {
+            fail!("command did not execute successfully, got: {}", status);
+        }
+    }};
+}
+
 fn env(name: &str) -> Option<String> {
     let prefix = env::var("TARGET").unwrap().to_uppercase().replace("-", "_");
     let prefixed = format!("{}_{}", prefix, name);
@@ -266,14 +286,14 @@ fn main() {
             cmd.arg(format!("--host={}", target));
         }
     }
-    run(&mut cmd, "sh");
-    run(
+    run!(&mut cmd, "sh");
+    run!(
         make()
             .arg(&format!("-j{}", env::var("NUM_JOBS").unwrap()))
             .current_dir(&build_dir.join("build")),
         "make",
     );
-    run(
+    run!(
         make().arg("install").current_dir(&build_dir.join("build")),
         "make",
     );
@@ -286,7 +306,7 @@ fn main() {
         .arg(&build_dir.join("include"))
         .arg(&build_dir.join("lib"))
         .arg(&dst);
-    run(&mut cmd, "cp");
+    run!(&mut cmd, "cp");
 
     println!("cargo:rustc-link-lib=static=intl");
     println!("cargo:rustc-link-search=native={}/lib", dst.display());
@@ -301,24 +321,6 @@ fn main() {
             &get_windows_gnu_root()
         );
         println!("cargo:rustc-link-lib=dylib=iconv");
-    }
-}
-
-fn run(cmd: &mut Command, program: &str) {
-    println!("running: {:?}", cmd);
-    let status = match cmd.status() {
-        Ok(status) => status,
-        Err(ref e) if e.kind() == ErrorKind::NotFound => {
-            fail!(
-                "failed to execute command: {}\nis `{}` not installed?",
-                e,
-                program
-            );
-        }
-        Err(e) => fail!("failed to execute command: {}", e),
-    };
-    if !status.success() {
-        fail!("command did not execute successfully, got: {}", status);
     }
 }
 
