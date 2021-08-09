@@ -10,6 +10,12 @@ use std::path::{Component, Path, PathBuf};
 use std::process::Command;
 use temp_dir::TempDir;
 
+macro_rules! fail {
+    ($s:expr $(, $args:expr)*) => {
+        panic!(concat!("\n", $s, "\n\nbuild script failed, must exit now") $(, $args)*)
+    };
+}
+
 fn env(name: &str) -> Option<String> {
     let prefix = env::var("TARGET").unwrap().to_uppercase().replace("-", "_");
     let prefixed = format!("{}_{}", prefix, name);
@@ -41,13 +47,13 @@ fn get_windows_gnu_root() -> String {
                 None
             }
         })
-        .unwrap_or_else(|| fail("Failed to get gnu installation root dir"))
+        .unwrap_or_else(|| fail!("Failed to get gnu installation root dir"))
 }
 
 fn posix_path(path: &Path) -> String {
     let path = path
         .to_str()
-        .unwrap_or_else(|| fail(&format!("Couldn't convert path {:?} to string", path)));
+        .unwrap_or_else(|| fail!("Couldn't convert path {:?} to string", path));
     if env::var("HOST").unwrap().contains("windows") {
         let path = path.replace("\\", "/");
         if path.find(":") == Some(1) {
@@ -79,7 +85,7 @@ fn check_dependencies(required_programs: Vec<&str>) {
     let errors: String = required_programs.iter().map(|x| command(x)).collect();
 
     if !errors.is_empty() {
-        fail(&format!("The following programs were not found:{}", errors));
+        fail!("The following programs were not found:{}", errors);
     }
 }
 
@@ -204,7 +210,7 @@ fn main() {
                 // security issues.  See, e.g.: CVE-2001-1267,
                 // CVE-2002-0399, CVE-2005-1918, CVE-2007-4131
                 Component::ParentDir => {
-                    panic!("security risk detected in path: {}", path.display())
+                    fail!("security risk detected in path: {}", path.display())
                 }
 
                 Component::Normal(part) => file_dst.push(part),
@@ -303,23 +309,17 @@ fn run(cmd: &mut Command, program: &str) {
     let status = match cmd.status() {
         Ok(status) => status,
         Err(ref e) if e.kind() == ErrorKind::NotFound => {
-            fail(&format!(
+            fail!(
                 "failed to execute command: {}\nis `{}` not installed?",
-                e, program
-            ));
+                e,
+                program
+            );
         }
-        Err(e) => fail(&format!("failed to execute command: {}", e)),
+        Err(e) => fail!("failed to execute command: {}", e),
     };
     if !status.success() {
-        fail(&format!(
-            "command did not execute successfully, got: {}",
-            status
-        ));
+        fail!("command did not execute successfully, got: {}", status);
     }
-}
-
-fn fail(s: &str) -> ! {
-    panic!("\n{}\n\nbuild script failed, must exit now", s)
 }
 
 fn which(cmd: &str) -> Option<PathBuf> {
