@@ -64,9 +64,9 @@ jobs:
             ~/.cargo/registry/cache
             ~/.cargo/registry/index
 
-      - name: Set TARGET environment variable
-        run: echo TARGET=${{ matrix.env.TARGET }} >> $GITHUB_ENV
-        if: ${{ matrix.env.TARGET }}
+      - run: |
+         chcp 65001 #set code page to utf-8
+         echo ("TARGET=${{ matrix.env.TARGET }") >> $env:GITHUB_ENV
 
       - name: ./ci/run.sh
         run: sh ci/run.sh
