@@ -383,7 +383,7 @@ where
         // Trailing zero to mark the end of the C string.
         dirname.push(0);
         unsafe {
-            let mut ptr = ffi::libintl_wbindtextdomain(domainname.as_ptr(), dirname.as_ptr());
+            let mut ptr = ffi::wbindtextdomain(domainname.as_ptr(), dirname.as_ptr());
             if ptr.is_null() {
                 Err(io::Error::last_os_error())
             } else {

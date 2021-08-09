@@ -26,11 +26,19 @@ extern "C" {
 
     pub fn bindtextdomain(domain: *const c_char, dir: *const c_char) -> *mut c_char;
     #[cfg(windows)]
-    pub fn libintl_wbindtextdomain(domain: *const c_char, dir: *const wchar_t) -> *mut wchar_t;
+    // The "wbindtextdomain" symbol is not exposed directly in the compiled
+    // .DLL file when building using MinGW. See: https://github.com/Koka/gettext-rs/pull/79
+    fn libintl_wbindtextdomain(domain: *const c_char, dir: *const wchar_t) -> *mut wchar_t;
 
     pub fn textdomain(domain: *const c_char) -> *mut c_char;
 
     pub fn bind_textdomain_codeset(domain: *const c_char, codeset: *const c_char) -> *mut c_char;
 
     pub fn setlocale(category: c_int, locale: *const c_char) -> *mut c_char;
+}
+
+pub fn wbindtextdomain(domain: *const c_char, dir: *const wchar_t) -> *mut wchar_t {
+    unsafe {
+        libintl_wbindtextdomain(domain, dir)
+    }
 }

@@ -58,7 +58,7 @@ pub fn domain_directory<T: Into<Vec<u8>>>(domainname: T) -> Result<PathBuf, io::
         use std::os::windows::ffi::OsStringExt;
 
         unsafe {
-            let mut ptr = ffi::libintl_wbindtextdomain(domainname.as_ptr(), ptr::null());
+            let mut ptr = ffi::wbindtextdomain(domainname.as_ptr(), ptr::null());
             if ptr.is_null() {
                 Err(io::Error::last_os_error())
             } else {
