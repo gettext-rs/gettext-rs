@@ -37,8 +37,7 @@ extern "C" {
     pub fn setlocale(category: c_int, locale: *const c_char) -> *mut c_char;
 }
 
-pub fn wbindtextdomain(domain: *const c_char, dir: *const wchar_t) -> *mut wchar_t {
-    unsafe {
-        libintl_wbindtextdomain(domain, dir)
-    }
+#[cfg(windows)]
+pub unsafe fn wbindtextdomain(domain: *const c_char, dir: *const wchar_t) -> *mut wchar_t {
+    libintl_wbindtextdomain(domain, dir)
 }
