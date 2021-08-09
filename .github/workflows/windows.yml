@@ -8,7 +8,6 @@ on:
 
 jobs:
   build_and_test_windows:
-    name: "ci/run.sh on Windows"
     runs-on: windows-latest
     env:
       # Disable progress bar in Cargo. This cuts down on output, avoiding log length limits.
@@ -34,6 +33,8 @@ jobs:
             env:
               TARGET: x86_64-pc-windows-msvc
             name: "x86_64, msvc, Rust nightly"
+
+    name: ci/run.sh on ${{ matrix.name }}
 
     steps:
       - uses: hecrj/setup-rust-action@v1
