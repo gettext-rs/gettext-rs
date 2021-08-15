@@ -24,13 +24,19 @@ pub fn rt_format(
                             if let Some(_) = chars.next_if_eq(&'}') {
                                 match args.next() {
                                     Some(arg) => formatted.push_str(&arg.to_string()),
-                                    None => debug_assert!(false, "There are fewer arguments than format directives")
+                                    None => {
+                                        debug_assert!(false, "There are fewer arguments than format directives");
+                                        formatted.push_str("{}");
+                                    }
                                 }
                             } else if let Some(_) = chars.next_if_eq(&'n') {
                                 if let Some(_) = chars.next_if_eq(&'}') {
                                     match n_arg {
                                         Some(arg) => formatted.push_str(&arg.to_string()),
-                                        None => debug_assert!(false, "{}", "Using '{n}' format directive in non-plural form")
+                                        None => {
+                                            debug_assert!(false, "{}", "Using '{n}' format directive in non-plural form");
+                                            formatted.push_str("{n}");
+                                        }
                                     }
                                 }
                             }

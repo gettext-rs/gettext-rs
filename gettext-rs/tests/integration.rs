@@ -417,7 +417,7 @@ fn dcngettext_macro_formatting() {
 fn gettext_macro_fewer_arguments_than_parameters() {
     let _ = *SETUP;
 
-    assert_eq!(gettext!("Hello, {}! {}", "World"), "Hello, World! ");
+    assert_eq!(gettext!("Hello, {}! {}", "World"), "Hello, World! {}");
 }
 
 #[test]
@@ -430,7 +430,7 @@ fn pgettext_macro_fewer_arguments_than_parameters() {
 
     assert_eq!(
         pgettext!("context", "Hello, {}! {}", "World"),
-        "Hello, World! "
+        "Hello, World! {}"
     );
 }
 
@@ -444,7 +444,7 @@ fn dgettext_macro_fewer_arguments_than_parameters() {
 
     assert_eq!(
         dgettext!("bound_domain", "Hello, {}! {}", "World"),
-        "Hello, World! "
+        "Hello, World! {}"
     );
 }
 
@@ -463,7 +463,7 @@ fn dcgettext_macro_fewer_arguments_than_parameters() {
             "Hello, {}! {}",
             "World"
         ),
-        "Hello, World! "
+        "Hello, World! {}"
     );
 }
 
@@ -482,7 +482,7 @@ fn ngettext_macro_fewer_arguments_than_parameters() {
             2,
             "UwU"
         ),
-        "There are few \"UwU\" in text! "
+        "There are few \"UwU\" in text! {}"
     );
 }
 
@@ -502,7 +502,7 @@ fn npgettext_macro_fewer_arguments_than_parameters() {
             2,
             "UwU"
         ),
-        "There are few \"UwU\" in text! "
+        "There are few \"UwU\" in text! {}"
     );
 }
 
@@ -522,7 +522,7 @@ fn dngettext_macro_fewer_arguments_than_parameters() {
             2,
             "UwU"
         ),
-        "There are few \"UwU\" in text! "
+        "There are few \"UwU\" in text! {}"
     );
 }
 
@@ -543,7 +543,7 @@ fn dcngettext_macro_fewer_arguments_than_parameters() {
             2,
             "UwU"
         ),
-        "There are few \"UwU\" in text! "
+        "There are few \"UwU\" in text! {}"
     );
 }
 
@@ -698,7 +698,7 @@ fn dcngettext_macro_more_arguments_than_parameters() {
 fn gettext_macro_n_in_singular() {
     let _ = *SETUP;
 
-    assert_eq!(gettext!("Hello, {}! {n}", "World"), "Hello, World! ");
+    assert_eq!(gettext!("Hello, {}! {n}", "World"), "Hello, World! {n}");
 }
 
 #[test]
@@ -711,7 +711,7 @@ fn pgettext_macro_n_in_singular() {
 
     assert_eq!(
         pgettext!("context", "Hello, {}! {n}", "World"),
-        "Hello, World! "
+        "Hello, World! {n}"
     );
 }
 
@@ -725,7 +725,7 @@ fn dgettext_macro_n_in_singular() {
 
     assert_eq!(
         dgettext!("bound_domain", "Hello, {}! {n}", "World"),
-        "Hello, World! "
+        "Hello, World! {n}"
     );
 }
 
@@ -744,7 +744,7 @@ fn dcgettext_macro_n_in_singular() {
             "Hello, {}! {n}",
             "World"
         ),
-        "Hello, World! "
+        "Hello, World! {n}"
     );
 }
 
