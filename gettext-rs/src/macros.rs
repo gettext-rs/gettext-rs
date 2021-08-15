@@ -4,35 +4,52 @@
 /// Don't call this directly.
 #[doc(hidden)]
 #[allow(dead_code)]
-pub fn rt_format<T: std::fmt::Display>(msgstr: &str, pat: &str, arg: T) -> String {
-    match msgstr.split_once(pat) {
-        Some((pre, suf)) => format!("{}{}{}", pre, arg, suf),
-        None => {
-            debug_assert!(false, "There are more arguments than format directives");
-            msgstr.to_string()
+pub fn rt_format(
+    msgstr: String,
+    args: Vec<&dyn std::string::ToString>,
+    n_arg: Option<&dyn std::string::ToString>,
+) -> String {
+    let mut args = args.iter().peekable();
+    let mut formatted = String::new();
+    let mut chars = msgstr.chars().peekable();
+
+    while let Some(ch) = chars.next() {
+        match ch {
+            ch @ ('{' | '}') => {
+                if let Some(ch) = chars.next_if_eq(&ch) {
+                    formatted.push(ch);
+                } else {
+                    match ch {
+                        '{' => {
+                            if let Some(_) = chars.next_if_eq(&'}') {
+                                match args.next() {
+                                    Some(arg) => formatted.push_str(&arg.to_string()),
+                                    None => debug_assert!(false, "There are fewer arguments than format directives")
+                                }
+                            } else if let Some(_) = chars.next_if_eq(&'n') {
+                                if let Some(_) = chars.next_if_eq(&'}') {
+                                    match n_arg {
+                                        Some(arg) => formatted.push_str(&arg.to_string()),
+                                        None => debug_assert!(false, "{}", "Using '{n}' format directive in non-plural form")
+                                    }
+                                }
+                            }
+                        },
+                        '}' => {},
+                        _ => unreachable!()
+                    }
+                }
+            },
+            _ => formatted.push(ch)
         }
     }
-}
 
-/// This is an implementation detail for replacing arguments in the gettext macros.
-/// Don't call this directly.
-#[macro_export]
-#[doc(hidden)]
-macro_rules! rt_format {
-	( $msgstr:expr, $pat:expr, ) => {{
-        debug_assert!(
-            !$msgstr.contains("{}"),
-            "There are fewer arguments than format directives"
-        );
-		$msgstr
-	}};
-	( $msgstr:expr, $pat:expr, $arg:expr $(, $rest: expr)* ) => {{
-		$crate::rt_format!(
-            $crate::macros::rt_format(&$msgstr, $pat, $arg),
-            $pat,
-            $($rest),*
-        )
-	}};
+    #[cfg(debug_assertions)]
+    if let Some(_) = args.peek() {
+        debug_assert!(false, "There are more arguments than format directives")
+    }
+    
+    formatted
 }
 
 /// Like [`gettext`], but allows for formatting.
@@ -48,14 +65,33 @@ macro_rules! rt_format {
 /// [`gettext`]: fn.gettext.html
 #[macro_export]
 macro_rules! gettext {
-    ( $msgid:expr $(,)? ) => {
-        $crate::gettext($msgid)
-    };
-    ( $msgid:expr, $($args:expr),+ $(,)? ) => {{
-        $crate::rt_format!(
+    ( $msgid:expr $(, $args:expr)* $(,)? ) => {{
+        $crate::macros::rt_format(
             $crate::gettext($msgid),
-            "{}",
-            $($args),+
+            vec![$(&$args),*],
+            Option::None
+        )
+    }};
+}
+
+/// Like [`pgettext`], but allows for formatting.
+///
+/// It calls [`pgettext`] on `msgctxt` and `msgid`, and then replaces each occurrence of `{}` with
+/// the next value out of `args`.
+///
+/// # Panics
+///
+/// If compiled with debug assertions enabled (as in "dev" profile),
+/// will panic if the number of arguments doesn't match the number of format directives.
+///
+/// [`pgettext`]: fn.pgettext.html
+#[macro_export]
+macro_rules! pgettext {
+    ( $msgctxt:expr, $msgid:expr $(, $args:expr)* $(,)? ) => {{
+        $crate::macros::rt_format(
+            $crate::pgettext($msgctxt, $msgid),
+            vec![$(&$args),*],
+            Option::None
         )
     }};
 }
@@ -73,14 +109,11 @@ macro_rules! gettext {
 /// [`dgettext`]: fn.dgettext.html
 #[macro_export]
 macro_rules! dgettext {
-    ( $domainname:expr, $msgid:expr $(,)? ) => {
-        $crate::dgettext($domainname, $msgid)
-    };
-    ( $domainname:expr, $msgid:expr, $($args:expr),+ $(,)? ) => {{
-        $crate::rt_format!(
+    ( $domainname:expr, $msgid:expr $(, $args:expr)* $(,)? ) => {{
+        $crate::macros::rt_format(
             $crate::dgettext($domainname, $msgid),
-            "{}",
-            $($args),+
+            vec![$(&$args),*],
+            Option::None
         )
     }};
 }
@@ -98,14 +131,11 @@ macro_rules! dgettext {
 /// [`dcgettext`]: fn.dcgettext.html
 #[macro_export]
 macro_rules! dcgettext {
-    ( $domainname:expr, $category:expr, $msgid:expr $(,)? ) => {
-        $crate::dcgettext($domainname, $msgid, $category)
-    };
-    ( $domainname:expr, $category:expr, $msgid:expr, $($args:expr),+ $(,)? ) => {{
-        $crate::rt_format!(
+    ( $domainname:expr, $category:expr, $msgid:expr $(, $args:expr)* $(,)? ) => {{
+        $crate::macros::rt_format(
             $crate::dcgettext($domainname, $msgid, $category),
-            "{}",
-            $($args),+
+            vec![$(&$args),*],
+            Option::None
         )
     }};
 }
@@ -123,102 +153,11 @@ macro_rules! dcgettext {
 /// [`ngettext`]: fn.ngettext.html
 #[macro_export]
 macro_rules! ngettext {
-    ( $msgid:expr, $msgid_plural:expr, $n:expr $(,)? ) => {{
-        let mut msgstr = $crate::ngettext($msgid, $msgid_plural, $n);
-        while msgstr.contains("{n}") {
-            msgstr = $crate::macros::rt_format(&msgstr, "{n}", $n);
-        }
-        msgstr
-    }};
-    ( $msgid:expr, $msgid_plural:expr, $n:expr, $($args:expr),+ $(,)? ) => {{
-        let mut msgstr = $crate::ngettext($msgid, $msgid_plural, $n);
-        while msgstr.contains("{n}") {
-            msgstr = $crate::macros::rt_format(&msgstr, "{n}", $n);
-        }
-        $crate::rt_format!(msgstr, "{}", $($args),+)
-    }};
-}
-
-/// Like [`dngettext`], but allows for formatting.
-///
-/// It calls [`dngettext`] on `domainname`, `msgid`, `msgid_plural`, and `n`, and then replaces
-/// each occurrence of `{}` with the next value out of `args`, and `{n}` with `n`.
-///
-/// # Panics
-///
-/// If compiled with debug assertions enabled (as in "dev" profile),
-/// will panic if the number of arguments doesn't match the number of format directives.
-///
-/// [`dngettext`]: fn.dngettext.html
-#[macro_export]
-macro_rules! dngettext {
-    ( $domainname:expr, $msgid:expr, $msgid_plural:expr, $n:expr $(,)? ) => {{
-        let mut msgstr = $crate::dngettext($domainname, $msgid, $msgid_plural, $n);
-        while msgstr.contains("{n}") {
-            msgstr = $crate::macros::rt_format(&msgstr, "{n}", $n);
-        }
-        msgstr
-    }};
-    ( $domainname:expr, $msgid:expr, $msgid_plural:expr, $n:expr, $($args:expr),+ $(,)? ) => {{
-        let mut msgstr = $crate::dngettext($domainname, $msgid, $msgid_plural, $n);
-        while msgstr.contains("{n}") {
-            msgstr = $crate::macros::rt_format(&msgstr, "{n}", $n);
-        }
-        $crate::rt_format!(msgstr, "{}", $($args),+)
-    }};
-}
-
-/// Like [`dcngettext`], but allows for formatting.
-///
-/// It calls [`dcngettext`] on `domainname`, `category`, `msgid`, `msgid_plural`, and `n`, and then
-/// replaces each occurrence of `{}` with the next value out of `args`, and `{n}` with `n`.
-///
-/// # Panics
-///
-/// If compiled with debug assertions enabled (as in "dev" profile),
-/// will panic if the number of arguments doesn't match the number of format directives.
-///
-/// [`dcngettext`]: fn.dcngettext.html
-#[macro_export]
-macro_rules! dcngettext {
-    ( $domainname:expr, $category:expr, $msgid:expr, $msgid_plural:expr, $n:expr $(,)? ) => {{
-        let mut msgstr = $crate::dcngettext($domainname, $msgid, $msgid_plural, $n, $category);
-        while msgstr.contains("{n}") {
-            msgstr = $crate::macros::rt_format(&msgstr, "{n}", $n);
-        }
-        msgstr
-    }};
-    ( $domainname:expr, $category:expr,
-      $msgid:expr, $msgid_plural:expr, $n:expr, $($args:expr),+ $(,)? ) => {{
-        let mut msgstr = $crate::dcngettext($domainname, $msgid, $msgid_plural, $n, $category);
-        while msgstr.contains("{n}") {
-            msgstr = $crate::macros::rt_format(&msgstr, "{n}", $n);
-        }
-        $crate::rt_format!(msgstr, "{}", $($args),+)
-    }};
-}
-
-/// Like [`pgettext`], but allows for formatting.
-///
-/// It calls [`pgettext`] on `msgctxt` and `msgid`, and then replaces each occurrence of `{}` with
-/// the next value out of `args`.
-///
-/// # Panics
-///
-/// If compiled with debug assertions enabled (as in "dev" profile),
-/// will panic if the number of arguments doesn't match the number of format directives.
-///
-/// [`pgettext`]: fn.pgettext.html
-#[macro_export]
-macro_rules! pgettext {
-    ( $msgctxt:expr, $msgid:expr $(,)? ) => {
-        $crate::pgettext($msgctxt, $msgid)
-    };
-    ( $msgctxt:expr, $msgid:expr, $($args:expr),+ $(,)? ) => {{
-        $crate::rt_format!(
-            $crate::pgettext($msgctxt, $msgid),
-            "{}",
-            $($args),+
+    ( $msgid:expr, $msgid_plural:expr, $n:expr $(, $args:expr)* $(,)? ) => {{
+        $crate::macros::rt_format(
+            $crate::ngettext($msgid, $msgid_plural, $n),
+            vec![$(&$args),*],
+            Option::Some(&$n)
         )
     }};
 }
@@ -236,18 +175,69 @@ macro_rules! pgettext {
 /// [`npgettext`]: fn.npgettext.html
 #[macro_export]
 macro_rules! npgettext {
-    ( $msgctxt:expr, $msgid:expr, $msgid_plural:expr, $n:expr $(,)? ) => {{
-        let mut msgstr = $crate::npgettext($msgctxt, $msgid, $msgid_plural, $n);
-        while msgstr.contains("{n}") {
-            msgstr = $crate::macros::rt_format(&msgstr, "{n}", $n);
-        }
-        msgstr
+    ( $msgctxt:expr, $msgid:expr, $msgid_plural:expr, $n:expr $(, $args:expr)* $(,)? ) => {{
+        $crate::macros::rt_format(
+            $crate::npgettext($msgctxt, $msgid, $msgid_plural, $n),
+            vec![$(&$args),*],
+            Option::Some(&$n)
+        )
     }};
-    ( $msgctxt:expr, $msgid:expr, $msgid_plural:expr, $n:expr, $($args:expr),+ $(,)? ) => {{
-        let mut msgstr = $crate::npgettext($msgctxt, $msgid, $msgid_plural, $n);
-        while msgstr.contains("{n}") {
-            msgstr = $crate::macros::rt_format(&msgstr, "{n}", $n);
-        }
-        $crate::rt_format!(msgstr, "{}", $($args),+)
+}
+
+/// Like [`dngettext`], but allows for formatting.
+///
+/// It calls [`dngettext`] on `domainname`, `msgid`, `msgid_plural`, and `n`, and then replaces
+/// each occurrence of `{}` with the next value out of `args`, and `{n}` with `n`.
+///
+/// # Panics
+///
+/// If compiled with debug assertions enabled (as in "dev" profile),
+/// will panic if the number of arguments doesn't match the number of format directives.
+///
+/// [`dngettext`]: fn.dngettext.html
+#[macro_export]
+macro_rules! dngettext {
+    ( $domainname:expr, $msgid:expr, $msgid_plural:expr, $n:expr $(, $args:expr)* $(,)? ) => {{
+        $crate::macros::rt_format(
+            $crate::dngettext($domainname, $msgid, $msgid_plural, $n),
+            vec![$(&$args),*],
+            Option::Some(&$n)
+        )
     }};
+}
+
+/// Like [`dcngettext`], but allows for formatting.
+///
+/// It calls [`dcngettext`] on `domainname`, `category`, `msgid`, `msgid_plural`, and `n`, and then
+/// replaces each occurrence of `{}` with the next value out of `args`, and `{n}` with `n`.
+///
+/// # Panics
+///
+/// If compiled with debug assertions enabled (as in "dev" profile),
+/// will panic if the number of arguments doesn't match the number of format directives.
+///
+/// [`dcngettext`]: fn.dcngettext.html
+#[macro_export]
+macro_rules! dcngettext {
+    ( $domainname:expr, $category:expr,
+      $msgid:expr, $msgid_plural:expr, $n:expr $(, $args:expr)* $(,)? ) => {{
+        $crate::macros::rt_format(
+            $crate::dcngettext($domainname, $msgid, $msgid_plural, $n, $category),
+            vec![$(&$args),*],
+            Option::Some(&$n)
+        )
+    }};
+}
+
+#[cfg(test)]
+mod tests {
+    use macros::rt_format;
+
+    #[test]
+    fn partial_escaping() {
+        assert_eq!(
+            rt_format(String::from("{{}, {}}, {{n}, {n}}"), vec![&"smth"], Option::Some(&5)),
+            "{, smth, {n, 5"
+        );
+    }
 }
