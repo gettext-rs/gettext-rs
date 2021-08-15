@@ -25,7 +25,10 @@ pub fn rt_format(
                                 match args.next() {
                                     Some(arg) => formatted.push_str(&arg.to_string()),
                                     None => {
-                                        debug_assert!(false, "There are fewer arguments than format directives");
+                                        debug_assert!(
+                                            false,
+                                            "There are fewer arguments than format directives"
+                                        );
                                         formatted.push_str("{}");
                                     }
                                 }
@@ -34,19 +37,23 @@ pub fn rt_format(
                                     match n_arg {
                                         Some(arg) => formatted.push_str(&arg.to_string()),
                                         None => {
-                                            debug_assert!(false, "{}", "Using '{n}' format directive in non-plural form");
+                                            debug_assert!(
+                                                false,
+                                                "{}",
+                                                "Using '{n}' format directive in non-plural form"
+                                            );
                                             formatted.push_str("{n}");
                                         }
                                     }
                                 }
                             }
-                        },
-                        '}' => {},
-                        _ => unreachable!()
+                        }
+                        '}' => {}
+                        _ => unreachable!(),
                     }
                 }
-            },
-            _ => formatted.push(ch)
+            }
+            _ => formatted.push(ch),
         }
     }
 
@@ -54,7 +61,7 @@ pub fn rt_format(
     if let Some(_) = args.peek() {
         debug_assert!(false, "There are more arguments than format directives")
     }
-    
+
     formatted
 }
 
@@ -242,7 +249,11 @@ mod tests {
     #[test]
     fn partial_escaping() {
         assert_eq!(
-            rt_format(String::from("{{}, {}}, {{n}, {n}}"), vec![&"smth"], Option::Some(&5)),
+            rt_format(
+                String::from("{{}, {}}, {{n}, {n}}"),
+                vec![&"smth"],
+                Option::Some(&5)
+            ),
             "{, smth, {n, 5"
         );
     }
