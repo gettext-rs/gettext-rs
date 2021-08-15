@@ -65,6 +65,18 @@ fn gettext_fn() {
 }
 
 #[test]
+fn pgettext_fn() {
+    let _ = *SETUP;
+
+    assert_eq!(
+        current_textdomain().unwrap(),
+        "initialized_domain".as_bytes()
+    );
+
+    assert_eq!(pgettext("context", "Hello, World!"), "Hello, World!");
+}
+
+#[test]
 fn dgettext_fn() {
     let _ = *SETUP;
 
@@ -92,18 +104,6 @@ fn dcgettext_fn() {
 }
 
 #[test]
-fn pgettext_fn() {
-    let _ = *SETUP;
-
-    assert_eq!(
-        current_textdomain().unwrap(),
-        "initialized_domain".as_bytes()
-    );
-
-    assert_eq!(pgettext("context", "Hello, World!"), "Hello, World!");
-}
-
-#[test]
 fn ngettext_fn() {
     let _ = *SETUP;
 
@@ -118,6 +118,25 @@ fn ngettext_fn() {
     );
     assert_eq!(
         ngettext("Hello, World!", "Hello, Worlds!", 2),
+        "Hello, Worlds!"
+    );
+}
+
+#[test]
+fn npgettext_fn() {
+    let _ = *SETUP;
+
+    assert_eq!(
+        current_textdomain().unwrap(),
+        "initialized_domain".as_bytes()
+    );
+
+    assert_eq!(
+        npgettext("context", "Hello, World!", "Hello, Worlds!", 1),
+        "Hello, World!"
+    );
+    assert_eq!(
+        npgettext("context", "Hello, World!", "Hello, Worlds!", 2),
         "Hello, Worlds!"
     );
 }
@@ -173,29 +192,17 @@ fn dcngettext_fn() {
 }
 
 #[test]
-fn npgettext_fn() {
-    let _ = *SETUP;
-
-    assert_eq!(
-        current_textdomain().unwrap(),
-        "initialized_domain".as_bytes()
-    );
-
-    assert_eq!(
-        npgettext("context", "Hello, World!", "Hello, Worlds!", 1),
-        "Hello, World!"
-    );
-    assert_eq!(
-        npgettext("context", "Hello, World!", "Hello, Worlds!", 2),
-        "Hello, Worlds!"
-    );
-}
-
-#[test]
 fn gettext_macro_no_formatting() {
     let _ = *SETUP;
 
     assert_eq!(gettext!("Hello, World!"), "Hello, World!");
+}
+
+#[test]
+fn pgettext_macro_no_formatting() {
+    let _ = *SETUP;
+
+    assert_eq!(pgettext!("context", "Hello, World!"), "Hello, World!");
 }
 
 #[test]
@@ -221,6 +228,16 @@ fn ngettext_macro_no_formatting() {
 
     assert_eq!(
         ngettext!("There is one result", "There are few results", 2),
+        "There are few results"
+    );
+}
+
+#[test]
+fn npgettext_macro_no_formatting() {
+    let _ = *SETUP;
+
+    assert_eq!(
+        npgettext!("context", "There is one result", "There are few results", 2),
         "There are few results"
     );
 }
@@ -257,133 +274,138 @@ fn dcngettext_macro_no_formatting() {
 }
 
 #[test]
-fn pgettext_macro_no_formatting() {
-    let _ = *SETUP;
-
-    assert_eq!(pgettext!("context", "Hello, World!"), "Hello, World!");
-}
-
-#[test]
-fn npgettext_macro_no_formatting() {
+fn gettext_macro_formatting() {
     let _ = *SETUP;
 
     assert_eq!(
-        npgettext!("context", "There is one result", "There are few results", 2),
-        "There are few results"
+        gettext!(
+            "ToString {{}} (number): {}, ToString {{}} (char): {}, ToString {{}} (str): {}, {{n}}: Not provided",
+            1,
+            'b',
+            "str"
+        ),
+        "ToString {} (number): 1, ToString {} (char): b, ToString {} (str): str, {n}: Not provided"
     );
 }
 
 #[test]
-fn gettext_macro_basic_formatting() {
+fn pgettext_macro_formatting() {
     let _ = *SETUP;
 
     assert_eq!(
-        gettext!("Hello, {}! {}", "World", "UwU"),
-        "Hello, World! UwU"
+        pgettext!(
+            "context",
+            "ToString {{}} (number): {}, ToString {{}} (char): {}, ToString {{}} (str): {}, {{n}}: Not provided",
+            1,
+            'b',
+            "str"
+        ),
+        "ToString {} (number): 1, ToString {} (char): b, ToString {} (str): str, {n}: Not provided"
     );
 }
 
 #[test]
-fn dgettext_macro_basic_formatting() {
+fn dgettext_macro_formatting() {
     let _ = *SETUP;
 
     assert_eq!(
-        dgettext!("bound_domain", "Hello, {}! {}", "World", "UwU"),
-        "Hello, World! UwU"
+        dgettext!(
+            "bound_domain",
+            "ToString {{}} (number): {}, ToString {{}} (char): {}, ToString {{}} (str): {}, {{n}}: Not provided",
+            1,
+            'b',
+            "str"
+        ),
+        "ToString {} (number): 1, ToString {} (char): b, ToString {} (str): str, {n}: Not provided"
     );
 }
 
 #[test]
-fn dcgettext_macro_basic_formatting() {
+fn dcgettext_macro_formatting() {
     let _ = *SETUP;
 
     assert_eq!(
         dcgettext!(
             "bound_domain",
             LocaleCategory::LcAll,
-            "Hello, {}! {}",
-            "World",
-            "UwU"
+            "ToString {{}} (number): {}, ToString {{}} (char): {}, ToString {{}} (str): {}, {{n}}: Not provided",
+            1,
+            'b',
+            "str"
         ),
-        "Hello, World! UwU"
+        "ToString {} (number): 1, ToString {} (char): b, ToString {} (str): str, {n}: Not provided"
     );
 }
 
 #[test]
-fn ngettext_macro_basic_formatting() {
+fn ngettext_macro_formatting() {
     let _ = *SETUP;
 
     assert_eq!(
         ngettext!(
-            "There is one \"{}\" in text! {}",
-            "There are few \"{}\" in text! {}",
-            2,
-            "UwU",
-            "OwO"
+            "Singular, {{n}}: {n}, ToString {{}} (number): {}, ToString {{}} (char): {}, ToString {{}} (str): {}, {{n}} (again): {n}",
+            "Plural, {{n}}: {n}, ToString {{}} (number): {}, ToString {{}} (char): {}, ToString {{}} (str): {}, {{n}} (again): {n}",
+            5,
+            1,
+            'b',
+            "str"
         ),
-        "There are few \"UwU\" in text! OwO"
+        "Plural, {n}: 5, ToString {} (number): 1, ToString {} (char): b, ToString {} (str): str, {n} (again): 5"
     );
 }
 
 #[test]
-fn dngettext_macro_basic_formatting() {
+fn npgettext_macro_formatting() {
+    let _ = *SETUP;
+
+    assert_eq!(
+        npgettext!(
+            "context",
+            "Singular, {{n}}: {n}, ToString {{}} (number): {}, ToString {{}} (char): {}, ToString {{}} (str): {}, {{n}} (again): {n}",
+            "Plural, {{n}}: {n}, ToString {{}} (number): {}, ToString {{}} (char): {}, ToString {{}} (str): {}, {{n}} (again): {n}",
+            5,
+            1,
+            'b',
+            "str"
+        ),
+        "Plural, {n}: 5, ToString {} (number): 1, ToString {} (char): b, ToString {} (str): str, {n} (again): 5"
+    );
+}
+
+#[test]
+fn dngettext_macro_formatting() {
     let _ = *SETUP;
 
     assert_eq!(
         dngettext!(
             "bound_domain",
-            "There is one \"{}\" in text! {}",
-            "There are few \"{}\" in text! {}",
-            2,
-            "UwU",
-            "OwO"
+            "Singular, {{n}}: {n}, ToString {{}} (number): {}, ToString {{}} (char): {}, ToString {{}} (str): {}, {{n}} (again): {n}",
+            "Plural, {{n}}: {n}, ToString {{}} (number): {}, ToString {{}} (char): {}, ToString {{}} (str): {}, {{n}} (again): {n}",
+            5,
+            1,
+            'b',
+            "str"
         ),
-        "There are few \"UwU\" in text! OwO"
+        "Plural, {n}: 5, ToString {} (number): 1, ToString {} (char): b, ToString {} (str): str, {n} (again): 5"
     );
 }
 
 #[test]
-fn dcngettext_macro_basic_formatting() {
+fn dcngettext_macro_formatting() {
     let _ = *SETUP;
 
     assert_eq!(
         dcngettext!(
             "bound_domain",
             LocaleCategory::LcAll,
-            "There is one \"{}\" in text! {}",
-            "There are few \"{}\" in text! {}",
-            2,
-            "UwU",
-            "OwO"
+            "Singular, {{n}}: {n}, ToString {{}} (number): {}, ToString {{}} (char): {}, ToString {{}} (str): {}, {{n}} (again): {n}",
+            "Plural, {{n}}: {n}, ToString {{}} (number): {}, ToString {{}} (char): {}, ToString {{}} (str): {}, {{n}} (again): {n}",
+            5,
+            1,
+            'b',
+            "str"
         ),
-        "There are few \"UwU\" in text! OwO"
-    );
-}
-
-#[test]
-fn pgettext_macro_basic_formatting() {
-    let _ = *SETUP;
-
-    assert_eq!(
-        pgettext!("context", "Hello, {}! {}", "World", "UwU"),
-        "Hello, World! UwU"
-    );
-}
-
-#[test]
-fn npgettext_macro_basic_formatting() {
-    let _ = *SETUP;
-
-    assert_eq!(
-        npgettext!(
-            "context",
-            "There is one \"{}\" in text! {}",
-            "There are few \"{}\" in text! {}",
-            2,
-            "UwU",
-            "OwO"
-        ),
-        "There are few \"UwU\" in text! OwO"
+        "Plural, {n}: 5, ToString {} (number): 1, ToString {} (char): b, ToString {} (str): str, {n} (again): 5"
     );
 }
 
@@ -395,7 +417,21 @@ fn npgettext_macro_basic_formatting() {
 fn gettext_macro_fewer_arguments_than_parameters() {
     let _ = *SETUP;
 
-    assert_eq!(gettext!("Hello, {}! {}", "World"), "Hello, World! {}");
+    assert_eq!(gettext!("Hello, {}! {}", "World"), "Hello, World! ");
+}
+
+#[test]
+#[cfg_attr(
+    debug_assertions,
+    should_panic = "There are fewer arguments than format directives"
+)]
+fn pgettext_macro_fewer_arguments_than_parameters() {
+    let _ = *SETUP;
+
+    assert_eq!(
+        pgettext!("context", "Hello, {}! {}", "World"),
+        "Hello, World! "
+    );
 }
 
 #[test]
@@ -408,7 +444,7 @@ fn dgettext_macro_fewer_arguments_than_parameters() {
 
     assert_eq!(
         dgettext!("bound_domain", "Hello, {}! {}", "World"),
-        "Hello, World! {}"
+        "Hello, World! "
     );
 }
 
@@ -427,7 +463,7 @@ fn dcgettext_macro_fewer_arguments_than_parameters() {
             "Hello, {}! {}",
             "World"
         ),
-        "Hello, World! {}"
+        "Hello, World! "
     );
 }
 
@@ -446,7 +482,27 @@ fn ngettext_macro_fewer_arguments_than_parameters() {
             2,
             "UwU"
         ),
-        "There are few \"UwU\" in text! {}"
+        "There are few \"UwU\" in text! "
+    );
+}
+
+#[test]
+#[cfg_attr(
+    debug_assertions,
+    should_panic = "There are fewer arguments than format directives"
+)]
+fn npgettext_macro_fewer_arguments_than_parameters() {
+    let _ = *SETUP;
+
+    assert_eq!(
+        npgettext!(
+            "context",
+            "There is one \"{}\" in text! {}",
+            "There are few \"{}\" in text! {}",
+            2,
+            "UwU"
+        ),
+        "There are few \"UwU\" in text! "
     );
 }
 
@@ -466,7 +522,7 @@ fn dngettext_macro_fewer_arguments_than_parameters() {
             2,
             "UwU"
         ),
-        "There are few \"UwU\" in text! {}"
+        "There are few \"UwU\" in text! "
     );
 }
 
@@ -487,41 +543,7 @@ fn dcngettext_macro_fewer_arguments_than_parameters() {
             2,
             "UwU"
         ),
-        "There are few \"UwU\" in text! {}"
-    );
-}
-
-#[test]
-#[cfg_attr(
-    debug_assertions,
-    should_panic = "There are fewer arguments than format directives"
-)]
-fn pgettext_macro_fewer_arguments_than_parameters() {
-    let _ = *SETUP;
-
-    assert_eq!(
-        pgettext!("context", "Hello, {}! {}", "World"),
-        "Hello, World! {}"
-    );
-}
-
-#[test]
-#[cfg_attr(
-    debug_assertions,
-    should_panic = "There are fewer arguments than format directives"
-)]
-fn npgettext_macro_fewer_arguments_than_parameters() {
-    let _ = *SETUP;
-
-    assert_eq!(
-        npgettext!(
-            "context",
-            "There is one \"{}\" in text! {}",
-            "There are few \"{}\" in text! {}",
-            2,
-            "UwU"
-        ),
-        "There are few \"UwU\" in text! {}"
+        "There are few \"UwU\" in text! "
     );
 }
 
@@ -534,6 +556,20 @@ fn gettext_macro_more_arguments_than_parameters() {
     let _ = *SETUP;
 
     assert_eq!(gettext!("Hello, {}!", "World", "UwU"), "Hello, World!");
+}
+
+#[test]
+#[cfg_attr(
+    debug_assertions,
+    should_panic = "There are more arguments than format directives"
+)]
+fn pgettext_macro_more_arguments_than_parameters() {
+    let _ = *SETUP;
+
+    assert_eq!(
+        pgettext!("context", "Hello, {}!", "World", "UwU"),
+        "Hello, World!"
+    );
 }
 
 #[test]
@@ -595,6 +631,27 @@ fn ngettext_macro_more_arguments_than_parameters() {
     debug_assertions,
     should_panic = "There are more arguments than format directives"
 )]
+fn npgettext_macro_more_arguments_than_parameters() {
+    let _ = *SETUP;
+
+    assert_eq!(
+        npgettext!(
+            "context",
+            "There is one \"{}\" in text!",
+            "There are few \"{}\" in text!",
+            2,
+            "UwU",
+            "OwO"
+        ),
+        "There are few \"UwU\" in text!"
+    );
+}
+
+#[test]
+#[cfg_attr(
+    debug_assertions,
+    should_panic = "There are more arguments than format directives"
+)]
 fn dngettext_macro_more_arguments_than_parameters() {
     let _ = *SETUP;
 
@@ -636,207 +693,58 @@ fn dcngettext_macro_more_arguments_than_parameters() {
 #[test]
 #[cfg_attr(
     debug_assertions,
-    should_panic = "There are more arguments than format directives"
+    should_panic = "Using '{n}' format directive in non-plural form"
 )]
-fn pgettext_macro_more_arguments_than_parameters() {
+fn gettext_macro_n_in_singular() {
+    let _ = *SETUP;
+
+    assert_eq!(gettext!("Hello, {}! {n}", "World"), "Hello, World! ");
+}
+
+#[test]
+#[cfg_attr(
+    debug_assertions,
+    should_panic = "Using '{n}' format directive in non-plural form"
+)]
+fn pgettext_macro_n_in_singular() {
     let _ = *SETUP;
 
     assert_eq!(
-        pgettext!("context", "Hello, {}!", "World", "UwU"),
-        "Hello, World!"
+        pgettext!("context", "Hello, {}! {n}", "World"),
+        "Hello, World! "
     );
 }
 
 #[test]
 #[cfg_attr(
     debug_assertions,
-    should_panic = "There are more arguments than format directives"
+    should_panic = "Using '{n}' format directive in non-plural form"
 )]
-fn npgettext_macro_more_arguments_than_parameters() {
+fn dgettext_macro_n_in_singular() {
     let _ = *SETUP;
 
     assert_eq!(
-        npgettext!(
-            "context",
-            "There is one \"{}\" in text!",
-            "There are few \"{}\" in text!",
-            2,
-            "UwU",
-            "OwO"
-        ),
-        "There are few \"UwU\" in text!"
+        dgettext!("bound_domain", "Hello, {}! {n}", "World"),
+        "Hello, World! "
     );
 }
 
 #[test]
-fn ngettext_macro_special_n_formatting() {
+#[cfg_attr(
+    debug_assertions,
+    should_panic = "Using '{n}' format directive in non-plural form"
+)]
+fn dcgettext_macro_n_in_singular() {
     let _ = *SETUP;
 
     assert_eq!(
-        ngettext!(
-            "There is {n} apple! Only {n}!",
-            "There are {n} apples! Only {n}!",
-            2
-        ),
-        "There are 2 apples! Only 2!"
-    );
-    assert_eq!(
-        ngettext!(
-            "There is one apple! Only one!",
-            "There are {n} apples! Only {n}!",
-            1
-        ),
-        "There is one apple! Only one!"
-    );
-    assert_eq!(
-        ngettext!(
-            "There is one apple! Only one!",
-            "There are {n} apples! Only {n}!",
-            2
-        ),
-        "There are 2 apples! Only 2!"
-    );
-    assert_eq!(
-        ngettext!(
-            "There is {n} \"{}\" in text! Only {n}!",
-            "There are {n} \"{}\" in text! Only {n}!",
-            2,
-            "UwU"
-        ),
-        "There are 2 \"UwU\" in text! Only 2!"
-    );
-}
-
-#[test]
-fn dngettext_macro_special_n_formatting() {
-    let _ = *SETUP;
-
-    assert_eq!(
-        dngettext!(
-            "bound_domain",
-            "There is {n} apple! Only {n}!",
-            "There are {n} apples! Only {n}!",
-            2
-        ),
-        "There are 2 apples! Only 2!"
-    );
-    assert_eq!(
-        dngettext!(
-            "bound_domain",
-            "There is one apple! Only one!",
-            "There are {n} apples! Only {n}!",
-            1
-        ),
-        "There is one apple! Only one!"
-    );
-    assert_eq!(
-        dngettext!(
-            "bound_domain",
-            "There is one apple! Only one!",
-            "There are {n} apples! Only {n}!",
-            2
-        ),
-        "There are 2 apples! Only 2!"
-    );
-    assert_eq!(
-        dngettext!(
-            "bound_domain",
-            "There is {n} \"{}\" in text! Only {n}!",
-            "There are {n} \"{}\" in text! Only {n}!",
-            2,
-            "UwU"
-        ),
-        "There are 2 \"UwU\" in text! Only 2!"
-    );
-}
-
-#[test]
-fn dcngettext_macro_special_n_formatting() {
-    let _ = *SETUP;
-
-    assert_eq!(
-        dcngettext!(
+        dcgettext!(
             "bound_domain",
             LocaleCategory::LcAll,
-            "There is {n} apple! Only {n}!",
-            "There are {n} apples! Only {n}!",
-            2
+            "Hello, {}! {n}",
+            "World"
         ),
-        "There are 2 apples! Only 2!"
-    );
-    assert_eq!(
-        dcngettext!(
-            "bound_domain",
-            LocaleCategory::LcAll,
-            "There is one apple! Only one!",
-            "There are {n} apples! Only {n}!",
-            1
-        ),
-        "There is one apple! Only one!"
-    );
-    assert_eq!(
-        dcngettext!(
-            "bound_domain",
-            LocaleCategory::LcAll,
-            "There is one apple! Only one!",
-            "There are {n} apples! Only {n}!",
-            2
-        ),
-        "There are 2 apples! Only 2!"
-    );
-    assert_eq!(
-        dcngettext!(
-            "bound_domain",
-            LocaleCategory::LcAll,
-            "There is {n} \"{}\" in text! Only {n}!",
-            "There are {n} \"{}\" in text! Only {n}!",
-            2,
-            "UwU"
-        ),
-        "There are 2 \"UwU\" in text! Only 2!"
-    );
-}
-
-#[test]
-fn npgettext_macro_special_n_formatting() {
-    let _ = *SETUP;
-
-    assert_eq!(
-        npgettext!(
-            "context",
-            "There is {n} apple! Only {n}!",
-            "There are {n} apples! Only {n}!",
-            2
-        ),
-        "There are 2 apples! Only 2!"
-    );
-    assert_eq!(
-        npgettext!(
-            "context",
-            "There is one apple! Only one!",
-            "There are {n} apples! Only {n}!",
-            1
-        ),
-        "There is one apple! Only one!"
-    );
-    assert_eq!(
-        npgettext!(
-            "context",
-            "There is one apple! Only one!",
-            "There are {n} apples! Only {n}!",
-            2
-        ),
-        "There are 2 apples! Only 2!"
-    );
-    assert_eq!(
-        npgettext!(
-            "context",
-            "There is {n} \"{}\" in text! Only {n}!",
-            "There are {n} \"{}\" in text! Only {n}!",
-            2,
-            "UwU"
-        ),
-        "There are 2 \"UwU\" in text! Only 2!"
+        "Hello, World! "
     );
 }
 
@@ -847,6 +755,17 @@ fn gettext_macro_trailing_comma() {
     assert_eq!(gettext!("Hello, World!",), "Hello, World!");
     assert_eq!(
         gettext!("Hello, {}! {}", "World", "UwU",),
+        "Hello, World! UwU"
+    );
+}
+
+#[test]
+fn pgettext_macro_trailing_comma() {
+    let _ = *SETUP;
+
+    assert_eq!(pgettext!("context", "Hello, World!",), "Hello, World!");
+    assert_eq!(
+        pgettext!("context", "Hello, {}! {}", "World", "UwU",),
         "Hello, World! UwU"
     );
 }
@@ -903,6 +822,27 @@ fn ngettext_macro_trailing_comma() {
 }
 
 #[test]
+fn npgettext_macro_trailing_comma() {
+    let _ = *SETUP;
+
+    assert_eq!(
+        npgettext!("context", "There is one result", "There are few results", 2,),
+        "There are few results"
+    );
+    assert_eq!(
+        npgettext!(
+            "context",
+            "There is one \"{}\" in text! {}",
+            "There are few \"{}\" in text! {}",
+            2,
+            "UwU",
+            "OwO",
+        ),
+        "There are few \"UwU\" in text! OwO"
+    );
+}
+
+#[test]
 fn dngettext_macro_trailing_comma() {
     let _ = *SETUP;
 
@@ -946,38 +886,6 @@ fn dcngettext_macro_trailing_comma() {
         dcngettext!(
             "bound_domain",
             LocaleCategory::LcAll,
-            "There is one \"{}\" in text! {}",
-            "There are few \"{}\" in text! {}",
-            2,
-            "UwU",
-            "OwO",
-        ),
-        "There are few \"UwU\" in text! OwO"
-    );
-}
-
-#[test]
-fn pgettext_macro_trailing_comma() {
-    let _ = *SETUP;
-
-    assert_eq!(pgettext!("context", "Hello, World!",), "Hello, World!");
-    assert_eq!(
-        pgettext!("context", "Hello, {}! {}", "World", "UwU",),
-        "Hello, World! UwU"
-    );
-}
-
-#[test]
-fn npgettext_macro_trailing_comma() {
-    let _ = *SETUP;
-
-    assert_eq!(
-        npgettext!("context", "There is one result", "There are few results", 2,),
-        "There are few results"
-    );
-    assert_eq!(
-        npgettext!(
-            "context",
             "There is one \"{}\" in text! {}",
             "There are few \"{}\" in text! {}",
             2,
