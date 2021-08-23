@@ -18,38 +18,30 @@ pub fn rt_format(
             ch @ ('{' | '}') => {
                 if let Some(ch) = chars.next_if_eq(&ch) {
                     formatted.push(ch);
-                } else {
-                    match ch {
-                        '{' => {
-                            if let Some(_) = chars.next_if_eq(&'}') {
-                                match args.next() {
-                                    Some(arg) => formatted.push_str(&arg.to_string()),
-                                    None => {
-                                        debug_assert!(
-                                            false,
-                                            "There are fewer arguments than format directives"
-                                        );
-                                        formatted.push_str("{}");
-                                    }
-                                }
-                            } else if let Some(_) = chars.next_if_eq(&'n') {
-                                if let Some(_) = chars.next_if_eq(&'}') {
-                                    match n_arg {
-                                        Some(arg) => formatted.push_str(&arg.to_string()),
-                                        None => {
-                                            debug_assert!(
-                                                false,
-                                                "{}",
-                                                "Using '{n}' format directive in non-plural form"
-                                            );
-                                            formatted.push_str("{n}");
-                                        }
-                                    }
-                                }
+                } else if ch == '{' {
+                    if chars.next_if_eq(&'}').is_some() {
+                        match args.next() {
+                            Some(arg) => formatted.push_str(&arg.to_string()),
+                            None => {
+                                debug_assert!(
+                                    false,
+                                    "There are fewer arguments than format directives"
+                                );
+                                formatted.push_str("{}");
                             }
                         }
-                        '}' => {}
-                        _ => unreachable!(),
+                    } else if chars.next_if_eq(&'n').is_some() && chars.next_if_eq(&'}').is_some() {
+                        match n_arg {
+                            Some(arg) => formatted.push_str(&arg.to_string()),
+                            None => {
+                                debug_assert!(
+                                    false,
+                                    "{}",
+                                    "Using '{n}' format directive in non-plural form"
+                                );
+                                formatted.push_str("{n}");
+                            }
+                        }
                     }
                 }
             }
@@ -58,7 +50,7 @@ pub fn rt_format(
     }
 
     #[cfg(debug_assertions)]
-    if let Some(_) = args.peek() {
+    if args.peek().is_some() {
         debug_assert!(false, "There are more arguments than format directives")
     }
 
