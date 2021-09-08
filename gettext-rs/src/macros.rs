@@ -49,10 +49,10 @@ pub fn rt_format(
         }
     }
 
-    #[cfg(debug_assertions)]
-    if args.peek().is_some() {
-        debug_assert!(false, "There are more arguments than format directives")
-    }
+    debug_assert!(
+        args.peek().is_none(),
+        "There are more arguments than format directives"
+    );
 
     formatted
 }
