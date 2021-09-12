@@ -91,11 +91,6 @@ mod text_domain;
 pub use text_domain::{TextDomain, TextDomainError};
 pub mod getters;
 
-/// This is an implementation detail for the gettext macros.
-/// Don't use it directly.
-#[doc(hidden)]
-pub mod macros;
-
 /// Locale category enum ported from locale.h.
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum LocaleCategory {
