@@ -91,7 +91,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     implementation that's part of glibc or musl libc. This only works on:
 
     * Linux with glibc or musl libc;
-    * Windows + GNU (e.g. [MSYS2](http://www.msys2.org/)) with `gettext-devel`
+    * Windows + GNU (e.g. [MSYS2](https://www.msys2.org/)) with `gettext-devel`
         installed e.g. using:
 
         ```
