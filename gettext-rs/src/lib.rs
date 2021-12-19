@@ -79,6 +79,8 @@
 
 extern crate locale_config;
 
+#[cfg(feature = "macros")]
+extern crate gettext_macros;
 extern crate gettext_sys as ffi;
 
 use std::ffi::CStr;
@@ -88,6 +90,8 @@ use std::os::raw::c_ulong;
 use std::path::PathBuf;
 
 mod text_domain;
+#[cfg(feature = "macros")]
+pub use gettext_macros::*;
 pub use text_domain::{TextDomain, TextDomainError};
 pub mod getters;
 
