@@ -1,5 +1,5 @@
 use gettext_macros::*;
-use gettextrs::{getters::*, *};
+use gettextrs::*;
 use lazy_static::lazy_static;
 
 lazy_static! {
@@ -23,4 +23,18 @@ fn gettext_macro() {
     let _ = *SETUP;
 
     assert_eq!(gettext!("Hello, World!"), "Hello, World!");
+}
+
+#[test]
+fn ngettext_macro() {
+    let _ = *SETUP;
+
+    assert_eq!(
+        ngettext!("Hello, World!", "Hello, Worlds!", 1),
+        "Hello, World!"
+    );
+    assert_eq!(
+        ngettext!("Hello, World!", "Hello, Worlds!", 2),
+        "Hello, Worlds!"
+    );
 }
