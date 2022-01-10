@@ -92,6 +92,8 @@ use std::path::PathBuf;
 mod text_domain;
 #[cfg(feature = "macros")]
 pub use gettext_macros::*;
+#[cfg(feature = "macros")]
+pub mod formatter;
 pub use text_domain::{TextDomain, TextDomainError};
 pub mod getters;
 
