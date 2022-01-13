@@ -4,10 +4,12 @@ use syn::{
     LitStr,
 };
 
+#[cfg_attr(test, derive(Debug, PartialEq))]
 pub enum Directive {
     Pos,
 }
 
+#[cfg_attr(test, derive(Debug, PartialEq))]
 pub struct Directives {
     pub directives: Vec<Directive>,
     pub escapes: bool,
@@ -74,5 +76,251 @@ impl<'a> IntoIterator for &'a Directives {
 
     fn into_iter(self) -> Self::IntoIter {
         (&self.directives).into_iter()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Directive::*, *};
+    use proc_macro2::Span;
+
+    macro_rules! LitStr {
+        ($str: literal) => {
+            LitStr::new($str, Span::call_site())
+        };
+    }
+
+    #[test]
+    fn parameter() {
+        let litstr = LitStr!("{}");
+
+        assert_eq!(
+            Directives::try_from(&litstr).unwrap(),
+            Directives {
+                directives: vec![Pos],
+                escapes: false
+            }
+        );
+    }
+
+    #[test]
+    fn text_before_parameter() {
+        let litstr = LitStr!("Text {}");
+
+        assert_eq!(
+            Directives::try_from(&litstr).unwrap(),
+            Directives {
+                directives: vec![Pos],
+                escapes: false
+            }
+        );
+    }
+
+    #[test]
+    fn text_after_parameter() {
+        let litstr = LitStr!("{} text");
+
+        assert_eq!(
+            Directives::try_from(&litstr).unwrap(),
+            Directives {
+                directives: vec![Pos],
+                escapes: false
+            }
+        );
+    }
+
+    #[test]
+    fn text_around_parameter() {
+        let litstr = LitStr!("There is a {} parameter");
+
+        assert_eq!(
+            Directives::try_from(&litstr).unwrap(),
+            Directives {
+                directives: vec![Pos],
+                escapes: false
+            }
+        );
+    }
+
+    #[test]
+    fn text_around_multiple_parameters() {
+        let litstr = LitStr!("There are {} multiple {} parameters");
+
+        assert_eq!(
+            Directives::try_from(&litstr).unwrap(),
+            Directives {
+                directives: vec![Pos, Pos],
+                escapes: false
+            }
+        );
+    }
+
+    #[test]
+    fn text_around_a_bunch_of_parameters() {
+        let litstr = LitStr!("There is {} quite {} a bunch {} of text {} around parameters");
+
+        assert_eq!(
+            Directives::try_from(&litstr).unwrap(),
+            Directives {
+                directives: vec![Pos, Pos, Pos, Pos],
+                escapes: false
+            }
+        );
+    }
+
+    #[test]
+    fn escaped_opening_brace() {
+        let litstr = LitStr!("{{");
+
+        assert_eq!(
+            Directives::try_from(&litstr).unwrap(),
+            Directives {
+                directives: vec![],
+                escapes: true
+            }
+        );
+    }
+
+    #[test]
+    fn escaped_closing_brace() {
+        let litstr = LitStr!("}}");
+
+        assert_eq!(
+            Directives::try_from(&litstr).unwrap(),
+            Directives {
+                directives: vec![],
+                escapes: true
+            }
+        );
+    }
+
+    #[test]
+    fn escaped_pair_of_braces() {
+        let litstr = LitStr!("{{}}");
+
+        assert_eq!(
+            Directives::try_from(&litstr).unwrap(),
+            Directives {
+                directives: vec![],
+                escapes: true
+            }
+        );
+    }
+
+    #[test]
+    fn text_before_escaped_opening_brace() {
+        let litstr = LitStr!("Text {{");
+
+        assert_eq!(
+            Directives::try_from(&litstr).unwrap(),
+            Directives {
+                directives: vec![],
+                escapes: true
+            }
+        );
+    }
+
+    #[test]
+    fn text_before_escaped_closing_brace() {
+        let litstr = LitStr!("Text }}");
+
+        assert_eq!(
+            Directives::try_from(&litstr).unwrap(),
+            Directives {
+                directives: vec![],
+                escapes: true
+            }
+        );
+    }
+
+    #[test]
+    fn text_before_escaped_pair_of_braces() {
+        let litstr = LitStr!("Text {{}}");
+
+        assert_eq!(
+            Directives::try_from(&litstr).unwrap(),
+            Directives {
+                directives: vec![],
+                escapes: true
+            }
+        );
+    }
+
+    #[test]
+    fn text_after_escaped_opening_brace() {
+        let litstr = LitStr!("{{ text");
+
+        assert_eq!(
+            Directives::try_from(&litstr).unwrap(),
+            Directives {
+                directives: vec![],
+                escapes: true
+            }
+        );
+    }
+
+    #[test]
+    fn text_after_escaped_closing_brace() {
+        let litstr = LitStr!("}} text");
+
+        assert_eq!(
+            Directives::try_from(&litstr).unwrap(),
+            Directives {
+                directives: vec![],
+                escapes: true
+            }
+        );
+    }
+
+    #[test]
+    fn text_after_escaped_pair_of_braces() {
+        let litstr = LitStr!("{{}} text");
+
+        assert_eq!(
+            Directives::try_from(&litstr).unwrap(),
+            Directives {
+                directives: vec![],
+                escapes: true
+            }
+        );
+    }
+
+    #[test]
+    fn text_around_escaped_opening_brace() {
+        let litstr = LitStr!("There is an {{ escape");
+
+        assert_eq!(
+            Directives::try_from(&litstr).unwrap(),
+            Directives {
+                directives: vec![],
+                escapes: true
+            }
+        );
+    }
+
+    #[test]
+    fn text_around_escaped_closing_brace() {
+        let litstr = LitStr!("There is an }} escape");
+
+        assert_eq!(
+            Directives::try_from(&litstr).unwrap(),
+            Directives {
+                directives: vec![],
+                escapes: true
+            }
+        );
+    }
+
+    #[test]
+    fn text_around_escaped_pair_of_braces() {
+        let litstr = LitStr!("There are {{}} escapes");
+
+        assert_eq!(
+            Directives::try_from(&litstr).unwrap(),
+            Directives {
+                directives: vec![],
+                escapes: true
+            }
+        );
     }
 }
