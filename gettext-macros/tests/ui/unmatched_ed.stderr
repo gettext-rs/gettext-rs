@@ -1,0 +1,5 @@
+error: Unmatched `}` in format string. If you intended to print `}`, you can escape it using `}}`
+ --> tests/ui/unmatched_ed.rs:4:11
+  |
+4 |     gettext!("Hello, }!");
+  |              ^^^^^^^^^^^

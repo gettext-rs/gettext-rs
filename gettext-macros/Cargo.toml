@@ -15,7 +15,9 @@ proc-macro = true
 [dependencies]
 syn = "1.0"
 quote = "1.0"
+proc-macro2 = "1.0"
 
 [dev-dependencies]
 gettext-rs = { path = "../gettext-rs" }
 lazy_static = "1"
+trybuild = "1.0"

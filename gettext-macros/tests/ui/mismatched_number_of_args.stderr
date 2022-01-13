@@ -1,0 +1,29 @@
+error: 1 positional argument in format string, but no arguments were given
+ --> tests/ui/mismatched_number_of_args.rs:4:11
+  |
+4 |     gettext!("{}");
+  |              ^^^^
+
+error: 1 positional argument in format string, but there are 2 arguments
+ --> tests/ui/mismatched_number_of_args.rs:5:11
+  |
+5 |     gettext!("{}", 1, 2);
+  |              ^^^^
+
+error: 2 positional arguments in format string, but no arguments were given
+ --> tests/ui/mismatched_number_of_args.rs:6:11
+  |
+6 |     gettext!("{}{}");
+  |              ^^^^^^
+
+error: 2 positional arguments in format string, but there is 1 argument
+ --> tests/ui/mismatched_number_of_args.rs:7:11
+  |
+7 |     gettext!("{}{}", 1);
+  |              ^^^^^^
+
+error: 3 positional arguments in format string, but there are 2 arguments
+ --> tests/ui/mismatched_number_of_args.rs:8:11
+  |
+8 |     gettext!("{}{}{}", 1, 2);
+  |              ^^^^^^^^

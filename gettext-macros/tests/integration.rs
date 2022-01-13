@@ -1,4 +1,3 @@
-use gettext_macros::*;
 use gettextrs::*;
 use lazy_static::lazy_static;
 
@@ -19,14 +18,56 @@ lazy_static! {
 }
 
 #[test]
-fn gettext_macro() {
+fn ui() {
+    let t = trybuild::TestCases::new();
+    t.compile_fail("tests/ui/*.rs");
+}
+
+#[test]
+fn gettext() {
     let _ = *SETUP;
 
     assert_eq!(gettext!("Hello, World!"), "Hello, World!");
 }
 
 #[test]
-fn ngettext_macro() {
+fn gettext_trailing_comma() {
+    let _ = *SETUP;
+
+    assert_eq!(gettext!("Hello, World!",), "Hello, World!");
+}
+
+#[test]
+fn gettext_escapes_only() {
+    let _ = *SETUP;
+
+    assert_eq!(gettext!("Hello, {{}}!"), "Hello, {}!");
+}
+
+#[test]
+fn gettext_positional_args() {
+    let _ = *SETUP;
+
+    assert_eq!(gettext!("Hello, {}!", "World"), "Hello, World!");
+    assert_eq!(gettext!("{}, {}!", "Hello", "World"), "Hello, World!");
+    assert_eq!(gettext!("{}, {}{}", "Hello", "World", '!'), "Hello, World!");
+}
+
+#[test]
+fn gettext_positional_args_and_trailing_comma() {
+    let _ = *SETUP;
+
+    assert_eq!(gettext!("Hello, {}!", "World",), "Hello, World!");
+    assert_eq!(gettext!("{}, {}!", "Hello", "World",), "Hello, World!");
+    assert_eq!(
+        gettext!("{}, {}{}", "Hello", "World", '!',),
+        "Hello, World!"
+    );
+}
+
+#[test]
+#[ignore]
+fn ngettext() {
     let _ = *SETUP;
 
     assert_eq!(
