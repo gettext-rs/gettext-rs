@@ -8,4 +8,20 @@ macro_rules! fake {
             }
         }
     };
+    (ngettext, $msgstr:literal, $msgstr_plural:literal) => {
+        mod gettextrs {
+            pub use ::gettextrs::formatter;
+            pub fn ngettext<T, S>(_msgid: T, _msgid_plural: S, n: u32) -> String
+            where
+                T: Into<String>,
+                S: Into<String>,
+            {
+                if n == 1 {
+                    $msgstr.into()
+                } else {
+                    $msgstr_plural.into()
+                }
+            }
+        }
+    };
 }

@@ -70,23 +70,38 @@ pub fn gettext(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 }
 
 struct NInvocation {
+    span: Span,
     msgid: LitStr,
     msgid_plural: LitStr,
     n: LitInt,
+    directives: Directives,
+    directives_plural: Directives,
+    arguments: Arguments,
 }
 
 impl Parse for NInvocation {
     fn parse(input: ParseStream) -> Result<Self> {
+        let span = input.span();
         let msgid: LitStr = input.parse()?;
         input.parse::<Token![,]>()?;
         let msgid_plural: LitStr = input.parse()?;
         input.parse::<Token![,]>()?;
         let n: LitInt = input.parse()?;
+        let directives = Directives::try_from(&msgid)?;
+        let directives_plural = Directives::try_from(&msgid_plural)?;
+        let arguments = match input.parse::<Token![,]>() {
+            Ok(_) => Arguments::parse(input)?,
+            Err(_) => Arguments(Vec::with_capacity(0)),
+        };
 
         Ok(Self {
+            span,
             msgid,
             msgid_plural,
             n,
+            directives,
+            directives_plural,
+            arguments,
         })
     }
 }
@@ -95,12 +110,47 @@ impl Parse for NInvocation {
 pub fn ngettext(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = parse_macro_input!(input as NInvocation);
     let NInvocation {
+        span,
         msgid,
         msgid_plural,
         n,
+        directives,
+        directives_plural,
+        arguments,
     } = input;
-    let tokens = quote! {
-        { gettextrs::ngettext(#msgid, #msgid_plural, #n) }
-    };
-    tokens.into()
+
+    let n_arguments = arguments.0.len();
+    match check_amount(directives.directives.len(), n_arguments) {
+        Ok(n_directives) => match check_amount(directives_plural.directives.len(), n_arguments) {
+            Ok(0)
+                if n_directives == 0
+                    && (directives.escapes == false || directives_plural.escapes == false) =>
+            {
+                quote! { gettextrs::ngettext(#msgid, #msgid_plural, #n) }.into()
+            }
+            Ok(_) => {
+                let arguments1 = (&arguments).into_iter();
+                let arguments2 = (&arguments).into_iter();
+                let format = {
+                    match n.base10_parse() {
+                        Ok(1) => quote! { format!(#msgid, #(#arguments2),*) },
+                        Ok(_) => quote! { format!(#msgid_plural, #(#arguments2),*) },
+                        Err(e) => e.into_compile_error(),
+                    }
+                };
+                quote! {{
+                    match gettextrs::formatter::format(
+                        &gettextrs::ngettext(#msgid, #msgid_plural, #n),
+                        &[#(#arguments1.to_string()),*]
+                    ) {
+                        Some(s) => s,
+                        None => #format
+                    }
+                }}
+                .into()
+            }
+            Err(e) => Error::new(span, e).into_compile_error().into(),
+        },
+        Err(e) => Error::new(span, e).into_compile_error().into(),
+    }
 }
