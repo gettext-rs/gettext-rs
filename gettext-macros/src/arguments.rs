@@ -26,7 +26,7 @@ impl Parse for Arguments {
         use Argument::*;
         let mut pos_args = Vec::new();
         if let Ok(p) = Punctuated::<Expr, Token![,]>::parse_terminated(input) {
-            pos_args = p.into_iter().map(|expr| Pos(expr)).collect();
+            pos_args = p.into_iter().map(Pos).collect();
         }
         Ok(Self(pos_args))
     }

@@ -1,17 +1,11 @@
-use std::iter::IntoIterator;
 use syn::{
     parse::{Error, Result},
     LitStr,
 };
 
 #[cfg_attr(test, derive(Debug, PartialEq))]
-pub enum Directive {
-    Pos,
-}
-
-#[cfg_attr(test, derive(Debug, PartialEq))]
 pub struct Directives {
-    pub directives: Vec<Directive>,
+    pub number: usize,
     pub escapes: bool,
 }
 
@@ -19,69 +13,46 @@ impl TryFrom<&LitStr> for Directives {
     type Error = Error;
 
     fn try_from(msgid: &LitStr) -> Result<Self> {
-        use Directive::*;
-
         let span = msgid.span();
         let value = msgid.value();
         let mut chars = value.chars().peekable();
         let mut result = Self {
-            directives: vec![],
+            number: 0,
             escapes: false,
         };
 
-        loop {
-            while let Some(c) = chars.next() {
-                if c == '{' && chars.next_if_eq(&'}').is_some() {
-                    result.directives.push(Pos);
-                } else if (c == '{' || c == '}') && chars.next_if_eq(&c).is_some() {
-                    result.escapes = true;
-                } else if (c == '{' || c == '}') && chars.next_if_eq(&c).is_none() {
-                    return Err(
-                        Error::new(
-                            span,
-                            format!(
-                                "Unmatched `{0}` in format string. If you intended to print `{0}`, you can escape it using `{1}`",
-                                c,
-                                {
-                                    if c == '{' {
-                                        "{{"
-                                    } else {
-                                        "}}"
-                                    }
+        while let Some(c) = chars.next() {
+            if c == '{' && chars.next_if_eq(&'}').is_some() {
+                result.number += 1;
+            } else if (c == '{' || c == '}') && chars.next_if_eq(&c).is_some() {
+                result.escapes = true;
+            } else if (c == '{' || c == '}') && chars.next_if_eq(&c).is_none() {
+                return Err(
+                    Error::new(
+                        span,
+                        format!(
+                            "Unmatched `{0}` in format string. If you intended to print `{0}`, you can escape it using `{1}`",
+                            c,
+                            {
+                                if c == '{' {
+                                    "{{"
+                                } else {
+                                    "}}"
                                 }
-                            )
+                            }
                         )
-                    );
-                }
+                    )
+                );
             }
-            break;
         }
 
         Ok(result)
     }
 }
 
-impl IntoIterator for Directives {
-    type Item = Directive;
-    type IntoIter = std::vec::IntoIter<Self::Item>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.directives.into_iter()
-    }
-}
-
-impl<'a> IntoIterator for &'a Directives {
-    type Item = &'a Directive;
-    type IntoIter = std::slice::Iter<'a, Directive>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        (&self.directives).into_iter()
-    }
-}
-
 #[cfg(test)]
 mod tests {
-    use super::{Directive::*, *};
+    use super::*;
     use proc_macro2::Span;
 
     macro_rules! LitStr {
@@ -97,7 +68,7 @@ mod tests {
         assert_eq!(
             Directives::try_from(&litstr).unwrap(),
             Directives {
-                directives: vec![Pos],
+                number: 1,
                 escapes: false
             }
         );
@@ -110,7 +81,7 @@ mod tests {
         assert_eq!(
             Directives::try_from(&litstr).unwrap(),
             Directives {
-                directives: vec![Pos],
+                number: 1,
                 escapes: false
             }
         );
@@ -123,7 +94,7 @@ mod tests {
         assert_eq!(
             Directives::try_from(&litstr).unwrap(),
             Directives {
-                directives: vec![Pos],
+                number: 1,
                 escapes: false
             }
         );
@@ -136,7 +107,7 @@ mod tests {
         assert_eq!(
             Directives::try_from(&litstr).unwrap(),
             Directives {
-                directives: vec![Pos],
+                number: 1,
                 escapes: false
             }
         );
@@ -149,7 +120,7 @@ mod tests {
         assert_eq!(
             Directives::try_from(&litstr).unwrap(),
             Directives {
-                directives: vec![Pos, Pos],
+                number: 2,
                 escapes: false
             }
         );
@@ -162,7 +133,7 @@ mod tests {
         assert_eq!(
             Directives::try_from(&litstr).unwrap(),
             Directives {
-                directives: vec![Pos, Pos, Pos, Pos],
+                number: 4,
                 escapes: false
             }
         );
@@ -175,7 +146,7 @@ mod tests {
         assert_eq!(
             Directives::try_from(&litstr).unwrap(),
             Directives {
-                directives: vec![],
+                number: 0,
                 escapes: true
             }
         );
@@ -188,7 +159,7 @@ mod tests {
         assert_eq!(
             Directives::try_from(&litstr).unwrap(),
             Directives {
-                directives: vec![],
+                number: 0,
                 escapes: true
             }
         );
@@ -201,7 +172,7 @@ mod tests {
         assert_eq!(
             Directives::try_from(&litstr).unwrap(),
             Directives {
-                directives: vec![],
+                number: 0,
                 escapes: true
             }
         );
@@ -214,7 +185,7 @@ mod tests {
         assert_eq!(
             Directives::try_from(&litstr).unwrap(),
             Directives {
-                directives: vec![],
+                number: 0,
                 escapes: true
             }
         );
@@ -227,7 +198,7 @@ mod tests {
         assert_eq!(
             Directives::try_from(&litstr).unwrap(),
             Directives {
-                directives: vec![],
+                number: 0,
                 escapes: true
             }
         );
@@ -240,7 +211,7 @@ mod tests {
         assert_eq!(
             Directives::try_from(&litstr).unwrap(),
             Directives {
-                directives: vec![],
+                number: 0,
                 escapes: true
             }
         );
@@ -253,7 +224,7 @@ mod tests {
         assert_eq!(
             Directives::try_from(&litstr).unwrap(),
             Directives {
-                directives: vec![],
+                number: 0,
                 escapes: true
             }
         );
@@ -266,7 +237,7 @@ mod tests {
         assert_eq!(
             Directives::try_from(&litstr).unwrap(),
             Directives {
-                directives: vec![],
+                number: 0,
                 escapes: true
             }
         );
@@ -279,7 +250,7 @@ mod tests {
         assert_eq!(
             Directives::try_from(&litstr).unwrap(),
             Directives {
-                directives: vec![],
+                number: 0,
                 escapes: true
             }
         );
@@ -292,7 +263,7 @@ mod tests {
         assert_eq!(
             Directives::try_from(&litstr).unwrap(),
             Directives {
-                directives: vec![],
+                number: 0,
                 escapes: true
             }
         );
@@ -305,7 +276,7 @@ mod tests {
         assert_eq!(
             Directives::try_from(&litstr).unwrap(),
             Directives {
-                directives: vec![],
+                number: 0,
                 escapes: true
             }
         );
@@ -318,7 +289,7 @@ mod tests {
         assert_eq!(
             Directives::try_from(&litstr).unwrap(),
             Directives {
-                directives: vec![],
+                number: 0,
                 escapes: true
             }
         );

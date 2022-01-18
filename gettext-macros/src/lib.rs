@@ -49,8 +49,8 @@ pub fn gettext(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
         arguments,
     } = input;
 
-    match check_amount(directives.directives.len(), arguments.0.len()) {
-        Ok(0) if directives.escapes == false => quote! { gettextrs::gettext(#msgid) }.into(),
+    match check_amount(directives.number, arguments.0.len()) {
+        Ok(0) if !directives.escapes => quote! { gettextrs::gettext(#msgid) }.into(),
         Ok(_) => {
             let arguments1 = (&arguments).into_iter();
             let arguments2 = (&arguments).into_iter();
@@ -120,11 +120,11 @@ pub fn ngettext(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     } = input;
 
     let n_arguments = arguments.0.len();
-    match check_amount(directives.directives.len(), n_arguments) {
-        Ok(n_directives) => match check_amount(directives_plural.directives.len(), n_arguments) {
+    match check_amount(directives.number, n_arguments) {
+        Ok(n_directives) => match check_amount(directives_plural.number, n_arguments) {
             Ok(0)
                 if n_directives == 0
-                    && (directives.escapes == false || directives_plural.escapes == false) =>
+                    && (!directives.escapes || !directives_plural.escapes) =>
             {
                 quote! { gettextrs::ngettext(#msgid, #msgid_plural, #n) }.into()
             }
