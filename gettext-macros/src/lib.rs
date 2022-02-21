@@ -122,10 +122,7 @@ pub fn ngettext(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let n_arguments = arguments.0.len();
     match check_amount(directives.number, n_arguments) {
         Ok(n_directives) => match check_amount(directives_plural.number, n_arguments) {
-            Ok(0)
-                if n_directives == 0
-                    && (!directives.escapes || !directives_plural.escapes) =>
-            {
+            Ok(0) if n_directives == 0 && (!directives.escapes || !directives_plural.escapes) => {
                 quote! { gettextrs::ngettext(#msgid, #msgid_plural, #n) }.into()
             }
             Ok(_) => {
