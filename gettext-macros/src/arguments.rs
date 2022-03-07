@@ -31,21 +31,3 @@ impl Parse for Arguments {
         Ok(Self(pos_args))
     }
 }
-
-impl IntoIterator for Arguments {
-    type Item = Argument;
-    type IntoIter = std::vec::IntoIter<Self::Item>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.0.into_iter()
-    }
-}
-
-impl<'a> IntoIterator for &'a Arguments {
-    type Item = &'a Argument;
-    type IntoIter = std::slice::Iter<'a, Argument>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        (&self.0).into_iter()
-    }
-}

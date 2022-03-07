@@ -1,8 +1,10 @@
-use proc_macro2::Span;
+#![allow(clippy::into_iter_on_ref)]
+
+use crate::helpers::check_amount;
 use quote::quote;
 use syn::{
     parse::{Parse, ParseStream},
-    parse_macro_input, Error, LitInt, LitStr, Result, Token,
+    parse_macro_input, Error, LitStr, Result, Token,
 };
 
 mod arguments;
@@ -11,13 +13,10 @@ mod helpers;
 
 use arguments::*;
 use directives::*;
-use helpers::*;
 
 struct Invocation {
-    span: Span,
     msgid: LitStr,
-    directives: Directives,
-    arguments: Arguments,
+    to_format: Option<Arguments>,
 }
 
 impl Parse for Invocation {
@@ -25,35 +24,33 @@ impl Parse for Invocation {
         let span = input.span();
         let msgid: LitStr = input.parse()?;
         let directives = Directives::try_from(&msgid)?;
-        let arguments = match input.parse::<Token![,]>() {
-            Ok(_) => Arguments::parse(input)?,
-            Err(_) => Arguments(Vec::with_capacity(0)),
+        let _ = input.parse::<Token![,]>();
+        let args = Arguments::parse(input)?;
+
+        if let Err(e) = check_amount(directives.amount, args.0.len()) {
+            return Err(Error::new(span, e));
+        }
+
+        let to_format = if directives.escapes || !args.0.is_empty() {
+            Some(args)
+        } else {
+            None
         };
 
-        Ok(Self {
-            span,
-            msgid,
-            directives,
-            arguments,
-        })
+        Ok(Self { msgid, to_format })
     }
 }
 
 #[proc_macro]
 pub fn gettext(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = parse_macro_input!(input as Invocation);
-    let Invocation {
-        span,
-        msgid,
-        directives,
-        arguments,
-    } = input;
+    let Invocation { msgid, to_format } = input;
 
-    match check_amount(directives.number, arguments.0.len()) {
-        Ok(0) if !directives.escapes => quote! { gettextrs::gettext(#msgid) }.into(),
-        Ok(_) => {
-            let arguments1 = (&arguments).into_iter();
-            let arguments2 = (&arguments).into_iter();
+    match to_format {
+        None => quote! { gettextrs::gettext(#msgid) }.into(),
+        Some(args) => {
+            let arguments1 = (&args.0).into_iter();
+            let arguments2 = (&args.0).into_iter();
             quote! {{
                 match gettextrs::formatter::format(
                     &gettextrs::gettext(#msgid),
@@ -65,6 +62,5 @@ pub fn gettext(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
             }}
             .into()
         }
-        Err(e) => Error::new(span, e).into_compile_error().into(),
     }
 }

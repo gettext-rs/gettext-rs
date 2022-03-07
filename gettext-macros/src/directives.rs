@@ -5,7 +5,7 @@ use syn::{
 
 #[cfg_attr(test, derive(Debug, PartialEq))]
 pub struct Directives {
-    pub number: usize,
+    pub amount: usize,
     pub escapes: bool,
 }
 
@@ -17,13 +17,13 @@ impl TryFrom<&LitStr> for Directives {
         let value = msgid.value();
         let mut chars = value.chars().peekable();
         let mut result = Self {
-            number: 0,
+            amount: 0,
             escapes: false,
         };
 
         while let Some(c) = chars.next() {
             if c == '{' && chars.next_if_eq(&'}').is_some() {
-                result.number += 1;
+                result.amount += 1;
             } else if (c == '{' || c == '}') && chars.next_if_eq(&c).is_some() {
                 result.escapes = true;
             } else if (c == '{' || c == '}') && chars.next_if_eq(&c).is_none() {
@@ -68,7 +68,7 @@ mod tests {
         assert_eq!(
             Directives::try_from(&litstr).unwrap(),
             Directives {
-                number: 1,
+                amount: 1,
                 escapes: false
             }
         );
@@ -81,7 +81,7 @@ mod tests {
         assert_eq!(
             Directives::try_from(&litstr).unwrap(),
             Directives {
-                number: 1,
+                amount: 1,
                 escapes: false
             }
         );
@@ -94,7 +94,7 @@ mod tests {
         assert_eq!(
             Directives::try_from(&litstr).unwrap(),
             Directives {
-                number: 1,
+                amount: 1,
                 escapes: false
             }
         );
@@ -107,7 +107,7 @@ mod tests {
         assert_eq!(
             Directives::try_from(&litstr).unwrap(),
             Directives {
-                number: 1,
+                amount: 1,
                 escapes: false
             }
         );
@@ -120,7 +120,7 @@ mod tests {
         assert_eq!(
             Directives::try_from(&litstr).unwrap(),
             Directives {
-                number: 2,
+                amount: 2,
                 escapes: false
             }
         );
@@ -133,7 +133,7 @@ mod tests {
         assert_eq!(
             Directives::try_from(&litstr).unwrap(),
             Directives {
-                number: 4,
+                amount: 4,
                 escapes: false
             }
         );
@@ -146,7 +146,7 @@ mod tests {
         assert_eq!(
             Directives::try_from(&litstr).unwrap(),
             Directives {
-                number: 0,
+                amount: 0,
                 escapes: true
             }
         );
@@ -159,7 +159,7 @@ mod tests {
         assert_eq!(
             Directives::try_from(&litstr).unwrap(),
             Directives {
-                number: 0,
+                amount: 0,
                 escapes: true
             }
         );
@@ -172,7 +172,7 @@ mod tests {
         assert_eq!(
             Directives::try_from(&litstr).unwrap(),
             Directives {
-                number: 0,
+                amount: 0,
                 escapes: true
             }
         );
@@ -185,7 +185,7 @@ mod tests {
         assert_eq!(
             Directives::try_from(&litstr).unwrap(),
             Directives {
-                number: 0,
+                amount: 0,
                 escapes: true
             }
         );
@@ -198,7 +198,7 @@ mod tests {
         assert_eq!(
             Directives::try_from(&litstr).unwrap(),
             Directives {
-                number: 0,
+                amount: 0,
                 escapes: true
             }
         );
@@ -211,7 +211,7 @@ mod tests {
         assert_eq!(
             Directives::try_from(&litstr).unwrap(),
             Directives {
-                number: 0,
+                amount: 0,
                 escapes: true
             }
         );
@@ -224,7 +224,7 @@ mod tests {
         assert_eq!(
             Directives::try_from(&litstr).unwrap(),
             Directives {
-                number: 0,
+                amount: 0,
                 escapes: true
             }
         );
@@ -237,7 +237,7 @@ mod tests {
         assert_eq!(
             Directives::try_from(&litstr).unwrap(),
             Directives {
-                number: 0,
+                amount: 0,
                 escapes: true
             }
         );
@@ -250,7 +250,7 @@ mod tests {
         assert_eq!(
             Directives::try_from(&litstr).unwrap(),
             Directives {
-                number: 0,
+                amount: 0,
                 escapes: true
             }
         );
@@ -263,7 +263,7 @@ mod tests {
         assert_eq!(
             Directives::try_from(&litstr).unwrap(),
             Directives {
-                number: 0,
+                amount: 0,
                 escapes: true
             }
         );
@@ -276,7 +276,7 @@ mod tests {
         assert_eq!(
             Directives::try_from(&litstr).unwrap(),
             Directives {
-                number: 0,
+                amount: 0,
                 escapes: true
             }
         );
@@ -289,7 +289,7 @@ mod tests {
         assert_eq!(
             Directives::try_from(&litstr).unwrap(),
             Directives {
-                number: 0,
+                amount: 0,
                 escapes: true
             }
         );
