@@ -109,9 +109,6 @@ fn main() {
         println!("cargo:rustc-link-lib=dylib=iconv");
     }
 
-    // Programs required to compile GNU gettext
-    check_dependencies(vec!["cmp", "diff", "find", "xz"]);
-
     if let Some(gettext_dir) = env("GETTEXT_DIR") {
         println!("cargo:root={}", gettext_dir);
         if let Some(bin) = env("GETTEXT_BIN_DIR") {
@@ -158,6 +155,9 @@ fn main() {
         println!("cargo:include={}", include);
         return;
     }
+
+    // Programs required to compile GNU gettext
+    check_dependencies(vec!["cmp", "diff", "find", "xz"]);
 
     let host = env::var("HOST").unwrap();
     let src = env::current_dir().unwrap();
