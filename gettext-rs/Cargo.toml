@@ -17,7 +17,7 @@ name = "gettextrs"
 [features]
 default = ["macros"]
 gettext-system = ["gettext-sys/gettext-system"]
-macros = ["gettext-macros"]
+macros = ["gettext-macros", "aho-corasick", "macros-shared"]
 
 [dependencies.gettext-sys]
 version = "0.21.0"
@@ -30,6 +30,8 @@ optional = true
 
 [dependencies]
 locale_config = "0.3"
+aho-corasick = { version = "0.7", optional = true }
+macros-shared = { path = "../macros-shared", optional = true }
 
 [dev-dependencies]
 lazy_static = "1"

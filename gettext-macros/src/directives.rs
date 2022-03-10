@@ -1,3 +1,4 @@
+use macros_shared::*;
 use syn::{
     parse::{Error, Result},
     LitStr,
@@ -13,36 +14,32 @@ impl TryFrom<&LitStr> for Directives {
     type Error = Error;
 
     fn try_from(msgid: &LitStr) -> Result<Self> {
-        let span = msgid.span();
-        let value = msgid.value();
-        let mut chars = value.chars().peekable();
         let mut result = Self {
             amount: 0,
             escapes: false,
         };
 
-        while let Some(c) = chars.next() {
-            if c == '{' && chars.next_if_eq(&'}').is_some() {
-                result.amount += 1;
-            } else if (c == '{' || c == '}') && chars.next_if_eq(&c).is_some() {
-                result.escapes = true;
-            } else if (c == '{' || c == '}') && chars.next_if_eq(&c).is_none() {
-                return Err(
+        for m in directives_parser().find_iter(&msgid.value()) {
+            match DIRECTIVES_PATTERNS[m.pattern()] {
+                "{}" => result.amount += 1,
+                "{{" | "}}" => result.escapes = true,
+                c @ ("{" | "}") => return Err(
                     Error::new(
-                        span,
+                        msgid.span(),
                         format!(
                             "Unmatched `{0}` in format string. If you intended to print `{0}`, you can escape it using `{1}`",
                             c,
                             {
-                                if c == '{' {
-                                    "{{"
-                                } else {
-                                    "}}"
+                                match c {
+                                    "{" => "{{",
+                                    "}" => "}}",
+                                    _ => unreachable!()
                                 }
                             }
                         )
                     )
-                );
+                ),
+                _ => unreachable!()
             }
         }
 

@@ -80,8 +80,12 @@
 extern crate locale_config;
 
 #[cfg(feature = "macros")]
+extern crate aho_corasick;
+#[cfg(feature = "macros")]
 extern crate gettext_macros;
 extern crate gettext_sys as ffi;
+#[cfg(feature = "macros")]
+extern crate macros_shared;
 
 use std::ffi::CStr;
 use std::ffi::CString;

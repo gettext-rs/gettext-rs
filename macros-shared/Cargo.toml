@@ -1,0 +1,10 @@
+[package]
+name = "macros-shared"
+version = "0.1.0"
+authors = ["Maksym Hazevych <dpadar@protonmail.com>"]
+license = "MIT OR Unlicense"
+edition = "2021"
+publish = false
+
+[dependencies]
+aho-corasick = "0.7"
