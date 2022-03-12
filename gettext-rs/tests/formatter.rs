@@ -250,3 +250,108 @@ fn no_formatting() {
         Some("There is nothing to format".into())
     )
 }
+
+// ============================================================
+//                     Ordered parameters
+// ============================================================
+
+#[test]
+fn ordered_parameters() {
+    assert_eq!(
+        format("{0}", &["Single".to_string()]),
+        Some("Single".into())
+    );
+}
+
+#[test]
+fn multiple_ordered_parameters() {
+    assert_eq!(
+        format("{0}, {1}", &["First".into(), "Second".into()]),
+        Some("First, Second".into())
+    );
+}
+
+#[test]
+fn multiple_reverse_ordered_parameters() {
+    assert_eq!(
+        format("{1}, {0}", &["First".into(), "Second".into()]),
+        Some("Second, First".into())
+    );
+}
+
+#[test]
+fn a_bunch_of_ordered_parameters() {
+    assert_eq!(
+        format(
+            "{0}, {1}, {2}, {3}",
+            &[
+                "First".into(),
+                "Second".into(),
+                "Third".into(),
+                "Fourth".into()
+            ]
+        ),
+        Some("First, Second, Third, Fourth".into())
+    );
+}
+
+#[test]
+fn a_bunch_of_reverse_ordered_parameters() {
+    assert_eq!(
+        format(
+            "{3}, {2}, {1}, {0}",
+            &[
+                "First".into(),
+                "Second".into(),
+                "Third".into(),
+                "Fourth".into()
+            ]
+        ),
+        Some("Fourth, Third, Second, First".into())
+    );
+}
+
+#[test]
+fn a_bunch_of_randomly_ordered_parameters() {
+    assert_eq!(
+        format(
+            "{2}, {3}, {1}, {0}",
+            &[
+                "First".into(),
+                "Second".into(),
+                "Third".into(),
+                "Fourth".into()
+            ]
+        ),
+        Some("Third, Fourth, Second, First".into())
+    );
+}
+
+#[test]
+fn a_bunch_of_partially_ordered_parameters() {
+    assert_eq!(
+        format(
+            "{2}, {3}, {}, {}",
+            &[
+                "First".into(),
+                "Second".into(),
+                "Third".into(),
+                "Fourth".into()
+            ]
+        ),
+        Some("Third, Fourth, First, Second".into())
+    );
+}
+
+#[test]
+fn extra_ordered_parameter() {
+    assert_eq!(
+        format("{}, {}, {1}", &["First".into(), "Second".into()]),
+        Some("First, Second, Second".into())
+    );
+}
+
+#[test]
+fn ordered_unused_parameter() {
+    assert_eq!(format("{0}, {}", &["First".into(), "Second".into()]), None);
+}
