@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.21.3 - 2022-03-16
+
+### Changed
+- `wbindtextdomain` is now a Rust function rather than a C symbol. The symbol is
+    now named `libintl_wbindtextdomain`, for better compatibility with MinGW.
+    This change only affects Windows (Marin)
+
+### Fixed
+- Only check for build dependencies when actually building the library (Ignacio
+    Casal Quinteiro)
+
+
+
 ## 0.21.2 - 2021-07-21
 
 ### Fixed
