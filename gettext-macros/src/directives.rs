@@ -59,180 +59,36 @@ mod tests {
 
     #[test]
     fn parameter() {
-        let litstr = LitStr!("{}");
-
-        assert!(validate(&litstr, 1).unwrap());
-    }
-
-    #[test]
-    fn text_before_parameter() {
-        let litstr = LitStr!("Text {}");
-
-        assert!(validate(&litstr, 1).unwrap());
-    }
-
-    #[test]
-    fn text_after_parameter() {
-        let litstr = LitStr!("{} text");
-
-        assert!(validate(&litstr, 1).unwrap());
-    }
-
-    #[test]
-    fn text_around_parameter() {
         let litstr = LitStr!("There is a {} parameter");
 
         assert!(validate(&litstr, 1).unwrap());
     }
 
     #[test]
-    fn text_around_multiple_parameters() {
-        let litstr = LitStr!("There are {} multiple {} parameters");
+    fn ordered_parameter() {
+        let litstr = LitStr!("There is a {0} parameter");
 
-        assert!(validate(&litstr, 2).unwrap());
-    }
-
-    #[test]
-    fn text_around_a_bunch_of_parameters() {
-        let litstr = LitStr!("There is {} quite {} a bunch {} of text {} around parameters");
-
-        assert!(validate(&litstr, 4).unwrap());
+        assert!(validate(&litstr, 1).unwrap());
     }
 
     #[test]
     fn escaped_opening_brace() {
-        let litstr = LitStr!("{{");
-
-        assert!(validate(&litstr, 0).unwrap());
-    }
-
-    #[test]
-    fn escaped_closing_brace() {
-        let litstr = LitStr!("}}");
-
-        assert!(validate(&litstr, 0).unwrap());
-    }
-
-    #[test]
-    fn escaped_pair_of_braces() {
-        let litstr = LitStr!("{{}}");
-
-        assert!(validate(&litstr, 0).unwrap());
-    }
-
-    #[test]
-    fn text_before_escaped_opening_brace() {
-        let litstr = LitStr!("Text {{");
-
-        assert!(validate(&litstr, 0).unwrap());
-    }
-
-    #[test]
-    fn text_before_escaped_closing_brace() {
-        let litstr = LitStr!("Text }}");
-
-        assert!(validate(&litstr, 0).unwrap());
-    }
-
-    #[test]
-    fn text_before_escaped_pair_of_braces() {
-        let litstr = LitStr!("Text {{}}");
-
-        assert!(validate(&litstr, 0).unwrap());
-    }
-
-    #[test]
-    fn text_after_escaped_opening_brace() {
-        let litstr = LitStr!("{{ text");
-
-        assert!(validate(&litstr, 0).unwrap());
-    }
-
-    #[test]
-    fn text_after_escaped_closing_brace() {
-        let litstr = LitStr!("}} text");
-
-        assert!(validate(&litstr, 0).unwrap());
-    }
-
-    #[test]
-    fn text_after_escaped_pair_of_braces() {
-        let litstr = LitStr!("{{}} text");
-
-        assert!(validate(&litstr, 0).unwrap());
-    }
-
-    #[test]
-    fn text_around_escaped_opening_brace() {
         let litstr = LitStr!("There is an {{ escape");
 
         assert!(validate(&litstr, 0).unwrap());
     }
 
     #[test]
-    fn text_around_escaped_closing_brace() {
+    fn escaped_closing_brace() {
         let litstr = LitStr!("There is an }} escape");
 
         assert!(validate(&litstr, 0).unwrap());
     }
 
     #[test]
-    fn text_around_escaped_pair_of_braces() {
-        let litstr = LitStr!("There are {{}} escapes");
+    fn no_parameters() {
+        let litstr = LitStr!("There is no parameters");
 
-        assert!(validate(&litstr, 0).unwrap());
-    }
-
-    // ========================================================
-    //                   Ordered parameters
-    // ========================================================
-
-    #[test]
-    fn ordered_parameter() {
-        let litstr = LitStr!("{0}");
-
-        assert!(validate(&litstr, 1).unwrap());
-    }
-
-    #[test]
-    fn multiple_ordered_parameters() {
-        let litstr = LitStr!("{0}, {1}");
-
-        assert!(validate(&litstr, 2).unwrap());
-    }
-
-    #[test]
-    fn multiple_reverse_ordered_parameters() {
-        let litstr = LitStr!("{1}, {0}");
-
-        assert!(validate(&litstr, 2).unwrap());
-    }
-
-    #[test]
-    fn a_bunch_of_ordered_parameters() {
-        let litstr = LitStr!("{0}, {1}, {2}, {3}");
-
-        assert!(validate(&litstr, 4).unwrap());
-    }
-
-    #[test]
-    fn a_bunch_of_reverse_ordered_parameters() {
-        let litstr = LitStr!("{3}, {2}, {1}, {0}");
-
-        assert!(validate(&litstr, 4).unwrap());
-    }
-
-    #[test]
-    fn a_bunch_of_randomly_ordered_parameters() {
-        let litstr = LitStr!("{2}, {3}, {1}, {0}");
-
-        assert!(validate(&litstr, 4).unwrap());
-    }
-
-    #[test]
-    fn a_bunch_of_partially_ordered_parameters() {
-        let litstr = LitStr!("{2}, {3}, {}, {}");
-
-        assert!(validate(&litstr, 4).unwrap());
+        assert!(!validate(&litstr, 0).unwrap());
     }
 }
