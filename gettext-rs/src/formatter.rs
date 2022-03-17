@@ -1,4 +1,4 @@
-use macros_shared::*;
+use macros_shared::{Brace::*, Pattern::*, *};
 
 pub struct PosArguments<'a> {
     args: &'a [String],
@@ -62,39 +62,30 @@ pub fn format<'a, T: Into<PosArguments<'a>>>(haystack: &str, pos_args: T) -> Opt
     let mut pos_args = pos_args.into();
     let mut result = String::new();
     let mut cursor = 0;
-    let mut inside = (false, 0);
 
-    for m in directives_parser().find_iter(haystack) {
-        if inside.0 {
-            inside.1 = cursor;
-        } else {
-            result.push_str(&haystack[cursor..m.start()]);
-        }
-        cursor = m.end();
+    for p in Formatter::new(haystack) {
+        let todo: (&str, usize, usize);
 
-        match DIRECTIVES_PATTERNS[m.pattern()] {
-            "{}" => match pos_args.next() {
-                Some(v) => result.push_str(v),
+        match p {
+            Ordered(None, start, end) => match pos_args.next() {
+                Some(v) => todo = (v, start, end),
                 _ => return None,
             },
-            "{{" => result.push('{'),
-            "}}" => result.push('}'),
-            "{" if !inside.0 => inside.0 = true,
-            "}" if inside.0 => match haystack[inside.1..m.start()].parse::<usize>() {
-                Ok(n) => {
-                    inside.0 = false;
-                    match pos_args.get(n) {
-                        Some(v) => result.push_str(v),
-                        _ => return None,
-                    }
-                }
+            Ordered(Some(n), start, end) => match pos_args.get(n) {
+                Some(v) => todo = (v, start, end),
                 _ => return None,
             },
-            _ => return None,
+            Escaped(Opening, start, end) => todo = ("{", start, end),
+            Escaped(Closing, start, end) => todo = ("}", start, end),
+            Unescaped(_) => return None,
         }
+
+        result.push_str(&haystack[cursor..todo.1]);
+        result.push_str(todo.0);
+        cursor = todo.2;
     }
 
-    if !pos_args.is_empty() || inside.0 {
+    if !pos_args.is_empty() {
         return None;
     }
 

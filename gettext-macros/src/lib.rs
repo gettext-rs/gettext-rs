@@ -1,10 +1,9 @@
 #![allow(clippy::into_iter_on_ref)]
 
-use crate::helpers::check_amount;
 use quote::quote;
 use syn::{
     parse::{Parse, ParseStream},
-    parse_macro_input, Error, LitStr, Result, Token,
+    parse_macro_input, LitStr, Result, Token,
 };
 
 mod arguments;
@@ -21,20 +20,12 @@ struct Invocation {
 
 impl Parse for Invocation {
     fn parse(input: ParseStream) -> Result<Self> {
-        let span = input.span();
         let msgid: LitStr = input.parse()?;
-        let directives = Directives::try_from(&msgid)?;
         let _ = input.parse::<Token![,]>();
         let args = Arguments::parse(input)?;
-
-        if let Err(e) = check_amount(directives.amount, args.0.len()) {
-            return Err(Error::new(span, e));
-        }
-
-        let to_format = if directives.escapes || !args.0.is_empty() {
-            Some(args)
-        } else {
-            None
+        let to_format = match validate(&msgid, args.0.len())? {
+            true => Some(args),
+            false => None,
         };
 
         Ok(Self { msgid, to_format })
