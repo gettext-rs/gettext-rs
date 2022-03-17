@@ -1,12 +1,11 @@
-use crate::helpers::*;
 use macros_shared::*;
 use syn::{
     parse::{Error, Result},
     LitStr,
 };
 
-pub fn validate(msgid: &LitStr, n_args: usize) -> Result<bool> {
-    let mut n_dirs = 0;
+pub fn validate(msgid: &LitStr, args: usize) -> Result<bool> {
+    let mut params = 0;
     let mut escapes = false;
     let span = msgid.span();
     let haystack = &msgid.value();
@@ -15,15 +14,19 @@ pub fn validate(msgid: &LitStr, n_args: usize) -> Result<bool> {
         use Pattern::*;
 
         match p {
-            Ordered(None, ..) => n_dirs += 1,
+            Ordered(None, ..) => params += 1,
             Escaped(..) => escapes = true,
-            Ordered(Some(n), ..) => match n < n_args {
-                true => n_dirs += 1,
+            Ordered(Some(n), ..) => match n < args {
+                true => params += 1,
                 false => {
-                    let there_is = match n_args {
-                        0 => "no arguments were given".into(),
-                        1 => "there is 1 argument".into(),
-                        _ => format!("there are {} arguments", n_args),
+                    let f;
+                    let there_is = match args {
+                        0 => "no arguments were given",
+                        1 => "there is 1 argument",
+                        _ => {
+                            f = format!("there are {} arguments", args);
+                            &f
+                        }
                     };
                     let msg = format!(
                         "invalid reference to positional argument {} ({})\nnote: positional arguments are zero-based",
@@ -46,11 +49,28 @@ pub fn validate(msgid: &LitStr, n_args: usize) -> Result<bool> {
         }
     }
 
-    if let Err(e) = check_amount(n_dirs, n_args) {
-        return Err(Error::new(span, e));
+    if params != args {
+        let arguments = if params == 1 { "argument" } else { "arguments" };
+
+        let f;
+        let given = if args == 0 {
+            "no arguments were given"
+        } else if args == 1 {
+            "there is 1 argument"
+        } else {
+            f = format!("there are {} arguments", args);
+            &f
+        };
+
+        let msg = format!(
+            "{} positional {} in format string, but {}",
+            params, arguments, given
+        );
+
+        return Err(Error::new(span, msg));
     }
 
-    if n_dirs == 0 && !escapes {
+    if params == 0 && !escapes {
         Ok(false)
     } else {
         Ok(true)
