@@ -19,7 +19,18 @@ pub fn validate(msgid: &LitStr, n_args: usize) -> Result<bool> {
             Escaped(..) => escapes = true,
             Ordered(Some(n), ..) => match n < n_args {
                 true => n_dirs += 1,
-                false => return Err(Error::new(span, "Index out of bounds")),
+                false => {
+                    let there_is = match n_args {
+                        0 => "no arguments were given".into(),
+                        1 => "there is 1 argument".into(),
+                        _ => format!("there are {} arguments", n_args),
+                    };
+                    let msg = format!(
+                        "invalid reference to positional argument {} ({})\nnote: positional arguments are zero-based",
+                        n, there_is
+                    );
+                    return Err(Error::new(span, msg));
+                }
             },
             Unescaped(c) => {
                 let (a, b) = match c {
