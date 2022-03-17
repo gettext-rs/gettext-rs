@@ -38,7 +38,7 @@ pub fn validate(msgid: &LitStr, n_args: usize) -> Result<bool> {
                     Brace::Closing => ("}", "}}"),
                 };
                 let msg = format!(
-                    "Unmatched `{0}` in format string. If you intended to print `{0}`, you can escape it using `{1}`",
+                    "unmatched `{0}` in format string\nnote: if you intended to print `{0}`, you can escape it using `{1}`",
                     a, b
                 );
                 return Err(Error::new(span, msg));
