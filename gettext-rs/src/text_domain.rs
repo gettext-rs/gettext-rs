@@ -362,7 +362,12 @@ impl TextDomain {
                 if let Ok(entry_iter) = fs::read_dir(&locale_path) {
                     return entry_iter
                         .filter_map(|entry_res| entry_res.ok())
-                        .filter(|entry| matches!(entry.file_type().map(|ft| ft.is_dir()), Ok(true)))
+                        .filter(|entry| {
+                            matches!(
+                                entry.file_type().map(|ft| ft.is_dir() || ft.is_symlink()),
+                                Ok(true)
+                            )
+                        })
                         .any(|entry| {
                             if let Some(entry_name) = entry.file_name().to_str() {
                                 return entry_name.starts_with(&lang)
