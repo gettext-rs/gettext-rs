@@ -68,6 +68,50 @@ pub fn gettext(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
         .into()
 }
 
+#[cfg(test)]
+mod test_invocation_parsing {
+    use quote::quote;
+    use syn::parse2;
+
+    use crate::Invocation;
+
+    #[test]
+    fn just_msgid() {
+        let inv = quote! {"Hello, World!"};
+        let inv: Invocation = parse2(inv).unwrap();
+
+        assert_eq!(&inv.msgid.value(), "Hello, World!");
+        assert!(inv.to_format.is_none());
+    }
+
+    #[test]
+    fn trailing_comma() {
+        let inv = quote! {"Hello, World!",};
+        let inv: Invocation = parse2(inv).unwrap();
+
+        assert_eq!(&inv.msgid.value(), "Hello, World!");
+        assert!(inv.to_format.is_none());
+    }
+
+    #[test]
+    fn formatting() {
+        let inv = quote! {"Hello, {}!", "World"};
+        let inv: Invocation = parse2(inv).unwrap();
+
+        assert_eq!(&inv.msgid.value(), "Hello, {}!");
+        assert!(inv.to_format.is_some());
+    }
+
+    #[test]
+    fn formatting_and_trailing_comma() {
+        let inv = quote! {"Hello, {}!", "World",};
+        let inv: Invocation = parse2(inv).unwrap();
+
+        assert_eq!(&inv.msgid.value(), "Hello, {}!");
+        assert!(inv.to_format.is_some());
+    }
+}
+
 struct DInvocation {
     d: Expr,
     inv: Invocation,
@@ -101,4 +145,35 @@ pub fn dgettext(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     parse_macro_input!(input as DInvocation)
         .to_token_stream()
         .into()
+}
+
+#[cfg(test)]
+mod test_dinvocation_parsing {
+    use crate::DInvocation;
+    use quote::quote;
+    use syn::{parse2, Expr, Lit};
+
+    #[test]
+    #[should_panic]
+    fn just_msgid() {
+        let inv = quote! {"Hello, World!"};
+        let _: DInvocation = parse2(inv).unwrap();
+    }
+
+    #[test]
+    fn domainname_and_msgid() {
+        let inv = quote! {"domainname", "Hello, World!"};
+        let inv: DInvocation = parse2(inv).unwrap();
+
+        assert!(matches!(
+            inv.d,
+            Expr::Lit(lit)
+            if matches!(
+                &lit.lit,
+                Lit::Str(lit)
+                if lit.value() == "domainname"
+            )
+        ));
+        assert_eq!(&inv.inv.msgid.value(), "Hello, World!");
+    }
 }
