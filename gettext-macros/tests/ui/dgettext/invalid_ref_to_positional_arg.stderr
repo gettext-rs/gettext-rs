@@ -1,0 +1,20 @@
+error: invalid reference to positional argument 0 (no arguments were given)
+       note: positional arguments are zero-based
+ --> tests/ui/dgettext/invalid_ref_to_positional_arg.rs:4:29
+  |
+4 |     dgettext!("domainname", "{0}");
+  |                             ^^^^^
+
+error: invalid reference to positional argument 1 (there is 1 argument)
+       note: positional arguments are zero-based
+ --> tests/ui/dgettext/invalid_ref_to_positional_arg.rs:5:29
+  |
+5 |     dgettext!("domainname", "{}{1}", 1);
+  |                             ^^^^^^^
+
+error: invalid reference to positional argument 2 (there are 2 arguments)
+       note: positional arguments are zero-based
+ --> tests/ui/dgettext/invalid_ref_to_positional_arg.rs:6:29
+  |
+6 |     dgettext!("domainname", "{}{}{2}", 1, 2);
+  |                             ^^^^^^^^^

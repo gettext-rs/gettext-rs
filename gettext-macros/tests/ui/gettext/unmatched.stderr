@@ -1,13 +1,13 @@
 error: unmatched `{` in format string
        note: if you intended to print `{`, you can escape it using `{{`
- --> tests/ui/unmatched.rs:4:14
+ --> tests/ui/gettext/unmatched.rs:4:14
   |
 4 |     gettext!("Hello, {!");
   |              ^^^^^^^^^^^
 
 error: unmatched `}` in format string
        note: if you intended to print `}`, you can escape it using `}}`
- --> tests/ui/unmatched.rs:5:14
+ --> tests/ui/gettext/unmatched.rs:5:14
   |
 5 |     gettext!("Hello, }!");
   |              ^^^^^^^^^^^

@@ -1,20 +1,20 @@
 error: invalid reference to positional argument 0 (no arguments were given)
        note: positional arguments are zero-based
- --> tests/ui/invalid_ref_to_positional_arg.rs:4:14
+ --> tests/ui/gettext/invalid_ref_to_positional_arg.rs:4:14
   |
 4 |     gettext!("{0}");
   |              ^^^^^
 
 error: invalid reference to positional argument 1 (there is 1 argument)
        note: positional arguments are zero-based
- --> tests/ui/invalid_ref_to_positional_arg.rs:5:14
+ --> tests/ui/gettext/invalid_ref_to_positional_arg.rs:5:14
   |
 5 |     gettext!("{}{1}", 1);
   |              ^^^^^^^
 
 error: invalid reference to positional argument 2 (there are 2 arguments)
        note: positional arguments are zero-based
- --> tests/ui/invalid_ref_to_positional_arg.rs:6:14
+ --> tests/ui/gettext/invalid_ref_to_positional_arg.rs:6:14
   |
 6 |     gettext!("{}{}{2}", 1, 2);
   |              ^^^^^^^^^

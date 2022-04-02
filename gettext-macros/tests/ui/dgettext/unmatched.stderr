@@ -1,0 +1,13 @@
+error: unmatched `{` in format string
+       note: if you intended to print `{`, you can escape it using `{{`
+ --> tests/ui/dgettext/unmatched.rs:4:29
+  |
+4 |     dgettext!("domainname", "Hello, {!");
+  |                             ^^^^^^^^^^^
+
+error: unmatched `}` in format string
+       note: if you intended to print `}`, you can escape it using `}}`
+ --> tests/ui/dgettext/unmatched.rs:5:29
+  |
+5 |     dgettext!("domainname", "Hello, }!");
+  |                             ^^^^^^^^^^^
