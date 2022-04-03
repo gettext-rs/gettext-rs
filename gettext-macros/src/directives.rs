@@ -1,3 +1,4 @@
+use crate::error::UiError;
 use macros_shared::*;
 use syn::{
     parse::{Error, Result},
@@ -7,7 +8,6 @@ use syn::{
 pub fn validate(msgid: &LitStr, args: usize) -> Result<bool> {
     let mut params = 0;
     let mut escapes = false;
-    let span = msgid.span();
     let haystack = &msgid.value();
 
     for p in Formatter::new(haystack) {
@@ -18,56 +18,17 @@ pub fn validate(msgid: &LitStr, args: usize) -> Result<bool> {
             Escaped(..) => escapes = true,
             Ordered(Some(n), ..) => match n < args {
                 true => params += 1,
-                false => {
-                    let f;
-                    let there_is = match args {
-                        0 => "no arguments were given",
-                        1 => "there is 1 argument",
-                        _ => {
-                            f = format!("there are {} arguments", args);
-                            &f
-                        }
-                    };
-                    let msg = format!(
-                        "invalid reference to positional argument {} ({})\nnote: positional arguments are zero-based",
-                        n, there_is
-                    );
-                    return Err(Error::new(span, msg));
-                }
+                false => return Err(Error::new(msgid.span(), UiError::InvalidRefToPosArg(n))),
             },
-            Unescaped(c) => {
-                let (a, b) = match c {
-                    Brace::Opening => ("{", "{{"),
-                    Brace::Closing => ("}", "}}"),
-                };
-                let msg = format!(
-                    "unmatched `{0}` in format string\nnote: if you intended to print `{0}`, you can escape it using `{1}`",
-                    a, b
-                );
-                return Err(Error::new(span, msg));
-            }
+            Unescaped(c) => return Err(Error::new(msgid.span(), UiError::Unmatched(c))),
         }
     }
 
     if params != args {
-        let arguments = if params == 1 { "argument" } else { "arguments" };
-
-        let f;
-        let given = if args == 0 {
-            "no arguments were given"
-        } else if args == 1 {
-            "there is 1 argument"
-        } else {
-            f = format!("there are {} arguments", args);
-            &f
-        };
-
-        let msg = format!(
-            "{} positional {} in format string, but {}",
-            params, arguments, given
-        );
-
-        return Err(Error::new(span, msg));
+        return Err(Error::new(
+            msgid.span(),
+            UiError::MismatchNumOfArgs { params, args },
+        ));
     }
 
     if params == 0 && !escapes {

@@ -8,6 +8,7 @@ use syn::{
 
 mod arguments;
 mod directives;
+mod error;
 
 use arguments::*;
 use directives::*;
