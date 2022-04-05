@@ -1,0 +1,7 @@
+error: requires at least a msgid string argument
+ --> tests/ui/gettext/requires_at_least.rs:4:5
+  |
+4 |     gettext!();
+  |     ^^^^^^^^^^
+  |
+  = note: this error originates in the macro `gettext` (in Nightly builds, run with -Z macro-backtrace for more info)

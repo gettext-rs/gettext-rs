@@ -1,0 +1,7 @@
+error: requires at least domainname and msgid string arguments
+ --> tests/ui/dgettext/requires_at_least.rs:4:5
+  |
+4 |     dgettext!();
+  |     ^^^^^^^^^^^
+  |
+  = note: this error originates in the macro `dgettext` (in Nightly builds, run with -Z macro-backtrace for more info)

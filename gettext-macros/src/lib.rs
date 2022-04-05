@@ -3,7 +3,7 @@
 use quote::{quote, ToTokens};
 use syn::{
     parse::{Parse, ParseStream},
-    parse_macro_input, Expr, LitStr, Result, Token,
+    parse_macro_input, Error, Expr, LitStr, Result, Token,
 };
 
 mod arguments;
@@ -12,6 +12,7 @@ mod error;
 
 use arguments::*;
 use directives::*;
+use error::*;
 
 fn fallback(
     msgid: &LitStr,
@@ -31,6 +32,28 @@ fn fallback(
     }}
 }
 
+fn comma_and_further(msgid: &LitStr, input: ParseStream) -> Result<Option<Arguments>> {
+    let comma = &input.parse::<Token![,]>().err();
+    let args = Arguments::parse(input).map_err(|err| combine_err(comma, err))?;
+    let to_format = validate(msgid, args.0.len()).map_err(|err| {
+        if !args.0.is_empty() {
+            return combine_err(comma, err);
+        }
+        err
+    })?;
+
+    if !args.0.is_empty() {
+        if let Some(e) = comma {
+            return Err(e.to_owned());
+        }
+    }
+
+    match to_format {
+        true => Ok(Some(args)),
+        false => Ok(None),
+    }
+}
+
 struct Invocation {
     msgid: LitStr,
     to_format: Option<Arguments>,
@@ -38,13 +61,11 @@ struct Invocation {
 
 impl Parse for Invocation {
     fn parse(input: ParseStream) -> Result<Self> {
-        let msgid: LitStr = input.parse()?;
-        let _ = input.parse::<Token![,]>();
-        let args = Arguments::parse(input)?;
-        let to_format = match validate(&msgid, args.0.len())? {
-            true => Some(args),
-            false => None,
+        let msgid: LitStr = match input.parse() {
+            Err(e) => return Err(Error::new(e.span(), UiError::AtLeastMsgid)),
+            Ok(v) => v,
         };
+        let to_format = comma_and_further(&msgid, input)?;
 
         Ok(Self { msgid, to_format })
     }
@@ -115,26 +136,41 @@ mod test_invocation_parsing {
 
 struct DInvocation {
     d: Expr,
-    inv: Invocation,
+    msgid: LitStr,
+    to_format: Option<Arguments>,
 }
 
 impl Parse for DInvocation {
     fn parse(input: ParseStream) -> Result<Self> {
-        let d: Expr = input.parse()?;
-        let _ = input.parse::<Token![,]>();
-        let inv = input.parse::<Invocation>()?;
+        let d = match input.parse::<Expr>() {
+            Err(e) => return Err(Error::new(e.span(), UiError::AtLeastDAndMsgid)),
+            Ok(v) => v,
+        };
+        let comma = input.parse::<Token![,]>();
+        let msgid = match input.parse::<LitStr>() {
+            Err(e) => return Err(Error::new(e.span(), UiError::MissingMsgid)),
+            Ok(v) => {
+                comma?;
+                v
+            }
+        };
+        let to_format = comma_and_further(&msgid, input)?;
 
-        Ok(Self { d, inv })
+        Ok(Self {
+            d,
+            msgid,
+            to_format,
+        })
     }
 }
 
 impl ToTokens for DInvocation {
     fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
         let d = &self.d;
-        let msgid = &self.inv.msgid;
+        let msgid = &self.msgid;
         let inv = quote! { gettextrs::dgettext(#d, #msgid) };
 
-        match &self.inv.to_format {
+        match &self.to_format {
             None => inv.to_tokens(tokens),
             Some(args) => fallback(msgid, args, inv).to_tokens(tokens),
         }
@@ -155,13 +191,6 @@ mod test_dinvocation_parsing {
     use syn::{parse2, Expr, Lit};
 
     #[test]
-    #[should_panic]
-    fn just_msgid() {
-        let inv = quote! {"Hello, World!"};
-        let _: DInvocation = parse2(inv).unwrap();
-    }
-
-    #[test]
     fn domainname_and_msgid() {
         let inv = quote! {"domainname", "Hello, World!"};
         let inv: DInvocation = parse2(inv).unwrap();
@@ -175,6 +204,7 @@ mod test_dinvocation_parsing {
                 if lit.value() == "domainname"
             )
         ));
-        assert_eq!(&inv.inv.msgid.value(), "Hello, World!");
+        assert_eq!(&inv.msgid.value(), "Hello, World!");
+        assert!(&inv.to_format.is_none());
     }
 }

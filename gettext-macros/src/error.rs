@@ -1,10 +1,23 @@
 use macros_shared::Brace;
 use std::fmt::Display;
+use syn::Error;
 
 pub enum UiError {
     InvalidRefToPosArg(usize),
     MismatchNumOfArgs { params: usize, args: usize },
     Unmatched(Brace),
+    AtLeastMsgid,
+    AtLeastDAndMsgid,
+    MissingMsgid,
+}
+
+pub fn combine_err(err: &Option<Error>, another: Error) -> Error {
+    if let Some(e) = &err {
+        let mut e = e.to_owned();
+        e.combine(another);
+        return e;
+    }
+    another
 }
 
 impl Display for UiError {
@@ -59,6 +72,11 @@ impl Display for UiError {
                     a, b
                 );
             }
+            AtLeastMsgid => write!(f, "requires at least a msgid string argument"),
+            AtLeastDAndMsgid => {
+                write!(f, "requires at least domainname and msgid string arguments")
+            }
+            MissingMsgid => write!(f, "missing msgid string argument"),
         }
     }
 }

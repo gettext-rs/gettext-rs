@@ -1,0 +1,5 @@
+error: expected `,`
+ --> tests/ui/dgettext/expected_comma.rs:4:34
+  |
+4 |     dgettext!("domainname", "{}" 1);
+  |                                  ^

@@ -1,0 +1,11 @@
+error: expected `,`
+ --> tests/ui/gettext/expected_comma_and_in_args_too.rs:4:19
+  |
+4 |     gettext!("{}" 1 2);
+  |                   ^
+
+error: expected `,`
+ --> tests/ui/gettext/expected_comma_and_in_args_too.rs:4:21
+  |
+4 |     gettext!("{}" 1 2);
+  |                     ^

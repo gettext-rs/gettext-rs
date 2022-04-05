@@ -1,0 +1,11 @@
+error: expected `,`
+ --> tests/ui/gettext/expected_comma_and_mismatched_number_of_args.rs:4:19
+  |
+4 |     gettext!("{}" 1, 2);
+  |                   ^
+
+error: 1 positional argument in format string, but there are 2 arguments
+ --> tests/ui/gettext/expected_comma_and_mismatched_number_of_args.rs:4:14
+  |
+4 |     gettext!("{}" 1, 2);
+  |              ^^^^

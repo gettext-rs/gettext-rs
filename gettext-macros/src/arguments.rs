@@ -24,10 +24,11 @@ pub struct Arguments(pub Vec<Argument>);
 impl Parse for Arguments {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         use Argument::*;
-        let mut pos_args = Vec::new();
-        if let Ok(p) = Punctuated::<Expr, Token![,]>::parse_terminated(input) {
-            pos_args = p.into_iter().map(Pos).collect();
-        }
-        Ok(Self(pos_args))
+        Ok(Self(
+            Punctuated::<Expr, Token![,]>::parse_terminated(input)?
+                .into_iter()
+                .map(Pos)
+                .collect(),
+        ))
     }
 }

@@ -1,0 +1,13 @@
+error: missing msgid string argument
+ --> tests/ui/dgettext/missing_msgid.rs:4:5
+  |
+4 |     dgettext!("domainname");
+  |     ^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: this error originates in the macro `dgettext` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: missing msgid string argument
+ --> tests/ui/dgettext/missing_msgid.rs:5:29
+  |
+5 |     dgettext!("domainname", 1, 2);
+  |                             ^
