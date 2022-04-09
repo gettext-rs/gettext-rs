@@ -18,7 +18,15 @@ fn format() {
 
 #[test]
 fn fallback() {
-    fake!(gettext, "Привіт, }{");
+    fake!(gettext, "Привіт, }{!");
 
     assert_eq!(gettext!("Hello, {}!", "Username"), "Hello, Username!");
+}
+
+#[test]
+fn handle_unique_argument() {
+    let world = "World".to_string();
+    let closure = || world; // This can only be called once
+
+    assert_eq!(gettext!("Hello, {}!", closure()), "Hello, World!");
 }

@@ -7,14 +7,27 @@ static AC: Lazy<AhoCorasick> = Lazy::new(|| {
         .build(["{}", "{{", "}}", "{", "}"])
 });
 
-#[cfg_attr(test, derive(PartialEq, Debug))]
+#[cfg_attr(not(release), derive(PartialEq, Debug))]
+pub enum Argument {
+    Ordered(Option<usize>),
+}
+
+#[cfg_attr(not(release), derive(PartialEq, Debug))]
 pub enum Pattern {
-    Ordered(Option<usize>, usize, usize),
-    Escaped(Brace, usize, usize),
+    Argument {
+        arg: Argument,
+        start: usize,
+        end: usize,
+    },
+    Escaped {
+        brace: Brace,
+        start: usize,
+        end: usize,
+    },
     Unescaped(Brace),
 }
 
-#[cfg_attr(test, derive(PartialEq, Debug))]
+#[cfg_attr(not(release), derive(PartialEq, Debug))]
 pub enum Brace {
     Opening,
     Closing,
@@ -24,7 +37,6 @@ pub struct Formatter<'a, 'b> {
     haystack: &'a str,
     find_iter: FindIter<'b, 'a, usize>,
     patterns: [&'a str; 5],
-    cursor: usize,
     inside: (bool, usize, usize),
 }
 
@@ -35,7 +47,6 @@ impl<'a> Formatter<'a, '_> {
             haystack,
             find_iter: AC.find_iter(haystack),
             patterns,
-            cursor: 0,
             inside: (false, 0, 0),
         }
     }
@@ -46,15 +57,31 @@ impl Iterator for Formatter<'_, '_> {
 
     fn next(&mut self) -> Option<Self::Item> {
         use Brace::*;
-        use Pattern::*;
+        // use Pattern::*;
 
         for m in &mut self.find_iter {
-            self.cursor = m.end();
-
             match self.patterns[m.pattern()] {
-                "{}" => return Some(Ordered(None, m.start(), m.end())),
-                "{{" => return Some(Escaped(Opening, m.start(), m.end())),
-                "}}" => return Some(Escaped(Closing, m.start(), m.end())),
+                "{}" => {
+                    return Some(Pattern::Argument {
+                        arg: Argument::Ordered(None),
+                        start: m.start(),
+                        end: m.end(),
+                    })
+                }
+                "{{" => {
+                    return Some(Pattern::Escaped {
+                        brace: Opening,
+                        start: m.start(),
+                        end: m.end(),
+                    })
+                }
+                "}}" => {
+                    return Some(Pattern::Escaped {
+                        brace: Closing,
+                        start: m.start(),
+                        end: m.end(),
+                    })
+                }
                 "{" if !self.inside.0 => {
                     self.inside.0 = true;
                     self.inside.1 = m.start();
@@ -64,20 +91,24 @@ impl Iterator for Formatter<'_, '_> {
                     match self.haystack[self.inside.2..m.start()].parse::<usize>() {
                         Ok(n) => {
                             self.inside.0 = false;
-                            return Some(Ordered(Some(n), self.inside.1, m.end()));
+                            return Some(Pattern::Argument {
+                                arg: Argument::Ordered(Some(n)),
+                                start: self.inside.1,
+                                end: m.end(),
+                            });
                         }
-                        _ => return Some(Unescaped(Opening)),
+                        _ => return Some(Pattern::Unescaped(Opening)),
                     }
                 }
-                "{" => return Some(Unescaped(Opening)),
-                "}" => return Some(Unescaped(Closing)),
+                "{" => return Some(Pattern::Unescaped(Opening)),
+                "}" => return Some(Pattern::Unescaped(Closing)),
                 _ => unreachable!(),
             }
         }
 
         if self.inside.0 {
             self.inside.0 = false;
-            Some(Unescaped(Opening))
+            Some(Pattern::Unescaped(Opening))
         } else {
             None
         }
@@ -86,12 +117,16 @@ impl Iterator for Formatter<'_, '_> {
 
 #[cfg(test)]
 mod tests {
-    use super::{Brace::*, Formatter, Pattern::*};
+    use super::*;
 
     #[test]
     fn single_ordered_none() {
         let haystack = "{}";
-        let expected = [Ordered(None, 0, 2)];
+        let expected = [Pattern::Argument {
+            arg: Argument::Ordered(None),
+            start: 0,
+            end: 2,
+        }];
 
         let actual: Vec<_> = Formatter::new(haystack).collect();
 
@@ -101,7 +136,11 @@ mod tests {
     #[test]
     fn text_around_single_ordered_none() {
         let haystack = "Text {} text";
-        let expected = [Ordered(None, 5, 7)];
+        let expected = [Pattern::Argument {
+            arg: Argument::Ordered(None),
+            start: 5,
+            end: 7,
+        }];
 
         let actual: Vec<_> = Formatter::new(haystack).collect();
 
@@ -111,7 +150,18 @@ mod tests {
     #[test]
     fn multiple_ordered_none() {
         let haystack = "{}{}";
-        let expected = [Ordered(None, 0, 2), Ordered(None, 2, 4)];
+        let expected = [
+            Pattern::Argument {
+                arg: Argument::Ordered(None),
+                start: 0,
+                end: 2,
+            },
+            Pattern::Argument {
+                arg: Argument::Ordered(None),
+                start: 2,
+                end: 4,
+            },
+        ];
 
         let actual: Vec<_> = Formatter::new(haystack).collect();
 
@@ -121,7 +171,18 @@ mod tests {
     #[test]
     fn text_around_multiple_ordered_none() {
         let haystack = "Text {} text {} text";
-        let expected = [Ordered(None, 5, 7), Ordered(None, 13, 15)];
+        let expected = [
+            Pattern::Argument {
+                arg: Argument::Ordered(None),
+                start: 5,
+                end: 7,
+            },
+            Pattern::Argument {
+                arg: Argument::Ordered(None),
+                start: 13,
+                end: 15,
+            },
+        ];
 
         let actual: Vec<_> = Formatter::new(haystack).collect();
 
@@ -131,7 +192,11 @@ mod tests {
     #[test]
     fn unicode_haystack_ordered_none() {
         let haystack = "私は{}です!";
-        let expected = [Ordered(None, 6, 8)];
+        let expected = [Pattern::Argument {
+            arg: Argument::Ordered(None),
+            start: 6,
+            end: 8,
+        }];
 
         let actual: Vec<_> = Formatter::new(haystack).collect();
 
@@ -141,7 +206,11 @@ mod tests {
     #[test]
     fn escaped_opening() {
         let haystack = "{{";
-        let expected = [Escaped(Opening, 0, 2)];
+        let expected = [Pattern::Escaped {
+            brace: Brace::Opening,
+            start: 0,
+            end: 2,
+        }];
 
         let actual: Vec<_> = Formatter::new(haystack).collect();
 
@@ -151,7 +220,11 @@ mod tests {
     #[test]
     fn text_around_escaped_opening() {
         let haystack = "Text {{ text";
-        let expected = [Escaped(Opening, 5, 7)];
+        let expected = [Pattern::Escaped {
+            brace: Brace::Opening,
+            start: 5,
+            end: 7,
+        }];
 
         let actual: Vec<_> = Formatter::new(haystack).collect();
 
@@ -161,7 +234,18 @@ mod tests {
     #[test]
     fn multiple_escaped_opening() {
         let haystack = "{{{{";
-        let expected = [Escaped(Opening, 0, 2), Escaped(Opening, 2, 4)];
+        let expected = [
+            Pattern::Escaped {
+                brace: Brace::Opening,
+                start: 0,
+                end: 2,
+            },
+            Pattern::Escaped {
+                brace: Brace::Opening,
+                start: 2,
+                end: 4,
+            },
+        ];
 
         let actual: Vec<_> = Formatter::new(haystack).collect();
 
@@ -171,7 +255,18 @@ mod tests {
     #[test]
     fn text_around_multiple_escaped_opening() {
         let haystack = "Text {{ text {{ text";
-        let expected = [Escaped(Opening, 5, 7), Escaped(Opening, 13, 15)];
+        let expected = [
+            Pattern::Escaped {
+                brace: Brace::Opening,
+                start: 5,
+                end: 7,
+            },
+            Pattern::Escaped {
+                brace: Brace::Opening,
+                start: 13,
+                end: 15,
+            },
+        ];
 
         let actual: Vec<_> = Formatter::new(haystack).collect();
 
@@ -181,7 +276,11 @@ mod tests {
     #[test]
     fn escaped_closing() {
         let haystack = "}}";
-        let expected = [Escaped(Closing, 0, 2)];
+        let expected = [Pattern::Escaped {
+            brace: Brace::Closing,
+            start: 0,
+            end: 2,
+        }];
 
         let actual: Vec<_> = Formatter::new(haystack).collect();
 
@@ -191,7 +290,11 @@ mod tests {
     #[test]
     fn text_around_escaped_closing() {
         let haystack = "Text }} text";
-        let expected = [Escaped(Closing, 5, 7)];
+        let expected = [Pattern::Escaped {
+            brace: Brace::Closing,
+            start: 5,
+            end: 7,
+        }];
 
         let actual: Vec<_> = Formatter::new(haystack).collect();
 
@@ -201,7 +304,18 @@ mod tests {
     #[test]
     fn multiple_escaped_closing() {
         let haystack = "}}}}";
-        let expected = [Escaped(Closing, 0, 2), Escaped(Closing, 2, 4)];
+        let expected = [
+            Pattern::Escaped {
+                brace: Brace::Closing,
+                start: 0,
+                end: 2,
+            },
+            Pattern::Escaped {
+                brace: Brace::Closing,
+                start: 2,
+                end: 4,
+            },
+        ];
 
         let actual: Vec<_> = Formatter::new(haystack).collect();
 
@@ -211,7 +325,18 @@ mod tests {
     #[test]
     fn text_around_multiple_escaped_closing() {
         let haystack = "Text }} text }} text";
-        let expected = [Escaped(Closing, 5, 7), Escaped(Closing, 13, 15)];
+        let expected = [
+            Pattern::Escaped {
+                brace: Brace::Closing,
+                start: 5,
+                end: 7,
+            },
+            Pattern::Escaped {
+                brace: Brace::Closing,
+                start: 13,
+                end: 15,
+            },
+        ];
 
         let actual: Vec<_> = Formatter::new(haystack).collect();
 
@@ -221,7 +346,18 @@ mod tests {
     #[test]
     fn escaped_pair() {
         let haystack = "{{}}";
-        let expected = [Escaped(Opening, 0, 2), Escaped(Closing, 2, 4)];
+        let expected = [
+            Pattern::Escaped {
+                brace: Brace::Opening,
+                start: 0,
+                end: 2,
+            },
+            Pattern::Escaped {
+                brace: Brace::Closing,
+                start: 2,
+                end: 4,
+            },
+        ];
 
         let actual: Vec<_> = Formatter::new(haystack).collect();
 
@@ -231,7 +367,18 @@ mod tests {
     #[test]
     fn text_around_escaped_pair() {
         let haystack = "Text {{}} text";
-        let expected = [Escaped(Opening, 5, 7), Escaped(Closing, 7, 9)];
+        let expected = [
+            Pattern::Escaped {
+                brace: Brace::Opening,
+                start: 5,
+                end: 7,
+            },
+            Pattern::Escaped {
+                brace: Brace::Closing,
+                start: 7,
+                end: 9,
+            },
+        ];
 
         let actual: Vec<_> = Formatter::new(haystack).collect();
 
@@ -241,7 +388,18 @@ mod tests {
     #[test]
     fn unicode_haystack_escaped_pair() {
         let haystack = "私は{{}}です!";
-        let expected = [Escaped(Opening, 6, 8), Escaped(Closing, 8, 10)];
+        let expected = [
+            Pattern::Escaped {
+                brace: Brace::Opening,
+                start: 6,
+                end: 8,
+            },
+            Pattern::Escaped {
+                brace: Brace::Closing,
+                start: 8,
+                end: 10,
+            },
+        ];
 
         let actual: Vec<_> = Formatter::new(haystack).collect();
 
@@ -251,7 +409,7 @@ mod tests {
     #[test]
     fn unescaped_opening() {
         let haystack = "{";
-        let expected = [Unescaped(Opening)];
+        let expected = [Pattern::Unescaped(Brace::Opening)];
 
         let actual: Vec<_> = Formatter::new(haystack).collect();
 
@@ -261,7 +419,7 @@ mod tests {
     #[test]
     fn text_around_unescaped_opening() {
         let haystack = "Text { text";
-        let expected = [Unescaped(Opening)];
+        let expected = [Pattern::Unescaped(Brace::Opening)];
 
         let actual: Vec<_> = Formatter::new(haystack).collect();
 
@@ -271,7 +429,10 @@ mod tests {
     #[test]
     fn multiple_unescaped_opening() {
         let haystack = "{ {";
-        let expected = [Unescaped(Opening), Unescaped(Opening)];
+        let expected = [
+            Pattern::Unescaped(Brace::Opening),
+            Pattern::Unescaped(Brace::Opening),
+        ];
 
         let actual: Vec<_> = Formatter::new(haystack).collect();
 
@@ -281,7 +442,10 @@ mod tests {
     #[test]
     fn text_around_multiple_unescaped_opening() {
         let haystack = "Text { text { text";
-        let expected = [Unescaped(Opening), Unescaped(Opening)];
+        let expected = [
+            Pattern::Unescaped(Brace::Opening),
+            Pattern::Unescaped(Brace::Opening),
+        ];
 
         let actual: Vec<_> = Formatter::new(haystack).collect();
 
@@ -291,7 +455,7 @@ mod tests {
     #[test]
     fn unescaped_closing() {
         let haystack = "}";
-        let expected = [Unescaped(Closing)];
+        let expected = [Pattern::Unescaped(Brace::Closing)];
 
         let actual: Vec<_> = Formatter::new(haystack).collect();
 
@@ -301,7 +465,7 @@ mod tests {
     #[test]
     fn text_around_unescaped_closing() {
         let haystack = "Text } text";
-        let expected = [Unescaped(Closing)];
+        let expected = [Pattern::Unescaped(Brace::Closing)];
 
         let actual: Vec<_> = Formatter::new(haystack).collect();
 
@@ -311,7 +475,10 @@ mod tests {
     #[test]
     fn multiple_unescaped_closing() {
         let haystack = "} }";
-        let expected = [Unescaped(Closing), Unescaped(Closing)];
+        let expected = [
+            Pattern::Unescaped(Brace::Closing),
+            Pattern::Unescaped(Brace::Closing),
+        ];
 
         let actual: Vec<_> = Formatter::new(haystack).collect();
 
@@ -321,7 +488,10 @@ mod tests {
     #[test]
     fn text_around_multiple_unescaped_closing() {
         let haystack = "Text } text } text";
-        let expected = [Unescaped(Closing), Unescaped(Closing)];
+        let expected = [
+            Pattern::Unescaped(Brace::Closing),
+            Pattern::Unescaped(Brace::Closing),
+        ];
 
         let actual: Vec<_> = Formatter::new(haystack).collect();
 
@@ -331,7 +501,10 @@ mod tests {
     #[test]
     fn unescaped_braces() {
         let haystack = "}{";
-        let expected = [Unescaped(Closing), Unescaped(Opening)];
+        let expected = [
+            Pattern::Unescaped(Brace::Closing),
+            Pattern::Unescaped(Brace::Opening),
+        ];
 
         let actual: Vec<_> = Formatter::new(haystack).collect();
 
@@ -341,7 +514,10 @@ mod tests {
     #[test]
     fn text_around_unescaped_braces() {
         let haystack = "Text } text { text";
-        let expected = [Unescaped(Closing), Unescaped(Opening)];
+        let expected = [
+            Pattern::Unescaped(Brace::Closing),
+            Pattern::Unescaped(Brace::Opening),
+        ];
 
         let actual: Vec<_> = Formatter::new(haystack).collect();
 
@@ -351,7 +527,10 @@ mod tests {
     #[test]
     fn unicode_haystack_unescaped_braces() {
         let haystack = "私は}{です!";
-        let expected = [Unescaped(Closing), Unescaped(Opening)];
+        let expected = [
+            Pattern::Unescaped(Brace::Closing),
+            Pattern::Unescaped(Brace::Opening),
+        ];
 
         let actual: Vec<_> = Formatter::new(haystack).collect();
 
@@ -361,7 +540,11 @@ mod tests {
     #[test]
     fn single_ordered_some() {
         let haystack = "{0}";
-        let expected = [Ordered(Some(0), 0, 3)];
+        let expected = [Pattern::Argument {
+            arg: Argument::Ordered(Some(0)),
+            start: 0,
+            end: 3,
+        }];
 
         let actual: Vec<_> = Formatter::new(haystack).collect();
 
@@ -371,7 +554,11 @@ mod tests {
     #[test]
     fn text_around_single_ordered_some() {
         let haystack = "Text {0} text";
-        let expected = [Ordered(Some(0), 5, 8)];
+        let expected = [Pattern::Argument {
+            arg: Argument::Ordered(Some(0)),
+            start: 5,
+            end: 8,
+        }];
 
         let actual: Vec<_> = Formatter::new(haystack).collect();
 
@@ -381,7 +568,18 @@ mod tests {
     #[test]
     fn multiple_ordered_some() {
         let haystack = "{0}{1}";
-        let expected = [Ordered(Some(0), 0, 3), Ordered(Some(1), 3, 6)];
+        let expected = [
+            Pattern::Argument {
+                arg: Argument::Ordered(Some(0)),
+                start: 0,
+                end: 3,
+            },
+            Pattern::Argument {
+                arg: Argument::Ordered(Some(1)),
+                start: 3,
+                end: 6,
+            },
+        ];
 
         let actual: Vec<_> = Formatter::new(haystack).collect();
 
@@ -391,7 +589,18 @@ mod tests {
     #[test]
     fn text_around_multiple_ordered_some() {
         let haystack = "Text {0} text {1} text";
-        let expected = [Ordered(Some(0), 5, 8), Ordered(Some(1), 14, 17)];
+        let expected = [
+            Pattern::Argument {
+                arg: Argument::Ordered(Some(0)),
+                start: 5,
+                end: 8,
+            },
+            Pattern::Argument {
+                arg: Argument::Ordered(Some(1)),
+                start: 14,
+                end: 17,
+            },
+        ];
 
         let actual: Vec<_> = Formatter::new(haystack).collect();
 
@@ -401,7 +610,11 @@ mod tests {
     #[test]
     fn unicode_haystack_ordered_some() {
         let haystack = "私は{0}です!";
-        let expected = [Ordered(Some(0), 6, 9)];
+        let expected = [Pattern::Argument {
+            arg: Argument::Ordered(Some(0)),
+            start: 6,
+            end: 9,
+        }];
 
         let actual: Vec<_> = Formatter::new(haystack).collect();
 

@@ -14,25 +14,26 @@ use arguments::*;
 use directives::*;
 use error::*;
 
-fn fallback(
-    msgid: &LitStr,
-    args: &Arguments,
+fn inv_format(
     inv: proc_macro2::TokenStream,
+    fallback: &[ToFormat],
+    args: &Arguments,
 ) -> proc_macro2::TokenStream {
-    let arguments1 = (&args.0).into_iter();
-    let arguments2 = (&args.0).into_iter();
+    let fallback = fallback.into_iter();
+    let arguments = (&args.0).into_iter();
     quote! {{
-        match gettextrs::formatter::format(
+        gettextrs::formatter::format(
             &#inv,
-            &[#(#arguments1.to_string()),*]
-        ) {
-            Some(s) => s,
-            None => format!(#msgid, #(#arguments2),*)
-        }
+            [#(#fallback.into()),*],
+            [#(#arguments.to_string()),*]
+        )
     }}
 }
 
-fn comma_and_further(msgid: &LitStr, input: ParseStream) -> Result<Option<Arguments>> {
+fn comma_and_further(
+    msgid: &LitStr,
+    input: ParseStream,
+) -> Result<Option<(Arguments, Vec<ToFormat>)>> {
     let comma = &input.parse::<Token![,]>().err();
     let args = Arguments::parse(input).map_err(|err| combine_err(comma, err))?;
     let to_format = validate(msgid, args.0.len()).map_err(|err| {
@@ -49,14 +50,14 @@ fn comma_and_further(msgid: &LitStr, input: ParseStream) -> Result<Option<Argume
     }
 
     match to_format {
-        true => Ok(Some(args)),
-        false => Ok(None),
+        Some(fallback) => Ok(Some((args, fallback))),
+        None => Ok(None),
     }
 }
 
 struct Invocation {
     msgid: LitStr,
-    to_format: Option<Arguments>,
+    to_format: Option<(Arguments, Vec<ToFormat>)>,
 }
 
 impl Parse for Invocation {
@@ -78,7 +79,7 @@ impl ToTokens for Invocation {
 
         match &self.to_format {
             None => inv.to_tokens(tokens),
-            Some(args) => fallback(msgid, args, inv).to_tokens(tokens),
+            Some((args, fallback)) => inv_format(inv, fallback, args).to_tokens(tokens),
         }
     }
 }
@@ -137,7 +138,7 @@ mod test_invocation_parsing {
 struct DInvocation {
     d: Expr,
     msgid: LitStr,
-    to_format: Option<Arguments>,
+    to_format: Option<(Arguments, Vec<ToFormat>)>,
 }
 
 impl Parse for DInvocation {
@@ -172,7 +173,7 @@ impl ToTokens for DInvocation {
 
         match &self.to_format {
             None => inv.to_tokens(tokens),
-            Some(args) => fallback(msgid, args, inv).to_tokens(tokens),
+            Some((args, fallback)) => inv_format(inv, fallback, args).to_tokens(tokens),
         }
     }
 }
