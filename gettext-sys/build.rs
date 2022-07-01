@@ -10,7 +10,7 @@ use std::process::Command;
 use temp_dir::TempDir;
 
 fn env(name: &str) -> Option<String> {
-    let prefix = env::var("TARGET").unwrap().to_uppercase().replace("-", "_");
+    let prefix = env::var("TARGET").unwrap().to_uppercase().replace('-', "_");
     let prefixed = format!("{}_{}", prefix, name);
     println!("cargo:rerun-if-env-changed={}", prefixed);
 
@@ -48,12 +48,12 @@ fn posix_path(path: &Path) -> String {
         .to_str()
         .unwrap_or_else(|| fail(&format!("Couldn't convert path {:?} to string", path)));
     if env::var("HOST").unwrap().contains("windows") {
-        let path = path.replace("\\", "/");
-        if path.find(":") == Some(1) {
+        let path = path.replace('\\', "/");
+        if path.find(':') == Some(2) {
             // absolute path with a drive letter
             format!("/{}{}", &path[0..1], &path[2..])
         } else {
-            path.to_owned()
+            path
         }
     } else {
         path.to_owned()
@@ -75,7 +75,7 @@ fn check_dependencies(required_programs: Vec<&str>) {
         }
     };
 
-    let errors: String = required_programs.iter().map(|x| command(x)).collect();
+    let errors: String = required_programs.iter().map(command).collect();
 
     if !errors.is_empty() {
         fail(&format!("The following programs were not found:{}", errors));
@@ -219,7 +219,7 @@ fn main() {
         cmd.arg("--enable-threads=windows");
     }
 
-    cmd.arg(format!("--prefix={}", &posix_path(&build_dir)));
+    cmd.arg(format!("--prefix={}", &posix_path(build_dir)));
     cmd.arg(format!("--libdir={}", &posix_path(&build_dir.join("lib"))));
 
     if target != host && (!target.contains("windows") || !host.contains("windows")) {
@@ -320,5 +320,5 @@ fn make() -> Command {
     if cfg!(windows) {
         cmd.env_remove("MAKEFLAGS").env_remove("MFLAGS");
     }
-    return cmd;
+    cmd
 }

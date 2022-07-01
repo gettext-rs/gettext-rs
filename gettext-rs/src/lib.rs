@@ -469,9 +469,9 @@ where
         if result.is_null() {
             let error = io::Error::last_os_error();
             if let Some(0) = error.raw_os_error() {
-                return Ok(None);
+                Ok(None)
             } else {
-                return Err(error);
+                Err(error)
             }
         } else {
             let result = CStr::from_ptr(result)

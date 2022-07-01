@@ -328,7 +328,7 @@ impl TextDomain {
             }
         };
 
-        let lang = norm_locale.as_ref().splitn(2, "-").collect::<Vec<&str>>()[0].to_owned();
+        let lang = norm_locale.as_ref().splitn(2, '-').collect::<Vec<&str>>()[0].to_owned();
 
         let domainname = self.domainname;
         let locale_category = self.locale_category;
