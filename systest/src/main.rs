@@ -1,4 +1,6 @@
 #![allow(bad_style)]
+#![allow(unused_imports)]
+#![allow(unused_macros)]
 
 extern crate gettext_sys;
 
