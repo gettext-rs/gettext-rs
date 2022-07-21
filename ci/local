@@ -18,9 +18,9 @@ case "$1" in
     export TARGET=i686-unknown-linux-gnu
     export DOCKER=linux32
     ;;
-  musl)
+  musl-gettext)
     export TARGET=x86_64-unknown-linux-musl
-    export DOCKER=musl
+    export DOCKER=musl-gettext
     ;;
   build)
     export TARGET=x86_64-unknown-linux-gnu

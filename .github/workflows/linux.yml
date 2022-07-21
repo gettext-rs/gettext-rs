@@ -31,7 +31,8 @@ jobs:
           - rust-version: stable
             env:
               TARGET: x86_64-unknown-linux-musl
-              DOCKER: musl
+              DOCKER: musl-gettext
+              GETTEXT_SYSTEM: 1 # Workaround for https://github.com/Koka/gettext-rs/issues/99
             name: "x86_64 with musl, Rust stable"
           - rust-version: stable
             env:
