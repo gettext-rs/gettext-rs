@@ -86,7 +86,7 @@ fn main() {
     let target = env::var("TARGET").unwrap();
 
     if cfg!(feature = "gettext-system") || env("GETTEXT_SYSTEM").is_some() {
-        if target.contains("linux") && (target.contains("-gnu") || target.contains("-musl")) {
+        if env::var("CARGO_CFG_TARGET_OS") == Ok("linux".to_string()) {
             // intl is part of glibc and musl
             return;
         } else if target.contains("windows") && target.contains("-gnu") {
