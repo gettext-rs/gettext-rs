@@ -1,4 +1,6 @@
-use std::os::raw::{c_char, c_int, c_ulong};
+#![no_std]
+
+use core::ffi::{c_char, c_int, c_ulong};
 
 #[cfg(windows)]
 #[allow(non_camel_case_types)]
