@@ -1,43 +1,44 @@
-use std::os::raw::{c_char, c_int, c_ulong};
+extern crate cfg_if;
+extern crate libc;
 
-#[cfg(windows)]
-#[allow(non_camel_case_types)]
-type wchar_t = u16;
+mod gettext_exports;
+pub use gettext_exports::*;
 
-extern "C" {
-    pub fn gettext(s: *const c_char) -> *mut c_char;
-    pub fn dgettext(domain: *const c_char, s: *const c_char) -> *mut c_char;
-    pub fn dcgettext(domain: *const c_char, s: *const c_char, category: c_int) -> *mut c_char;
+pub use libc::setlocale;
 
-    pub fn ngettext(s1: *const c_char, s2: *const c_char, n: c_ulong) -> *mut c_char;
-    pub fn dngettext(
-        domain: *const c_char,
-        s1: *const c_char,
-        s2: *const c_char,
-        n: c_ulong,
-    ) -> *mut c_char;
-    pub fn dcngettext(
-        domain: *const c_char,
-        s1: *const c_char,
-        s2: *const c_char,
-        n: c_ulong,
-        category: c_int,
-    ) -> *mut c_char;
+pub use libc::LC_CTYPE;
+pub use libc::LC_NUMERIC;
+pub use libc::LC_TIME;
+pub use libc::LC_COLLATE;
+pub use libc::LC_MONETARY;
+pub use libc::LC_ALL;
 
-    pub fn bindtextdomain(domain: *const c_char, dir: *const c_char) -> *mut c_char;
-    #[cfg(windows)]
-    // The "wbindtextdomain" symbol is not exposed directly in the compiled
-    // .DLL file when building using MinGW. See: https://github.com/Koka/gettext-rs/pull/79
-    fn libintl_wbindtextdomain(domain: *const c_char, dir: *const wchar_t) -> *mut wchar_t;
-
-    pub fn textdomain(domain: *const c_char) -> *mut c_char;
-
-    pub fn bind_textdomain_codeset(domain: *const c_char, codeset: *const c_char) -> *mut c_char;
-
-    pub fn setlocale(category: c_int, locale: *const c_char) -> *mut c_char;
+cfg_if::cfg_if!{
+    if #[cfg(any(target_os = "fuchsia",
+                 target_os = "solid_asp3",
+                 all(unix, not(target_os = "hermit"))))] {
+        pub use libc::LC_MESSAGES;
+        pub const LIBC_HAS_LC_MESSAGES: bool = true;
+    } else {
+        pub const LC_MESSAGES: std::os::raw::c_int = 1729;
+        pub const LIBC_HAS_LC_MESSAGES: bool = false;
+    }
 }
 
-#[cfg(windows)]
-pub unsafe fn wbindtextdomain(domain: *const c_char, dir: *const wchar_t) -> *mut wchar_t {
-    libintl_wbindtextdomain(domain, dir)
+cfg_if::cfg_if!{
+    if #[cfg(all(unix,
+             any(target_os = "linux",
+                 target_os = "l4re",
+                 target_os = "android",
+                 target_os = "emscripten"),
+             any(target_env = "ohos",
+                 target_env = "gnu",
+                 target_os = "android")))] {
+        pub use libc::LC_PAPER;
+        pub use libc::LC_NAME;
+        pub use libc::LC_ADDRESS;
+        pub use libc::LC_TELEPHONE;
+        pub use libc::LC_MEASUREMENT;
+        pub use libc::LC_IDENTIFICATION;
+    }
 }

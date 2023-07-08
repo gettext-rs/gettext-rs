@@ -81,46 +81,19 @@ extern crate locale_config;
 
 extern crate gettext_sys as ffi;
 
-use std::ffi::CStr;
+extern crate cfg_if;
+
+use std::ffi::{c_int, c_ulong, CStr};
+
 use std::ffi::CString;
 use std::io;
-use std::os::raw::c_ulong;
 use std::path::PathBuf;
 
 mod text_domain;
 pub use text_domain::{TextDomain, TextDomainError};
 pub mod getters;
-
-/// Locale category enum ported from locale.h.
-#[derive(Debug, PartialEq, Clone, Copy)]
-pub enum LocaleCategory {
-    /// Character classification and case conversion.
-    LcCType = 0,
-    /// Non-monetary numeric formats.
-    LcNumeric = 1,
-    /// Date and time formats.
-    LcTime = 2,
-    /// Collation order.
-    LcCollate = 3,
-    /// Monetary formats.
-    LcMonetary = 4,
-    /// Formats of informative and diagnostic messages and interactive responses.
-    LcMessages = 5,
-    /// For all.
-    LcAll = 6,
-    /// Paper size.
-    LcPaper = 7,
-    /// Name formats.
-    LcName = 8,
-    /// Address formats and location information.
-    LcAddress = 9,
-    /// Telephone number formats.
-    LcTelephone = 10,
-    /// Measurement units (Metric or Other).
-    LcMeasurement = 11,
-    /// Metadata about the locale information.
-    LcIdentification = 12,
-}
+mod lc_codes;
+pub use lc_codes::LocaleCategory;
 
 /// Translate msgid to localized message from the default domain.
 ///
@@ -197,7 +170,7 @@ where
         CStr::from_ptr(ffi::dcgettext(
             domainname.as_ptr(),
             msgid.as_ptr(),
-            category as i32,
+            category as c_int,
         ))
         .to_str()
         .expect("dcgettext() returned invalid UTF-8")
@@ -429,8 +402,14 @@ where
 /// underlying C API.
 pub fn setlocale<T: Into<Vec<u8>>>(category: LocaleCategory, locale: T) -> Option<Vec<u8>> {
     let c = CString::new(locale).expect("`locale` contains an internal 0 byte");
+    let mapped_category =
+        if !ffi::LIBC_HAS_LC_MESSAGES && category == LocaleCategory::LcMessages {
+            LocaleCategory::LcAll
+        } else {
+            category
+        };
     unsafe {
-        let ret = ffi::setlocale(category as i32, c.as_ptr());
+        let ret = ffi::setlocale(mapped_category as c_int, c.as_ptr());
         if ret.is_null() {
             None
         } else {

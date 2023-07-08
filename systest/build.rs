@@ -22,7 +22,7 @@ fn main() {
         cfg.skip_fn_ptrcheck(|_| true);
     }
 
-    cfg.generate("../gettext-sys/lib.rs", "all.rs");
+    cfg.generate("../gettext-sys/gettext_exports.rs", "all.rs");
 
     // Check that we can find and run gettext binary
     let cmd = if let Some(bin) = env::var_os("DEP_GETTEXT_BIN") {
