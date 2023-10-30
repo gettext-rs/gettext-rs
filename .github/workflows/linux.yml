@@ -79,7 +79,7 @@ jobs:
     name: ci/run.sh on ${{ matrix.name }}
 
     steps:
-      - uses: hecrj/setup-rust-action@v1
+      - uses: hecrj/setup-rust-action@v2
         with:
           rust-version: ${{ matrix.rust-version }}
 
@@ -96,13 +96,13 @@ jobs:
         if: ${{ ! matrix.env.NO_ADD }}
 
       - name: Check out the code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Generate lockfile
         run: cargo generate-lockfile
 
       - name: Cache Cargo dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           key: ${{ hashFiles('**/Cargo.lock') }}
           path: |
