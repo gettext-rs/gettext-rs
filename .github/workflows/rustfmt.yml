@@ -5,7 +5,7 @@ on: [push, pull_request]
 jobs:
   rustfmt:
     name: rustfmt
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
     steps:
       - uses: hecrj/setup-rust-action@v1
