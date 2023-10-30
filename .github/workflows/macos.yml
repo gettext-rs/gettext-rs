@@ -27,7 +27,7 @@ jobs:
           brew install gettext
           echo 'GETTEXT_DIR=/usr/local/opt/gettext' >> $GITHUB_ENV
 
-      - uses: hecrj/setup-rust-action@v1
+      - uses: hecrj/setup-rust-action@v2
         with:
           rust-version: stable
 
@@ -40,13 +40,13 @@ jobs:
         run: echo '::remove-matcher owner=cargo-test::'
 
       - name: Check out the code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Generate lockfile
         run: cargo generate-lockfile
 
       - name: Cache Cargo dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           key: ${{ hashFiles('**/Cargo.lock') }}
           path: |
