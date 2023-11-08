@@ -2,10 +2,10 @@
 
 set -ex
 
-cargo test --package gettext-sys warnings --target $TARGET --no-run -vv -- -D warnings
-cargo test --package gettext-rs --target $TARGET --no-run -vv -- -D warnings
+cargo test --package gettext-sys warnings --target $TARGET --no-run -v -- -D warnings
+cargo test --package gettext-rs --target $TARGET --no-run -v -- -D warnings
 # We don't deny warnings here because we don't care about warnings in auto-generated code.
-cargo build --package systest --target $TARGET -vv
+cargo build --package systest --target $TARGET -v
 
 if [ -z "$NO_RUN" ]; then
     if [ -n "$GETTEXT_LIB_DIR" ]; then
@@ -16,7 +16,7 @@ if [ -z "$NO_RUN" ]; then
     cargo test --exclude systest --workspace --target $TARGET --verbose -- --nocapture
     cargo doc --no-deps --target $TARGET
     # We don't deny warnings here because we don't care about warnings in auto-generated code.
-    cargo run --manifest-path systest/Cargo.toml --target $TARGET -vv
+    cargo run --manifest-path systest/Cargo.toml --target $TARGET -v
 fi
 
 if [ -n "$FEATURES" ]
