@@ -180,6 +180,9 @@ fn main() {
         // Avoid undefined reference to `__imp_xmlFree'
         cflags.push("-DLIBXML_STATIC");
     }
+    if target.contains("apple-darwin") {
+        cflags.push("-Wno-error=incompatible-function-pointer-types");
+    }
 
     let mut cmd = Command::new("tar");
     cmd.current_dir(&build_dir.join("gettext"))
