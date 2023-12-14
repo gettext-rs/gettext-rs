@@ -102,6 +102,12 @@ fn check_clang_version() -> Option<u8> {
 
             println!("cargo:warning=found cc {:?}", &output);
 
+    let re = Regex::new(r"clang version (?<major>\d+)\.(?<minor>\d+)\.*").unwrap();
+    let Some(caps) = re.captures(&output) else { return None };
+    let major = caps.name("major").unwrap().as_str().parse::<u8>().unwrap_or(0);
+
+            println!("cargo:warning=found cc {:?}", &caps);
+            println!("cargo:warning=found cc {:?}", &major);
     Some(2)
     /*
     let errors: String = required_programs.iter().map(|x| command(x)).collect();
