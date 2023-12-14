@@ -82,8 +82,41 @@ fn check_dependencies(required_programs: Vec<&str>) {
     }
 }
 
+fn check_clang_version() -> Option<u8> {
+    // ${CC} --version | head -n 1 | grep -o -E "[[:digit:]]+.[[:digit:]].[[:digit:]]"
+    match env("CC") {
+        Some(cc) => { 
+            println!("cargo:warning=found cc {}", &cc);
+            if cc != "clang" {return None;}
+        }
+        None => {return None;}
+    };
+    let output = match  Command::new("clang")
+            .arg("--version")
+            .output() {
+        Ok(s) => String::from_utf8(s.stdout).unwrap_or_else( |_| String::new() ),
+        Err(_) => { return None; }
+    };
+
+            println!("cargo:warning=found cc {:?}", &output);
+
+    Some(2)
+    /*
+    let errors: String = required_programs.iter().map(|x| command(x)).collect();
+
+    if !errors.is_empty() {
+        fail(&format!("The following programs were not found:{}", errors));
+    }
+    */
+
+}
+
 fn main() {
     let target = env::var("TARGET").unwrap();
+
+    let clang_version = check_clang_version();
+    println!("cargo:warning=found cc {:?}", &clang_version);
+    return;
 
     if cfg!(feature = "gettext-system") || env("GETTEXT_SYSTEM").is_some() {
         if target.contains("linux") && (target.contains("-gnu") || target.contains("-musl")) {
