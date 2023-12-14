@@ -22,3 +22,4 @@ gettext-system = []
 [build-dependencies]
 cc = "1.0"
 temp-dir = "0.1.11"
+regex = "1"

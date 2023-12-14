@@ -1,5 +1,6 @@
 extern crate cc;
 extern crate temp_dir;
+extern crate regex;
 
 use std::env;
 use std::ffi::OsString;
@@ -7,6 +8,7 @@ use std::fs;
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use regex::Regex;
 use temp_dir::TempDir;
 
 fn env(name: &str) -> Option<String> {
