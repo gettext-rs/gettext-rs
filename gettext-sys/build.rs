@@ -85,10 +85,8 @@ fn check_dependencies(required_programs: Vec<&str>) {
 }
 
 fn check_clang_version() -> Option<u8> {
-    // ${CC} --version | head -n 1 | grep -o -E "[[:digit:]]+.[[:digit:]].[[:digit:]]"
     match env("CC") {
         Some(cc) => { 
-            println!("cargo:warning=found cc {}", &cc);
             if cc != "clang" {return None;}
         }
         None => {return None;}
@@ -100,31 +98,19 @@ fn check_clang_version() -> Option<u8> {
         Err(_) => { return None; }
     };
 
-            println!("cargo:warning=found cc {:?}", &output);
 
     let re = Regex::new(r"clang version (?<major>\d+)\.(?<minor>\d+)\.*").unwrap();
     let Some(caps) = re.captures(&output) else { return None };
     let major = caps.name("major").unwrap().as_str().parse::<u8>().unwrap_or(0);
 
-            println!("cargo:warning=found cc {:?}", &caps);
-            println!("cargo:warning=found cc {:?}", &major);
-    Some(2)
-    /*
-    let errors: String = required_programs.iter().map(|x| command(x)).collect();
-
-    if !errors.is_empty() {
-        fail(&format!("The following programs were not found:{}", errors));
-    }
-    */
-
+            // println!("cargo:warning=found cc {:?}", &caps);
+            // println!("cargo:warning=found cc {:?}", &major);
+    Some(major)
 }
 
 fn main() {
     let target = env::var("TARGET").unwrap();
 
-    let clang_version = check_clang_version();
-    println!("cargo:warning=found cc {:?}", &clang_version);
-    return;
 
     if cfg!(feature = "gettext-system") || env("GETTEXT_SYSTEM").is_some() {
         if target.contains("linux") && (target.contains("-gnu") || target.contains("-musl")) {
@@ -221,9 +207,16 @@ fn main() {
         // Avoid undefined reference to `__imp_xmlFree'
         cflags.push("-DLIBXML_STATIC");
     }
-    if target.contains("apple-darwin") {
-        cflags.push("-Wno-error=incompatible-function-pointer-types");
-    }
+    match check_clang_version() {
+        Some(clang_version) => {
+            if clang_version >= 16 {
+                cflags.push("-Wno-error=incompatible-function-pointer-types");
+            }
+        },
+        None => {
+            println!("cargo:warning=Clang Version not Found");
+        }
+    };
 
     let mut cmd = Command::new("tar");
     cmd.current_dir(&build_dir.join("gettext"))
