@@ -182,15 +182,17 @@ fn main() {
     }
 
     let mut cmd = Command::new("tar");
-    cmd.current_dir(&build_dir.join("gettext"))
+    let gettext_file = "gettext-0.21.tar.xz";
+    let gettext_dir = build_dir.join("gettext");
+    let _ = fs::create_dir(&gettext_dir);
+    let gettext_src = src.join(gettext_file);
+    let _ = fs::copy(&gettext_src, gettext_dir.join(gettext_file));
+
+    cmd.current_dir(&gettext_dir)
         .arg("xJf")
-        .arg(&src.join("gettext-0.21.tar.xz"))
+        .arg(gettext_file)
         .arg("--strip-components")
         .arg("1");
-    if host.contains("windows") {
-        // tar confuses local path with a remote resource because of ':'
-        cmd.arg("--force-local");
-    }
     run(&mut cmd, "tar");
 
     let mut cmd = Command::new("sh");
