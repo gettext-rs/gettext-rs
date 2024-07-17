@@ -8,8 +8,8 @@ build = "build.rs"
 links = "gettext"
 readme = "README.md"
 documentation = "https://docs.rs/gettext-sys/"
-homepage = "https://github.com/Koka/gettext-rs"
-repository = "https://github.com/Koka/gettext-rs"
+homepage = "https://github.com/gettext-rs/gettext-rs"
+repository = "https://github.com/gettext-rs/gettext-rs"
 edition = "2015"
 keywords = ["gettext", "binding", "ffi", "i18n", "l10n"]
 

@@ -2,8 +2,8 @@
 
 GNU [gettext](https://www.gnu.org/software/gettext/) bindings for Rust.
 
-[![Build & test on macOS](https://github.com/Koka/gettext-rs/workflows/Build%20&%20test%20on%20macOS/badge.svg)](https://github.com/Koka/gettext-rs/actions)
-[![Build & test on Linux](https://github.com/Koka/gettext-rs/workflows/Build%20&%20test%20on%20Linux/badge.svg)](https://github.com/Koka/gettext-rs/actions)
+[![Build & test on macOS](https://github.com/gettext-rs/gettext-rs/actions/workflows/macos.yml/badge.svg)](https://github.com/gettext-rs/gettext-rs/actions/workflows/macos.yml)
+[![Build & test on Linux](https://github.com/gettext-rs/gettext-rs/actions/workflows/linux.yml/badge.svg)](https://github.com/gettext-rs/gettext-rs/actions/workflows/linux.yml)
 
 gettext-rs:
 [![https://crates.io/crates/gettext-rs](https://img.shields.io/crates/v/gettext-rs.svg?v2)](https://crates.io/crates/gettext-rs)
