@@ -102,7 +102,7 @@ jobs:
         run: cargo generate-lockfile
 
       - name: Cache Cargo dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           key: ${{ hashFiles('**/Cargo.lock') }}
           path: |
