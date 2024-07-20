@@ -4,6 +4,7 @@ GNU [gettext](https://www.gnu.org/software/gettext/) bindings for Rust.
 
 [![Build & test on macOS](https://github.com/gettext-rs/gettext-rs/actions/workflows/macos.yml/badge.svg)](https://github.com/gettext-rs/gettext-rs/actions/workflows/macos.yml)
 [![Build & test on Linux](https://github.com/gettext-rs/gettext-rs/actions/workflows/linux.yml/badge.svg)](https://github.com/gettext-rs/gettext-rs/actions/workflows/linux.yml)
+[![Build & test on FreeBSD](https://img.shields.io/cirrus/github/gettext-rs/gettext-rs/master?label=FreeBSD)](https://cirrus-ci.com/github/gettext-rs/gettext-rs)
 
 gettext-rs:
 [![https://crates.io/crates/gettext-rs](https://img.shields.io/crates/v/gettext-rs.svg?v2)](https://crates.io/crates/gettext-rs)
