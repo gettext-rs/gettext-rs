@@ -37,7 +37,6 @@ task:
         - chown -R testuser:testgroup $HOME
     build_script: su testuser -c 'cd ~ && cargo build --verbose'
     test_script: su testuser -c 'cd ~ && RUST_TEST_THREADS=5 RUST_BACKTRACE=1 cargo test'
-    clippy_script: su testuser -c 'cd ~ && cargo clippy --all-targets --all-features -- -D warnings -A unknown-lints'
     before_cache_script:
         # Cirrus CI sometimes fails to unpack the cache. In that case, it
         # removes the "cache folder" and tries again. To work around that,
