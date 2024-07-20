@@ -181,6 +181,9 @@ fn main() {
         cflags.push("-DLIBXML_STATIC");
     }
 
+    // Work around build failure with Clang 16, which turned this warning into an error.
+    cflags.push("-Wno-incompatible-function-pointer-types");
+
     let mut cmd = Command::new("tar");
     cmd.current_dir(&build_dir.join("gettext"))
         .arg("xJf")
