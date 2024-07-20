@@ -18,7 +18,7 @@ task:
         # before_cache_script defined below.
         folder: $HOME/cargo-cache
         fingerprint_script:
-          - cat Cargo.lock
+          - cat gettext-rs/Cargo.toml gettext-sys/Cargo.toml
 
     env:
         HOME: /home/testuser
