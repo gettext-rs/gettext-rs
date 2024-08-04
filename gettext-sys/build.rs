@@ -100,6 +100,10 @@ fn main() {
             println!("cargo:rustc-link-lib=dylib=pthread");
             println!("cargo:include={}/../usr/include", &gnu_root);
             return;
+        } else if target.contains("freebsd") {
+            println!("cargo:rustc-link-search=native=/usr/local/lib");
+            println!("cargo:rustc-link-lib=dylib=intl");
+            return;
         }
         // else can't use system gettext on this target
     }
