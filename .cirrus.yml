@@ -22,6 +22,9 @@ task:
 
     env:
         HOME: /home/testuser
+        matrix:
+          - {} # empty on purpose -- we don't want to set `GETTEXT_SYSTEM`
+          - GETTEXT_SYSTEM: 1
 
     after_cache_script:
       - mkdir $HOME/.cargo || true
@@ -30,6 +33,7 @@ task:
         - pkg update -f
         - pkg upgrade -y
         - pkg install -y rust gmake
+        - if [ "x$GETTEXT_SYSTEM" != "x" ]; then pkg install -y gettext gettext-runtime; fi
     setup_script:
         - pw groupadd testgroup
         - pw useradd testuser -g testgroup -w none -m

@@ -7,6 +7,11 @@ use std::process::{self, Command};
 fn main() {
     let mut cfg = ctest2::TestGenerator::new();
 
+    let target = env::var("TARGET").unwrap();
+    if target.contains("freebsd") {
+        cfg.include("/usr/local/include");
+    }
+
     if let Ok(out) = env::var("DEP_GETTEXT_INCLUDE") {
         cfg.include(&out);
     }
