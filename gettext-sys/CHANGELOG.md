@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.21.4 - 2024-08-30
+
+### Changed
+
+- One can now link with system-provided gettext on FreeBSD by installing
+    `gettext` package or port and enabling `gettext-system` feature (or setting
+    `GETTEXT_SYSTEM` environment variable) (Nathan Fisher)
+
+### Fixed
+
+- Build failure with Clang 16 (Alexander Batischev)
+
+
+
 ## 0.21.3 - 2022-03-16
 
 ### Changed
