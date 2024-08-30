@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.7.1 - 2024-08-30
+
+### Fixed
+
+- `TextDomain` not following symlinks (Julian Schmidhuber)
+
+
+
 ## 0.7.0 - 2021-04-25
 
 ### Changed

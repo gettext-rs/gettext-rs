@@ -1,7 +1,7 @@
 [package]
 name = "gettext-rs"
 description = "Safe bindings for gettext"
-version = "0.7.0"
+version = "0.7.1"
 authors = ["Konstantin Salikhov <koka58@yandex.ru>", "Alexander Batischev <eual.jp@gmail.com>"]
 repository = "https://github.com/gettext-rs/gettext-rs"
 documentation = "https://docs.rs/gettext-rs/"
