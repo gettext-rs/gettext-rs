@@ -10,3 +10,6 @@ gettext-sys = { path = "../gettext-sys" }
 
 [build-dependencies]
 ctest2 = "0.4"
+
+[features]
+cross_compiling = []
