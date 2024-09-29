@@ -4,9 +4,9 @@ freebsd_resource_settings: &freebsd_resource_settings
 
 task:
     matrix:
-        - name: FreeBSD 13.3
+        - name: FreeBSD 13.4
           freebsd_instance:
-            image: freebsd-13-3-release-amd64
+            image: freebsd-13-4-release-amd64
             << : *freebsd_resource_settings
         - name: FreeBSD 14.1
           freebsd_instance:
