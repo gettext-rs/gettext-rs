@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.7.2 - 2024-10-10
+
+### Changed
+
+- Allow gettext-sys 0.22
+
+
+
 ## 0.7.1 - 2024-08-30
 
 ### Fixed
