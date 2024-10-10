@@ -86,7 +86,7 @@ fn dcgettext_fn() {
     );
 
     assert_eq!(
-        dcgettext("bound_domain", "Hello, World!", LocaleCategory::LcAll),
+        dcgettext("bound_domain", "Hello, World!", LocaleCategory::LcMessages),
         "Hello, World!"
     );
 }
@@ -156,7 +156,7 @@ fn dcngettext_fn() {
             "Hello, World!",
             "Hello, Worlds!",
             1,
-            LocaleCategory::LcAll
+            LocaleCategory::LcMessages
         ),
         "Hello, World!"
     );
@@ -166,7 +166,7 @@ fn dcngettext_fn() {
             "Hello, World!",
             "Hello, Worlds!",
             2,
-            LocaleCategory::LcAll
+            LocaleCategory::LcMessages
         ),
         "Hello, Worlds!"
     );
