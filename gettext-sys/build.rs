@@ -1,5 +1,5 @@
 extern crate cc;
-extern crate temp_dir;
+extern crate tempfile;
 
 use std::env;
 use std::ffi::OsString;
@@ -7,7 +7,7 @@ use std::fs;
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use temp_dir::TempDir;
+use tempfile::TempDir;
 
 fn env(name: &str) -> Option<String> {
     let prefix = env::var("TARGET").unwrap().to_uppercase().replace("-", "_");
