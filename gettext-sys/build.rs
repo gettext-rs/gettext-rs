@@ -188,9 +188,7 @@ fn main() {
     let mut cmd = Command::new("tar");
     cmd.current_dir(&build_dir.join("gettext"))
         .arg("xJf")
-        .arg(&src.join("gettext-0.22.5.tar.xz"))
-        .arg("--strip-components")
-        .arg("1");
+        .arg(&src.join("gettext-0.22.5.tar.xz"));
     if host.contains("windows") {
         // tar confuses local path with a remote resource because of ':'
         cmd.arg("--force-local");
@@ -203,7 +201,7 @@ fn main() {
         .env("LD", &which("ld").unwrap())
         .env("VERBOSE", "1")
         .current_dir(&build_dir.join("build"))
-        .arg(&posix_path(&build_dir.join("gettext").join("configure")));
+        .arg(&posix_path(&build_dir.join("gettext").join("gettext-0.22.5").join("configure")));
 
     cmd.arg("--without-emacs");
     cmd.arg("--disable-java");
