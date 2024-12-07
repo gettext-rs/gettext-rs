@@ -20,13 +20,13 @@ jobs:
       matrix:
         use_homebrew: [false, true]
         sys:
-          - os: macos-12
-            target: x86_64-apple-darwin
-            gettext_dir: /usr/local/opt/gettext
           - os: macos-13
             target: x86_64-apple-darwin
             gettext_dir: /usr/local/opt/gettext
           - os: macos-14
+            target: aarch64-apple-darwin
+            gettext_dir: /opt/homebrew
+          - os: macos-15
             target: aarch64-apple-darwin
             gettext_dir: /opt/homebrew
 
