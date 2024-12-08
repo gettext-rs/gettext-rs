@@ -6,7 +6,7 @@ use std::ffi::OsString;
 use std::fs;
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::process::{Command, Stdio};
 use temp_dir::TempDir;
 
 fn env(name: &str) -> Option<String> {
@@ -161,7 +161,7 @@ fn main() {
     }
 
     // Programs required to compile GNU gettext
-    check_dependencies(vec!["cmp", "diff", "find", "xz"]);
+    check_dependencies(vec!["cmp", "diff", "find", "xz", "xzcat"]);
 
     let host = env::var("HOST").unwrap();
     let src = env::current_dir().unwrap();
@@ -185,15 +185,32 @@ fn main() {
         cflags.push("-DLIBXML_STATIC");
     }
 
-    let mut cmd = Command::new("tar");
-    cmd.current_dir(&build_dir.join("gettext"))
-        .arg("xJf")
-        .arg(&src.join("gettext-0.22.5.tar.xz"));
-    if host.contains("windows") {
-        // tar confuses local path with a remote resource because of ':'
-        cmd.arg("--force-local");
+    let xzcat = Command::new("xzcat")
+        .arg(&src.join("gettext-0.22.5.tar.xz"))
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .spawn()
+        .expect("Failed to execute xzcat. Is it installed?");
+
+    let mut tar = Command::new("tar")
+        .arg("xf")
+        .arg("-")
+        .stdin(Stdio::from(
+            xzcat.stdout.expect("Failed to open xzcat's stdout"),
+        ))
+        .stdout(Stdio::null())
+        .current_dir(&build_dir.join("gettext"))
+        .spawn()
+        .expect("Failed to execute tar. Is it installed?");
+
+    match tar.wait() {
+        Err(e) => fail(&format!("tar failed to run: {:?}", e)),
+        Ok(exit_status) => {
+            if !exit_status.success() {
+                fail(&format!("tar returned code {:?}", exit_status.code()))
+            }
+        }
     }
-    run(&mut cmd, "tar");
 
     let mut cmd = Command::new("sh");
     cmd.env("CC", compiler.path())
@@ -201,7 +218,12 @@ fn main() {
         .env("LD", &which("ld").unwrap())
         .env("VERBOSE", "1")
         .current_dir(&build_dir.join("build"))
-        .arg(&posix_path(&build_dir.join("gettext").join("gettext-0.22.5").join("configure")));
+        .arg(&posix_path(
+            &build_dir
+                .join("gettext")
+                .join("gettext-0.22.5")
+                .join("configure"),
+        ));
 
     cmd.arg("--without-emacs");
     cmd.arg("--disable-java");
