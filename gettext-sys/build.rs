@@ -85,10 +85,25 @@ fn check_dependencies(required_programs: Vec<&str>) {
 fn main() {
     let target = env::var("TARGET").unwrap();
 
+    if try_gettext_system() {
+        return;
+    }
+
+    if target.contains("apple-darwin") {
+        println!("cargo:rustc-link-lib=framework=CoreFoundation");
+        println!("cargo:rustc-link-lib=dylib=iconv");
+    }
+
+    let _ = try_gettext_dir() || try_gettext_dirs() || build_from_source();
+}
+
+fn try_gettext_system() -> bool {
+    let target = env::var("TARGET").unwrap();
+
     if cfg!(feature = "gettext-system") || env("GETTEXT_SYSTEM").is_some() {
         if target.contains("linux") && (target.contains("-gnu") || target.contains("-musl")) {
             // intl is part of glibc and musl
-            return;
+            return true;
         } else if target.contains("windows") && target.contains("-gnu") {
             // gettext doesn't come with a pkg-config file
             let gnu_root = get_windows_gnu_root();
@@ -99,20 +114,19 @@ fn main() {
             // It is needed by `cargo test` while generating doc
             println!("cargo:rustc-link-lib=dylib=pthread");
             println!("cargo:include={}/../usr/include", &gnu_root);
-            return;
+            return true;
         } else if target.contains("freebsd") {
             println!("cargo:rustc-link-search=native=/usr/local/lib");
             println!("cargo:rustc-link-lib=dylib=intl");
-            return;
+            return true;
         }
         // else can't use system gettext on this target
     }
 
-    if target.contains("apple-darwin") {
-        println!("cargo:rustc-link-lib=framework=CoreFoundation");
-        println!("cargo:rustc-link-lib=dylib=iconv");
-    }
+    false
+}
 
+fn try_gettext_dir() -> bool {
     if let Some(gettext_dir) = env("GETTEXT_DIR") {
         println!("cargo:root={}", gettext_dir);
         if let Some(bin) = env("GETTEXT_BIN_DIR") {
@@ -141,8 +155,14 @@ fn main() {
             println!("cargo:rustc-link-lib=dylib=intl");
         }
 
-        return;
-    } else if let (Some(bin), Some(lib), Some(include)) = (
+        return true;
+    }
+
+    false
+}
+
+fn try_gettext_dirs() -> bool {
+    if let (Some(bin), Some(lib), Some(include)) = (
         env("GETTEXT_BIN_DIR"),
         env("GETTEXT_LIB_DIR"),
         env("GETTEXT_INCLUDE_DIR"),
@@ -157,23 +177,36 @@ fn main() {
         println!("cargo:bin={}", bin);
         println!("cargo:lib={}", lib);
         println!("cargo:include={}", include);
-        return;
+        return true;
     }
 
+    false
+}
+
+fn build_from_source() -> bool {
     // Programs required to compile GNU gettext
     check_dependencies(vec!["cmp", "diff", "find", "xz", "xzcat"]);
 
-    let host = env::var("HOST").unwrap();
+    let target = env::var("TARGET").unwrap();
     let src = env::current_dir().unwrap();
     let build_dir = TempDir::new().unwrap();
     let build_dir = build_dir.path();
-
-    let cfg = cc::Build::new();
-    let compiler = cfg.get_compiler();
+    let compiler = cc::Build::new().get_compiler();
 
     let _ = fs::create_dir(&build_dir.join("build"));
     let _ = fs::create_dir(&build_dir.join("gettext"));
 
+    unpack_tarball(&src, &build_dir);
+    run_configure(&target, &compiler, &build_dir);
+    run_make(&build_dir);
+    run_make_install(&build_dir);
+    copy_artifacts_to_out_dir(&build_dir);
+    set_up_linking_with_out_dir(&target);
+
+    true
+}
+
+fn prepare_cflags(target: &str, compiler: &cc::Tool) -> OsString {
     let mut cflags = OsString::new();
     for arg in compiler.args() {
         cflags.push(arg);
@@ -185,6 +218,10 @@ fn main() {
         cflags.push("-DLIBXML_STATIC");
     }
 
+    cflags
+}
+
+fn unpack_tarball(src: &Path, build_dir: &Path) {
     let xzcat = Command::new("xzcat")
         .arg(&src.join("gettext-0.22.5.tar.xz"))
         .stdin(Stdio::null())
@@ -211,6 +248,12 @@ fn main() {
             }
         }
     }
+}
+
+fn run_configure(target: &str, compiler: &cc::Tool, build_dir: &Path) {
+    let host = env::var("HOST").unwrap();
+
+    let cflags = prepare_cflags(&target, &compiler);
 
     let mut cmd = Command::new("sh");
     cmd.env("CC", compiler.path())
@@ -263,18 +306,27 @@ fn main() {
         }
     }
     run(&mut cmd, "sh");
+}
+
+fn run_make(build_dir: &Path) {
     run(
         make()
             .arg(&format!("-j{}", env::var("NUM_JOBS").unwrap()))
             .current_dir(&build_dir.join("build")),
         "make",
     );
+}
+
+fn run_make_install(build_dir: &Path) {
     run(
         make().arg("install").current_dir(&build_dir.join("build")),
         "make",
     );
+}
 
+fn copy_artifacts_to_out_dir(build_dir: &Path) {
     let dst = PathBuf::from(env::var_os("OUT_DIR").unwrap());
+
     let mut cmd = Command::new("cp");
     cmd.current_dir(&build_dir)
         .arg("-r")
@@ -283,6 +335,10 @@ fn main() {
         .arg(&build_dir.join("lib"))
         .arg(&dst);
     run(&mut cmd, "cp");
+}
+
+fn set_up_linking_with_out_dir(target: &str) {
+    let dst = PathBuf::from(env::var_os("OUT_DIR").unwrap());
 
     println!("cargo:rustc-link-lib=static=intl");
     println!("cargo:rustc-link-search=native={}/lib", dst.display());
