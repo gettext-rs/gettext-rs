@@ -26,6 +26,7 @@ abide by LGPL**. If you don't want or can't do that, there are two ways out:
         pacman --noconfirm -S base-devel mingw-w64-x86_64-gcc libxml2-devel tar
         ```
     * FreeBSD with GNU gettext installed as a package or port;
+    * GNU/Hurd with glibc;
 
     If none of those conditions hold, the crate will proceed to building and
     statically linking its own copy of GNU gettext!
