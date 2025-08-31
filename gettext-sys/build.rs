@@ -385,9 +385,11 @@ fn fail(s: &str) -> ! {
 fn which(cmd: &str) -> Option<PathBuf> {
     let cmd = format!("{}{}", cmd, env::consts::EXE_SUFFIX);
     let paths = env::var_os("PATH").unwrap();
-    env::split_paths(&paths)
+    let path = env::split_paths(&paths)
         .map(|p| p.join(&cmd))
-        .find(|p| fs::metadata(p).is_ok())
+        .find(|p| fs::metadata(p).is_ok());
+
+    path
 }
 
 fn make() -> Command {

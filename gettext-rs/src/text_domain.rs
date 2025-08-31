@@ -345,7 +345,7 @@ impl TextDomain {
         let sys_data_dirs_iter = env::split_paths(&sys_data_paths_str);
 
         // Chain search paths and search for the translation mo file
-        self.pre_paths
+        let locale_set = self.pre_paths
             .into_iter()
             .chain(sys_data_dirs_iter)
             .chain(self.post_paths.into_iter())
@@ -388,7 +388,9 @@ impl TextDomain {
                     .map_err(TextDomainError::BindTextDomainCodesetCallFailed)?;
                 textdomain(domainname).map_err(TextDomainError::TextDomainCallFailed)?;
                 Ok(result)
-            })
+            });
+
+        locale_set
     }
 }
 
