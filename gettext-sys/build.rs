@@ -121,6 +121,9 @@ fn try_gettext_system() -> bool {
             println!("cargo:rustc-link-search=native=/usr/local/lib");
             println!("cargo:rustc-link-lib=dylib=intl");
             return true;
+        } else if target.contains("cygwin") {
+            println!("cargo:rustc-link-lib=dylib=intl");
+            return true;
         }
         // else can't use system gettext on this target
     }
