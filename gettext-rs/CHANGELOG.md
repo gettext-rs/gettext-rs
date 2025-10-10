@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.7.3 - 2025-10-10
+
+### Added
+
+- Support for glibc/libintl shipped with GNU/Hurd (Pino Toscano)
+
+
+
 ## 0.7.2 - 2024-10-10
 
 ### Changed
