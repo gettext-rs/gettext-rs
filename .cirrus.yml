@@ -4,13 +4,13 @@ freebsd_resource_settings: &freebsd_resource_settings
 
 task:
     matrix:
-        - name: FreeBSD 13.4
+        - name: FreeBSD 13.5
           freebsd_instance:
-            image: freebsd-13-4-release-amd64
+            image: freebsd-13-5-release-amd64
             << : *freebsd_resource_settings
-        - name: FreeBSD 14.2
+        - name: FreeBSD 14.3
           freebsd_instance:
-            image: freebsd-14-2-release-amd64-ufs
+            image: freebsd-14-3-release-amd64-ufs
             <<: *freebsd_resource_settings
 
     cargo_cache:
