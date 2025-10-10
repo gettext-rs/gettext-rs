@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.22.6 - 2025-10-10
+
+### Added
+
+- Support for glibc/libintl shipped with GNU/Hurd (Pino Toscano)
+
+### Changed
+
+- Stop building libgettext binaries that aren't required for gettext-sys. This
+    speeds up the compilation of the vendored GNU gettext by an order of
+    magnitude (Bruno Haible, Alexander Batischev)
+
+### Fixed
+
+- Build failure on OpenBSD caused by `tar` not supporting `--strip-components`
+    and `-J` (#116) (Alfred Morgan, Alexander Batischev)
+
+
+
 ## 0.22.5 - 2024-10-10
 
 ### Changed
