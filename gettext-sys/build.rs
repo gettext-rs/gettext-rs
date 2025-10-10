@@ -267,6 +267,7 @@ fn run_configure(target: &str, compiler: &cc::Tool, build_dir: &Path) {
             &build_dir
                 .join("gettext")
                 .join("gettext-0.22.5")
+                .join("gettext-runtime")
                 .join("configure"),
         ));
 
