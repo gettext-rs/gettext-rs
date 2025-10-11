@@ -225,7 +225,7 @@ fn prepare_cflags(target: &str, compiler: &cc::Tool) -> OsString {
 
 fn unpack_tarball(src: &Path, build_dir: &Path) {
     let xzcat = Command::new("xzcat")
-        .arg(&src.join("gettext-0.25.1.tar.xz"))
+        .arg(&src.join("gettext-0.26.tar.xz"))
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .spawn()
@@ -266,7 +266,7 @@ fn run_configure(target: &str, compiler: &cc::Tool, build_dir: &Path) {
         .arg(&posix_path(
             &build_dir
                 .join("gettext")
-                .join("gettext-0.25.1")
+                .join("gettext-0.26")
                 .join("gettext-runtime")
                 .join("configure"),
         ));
