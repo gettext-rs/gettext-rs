@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.24.0 - 2025-10-11
+
+### Changed
+
+- Bump bundled GNU gettext to 0.24.2 (Alexander Batischev)
+
+
+
 ## 0.23.0 - 2025-10-10
 
 Please note that in macOS 15 the `iconv()` call is too broken to be used by GNU

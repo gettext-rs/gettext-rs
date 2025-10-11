@@ -30,11 +30,12 @@ To internationalize your program with gettext, you have to do four things:
    the binary MO format, and install them into a well-known location like
    _/usr/local/share/locale_.
 
-This crate only covers the first step, the markup. To extract messages, use
-`xtr` (`cargo install xtr`). To translate, you can use desktop tools like
-[Poedit][], sites like [Crowdin][], or any text editor. To compile from PO to
-MO, use `msgfmt` tool from gettext-tools. The way you install files highly depend
-on your distribution method, so it's not covered here either.
+This crate only covers the first step, the markup. To extract messages, use the
+xgettext program (from GNU gettext version 0.24 or newer) or `xtr` (`cargo
+install xtr`). To translate, you can use desktop tools like [Poedit][], sites
+like [Crowdin][], or any text editor. To compile from PO to MO, use `msgfmt`
+tool from GNU gettext. The way you install files highly depend on your
+distribution method, so it's not covered here either.
 
 [Poedit]: https://poedit.net
 [Crowdin]: https://crowdin.com
