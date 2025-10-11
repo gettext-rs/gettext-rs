@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.26.0 - 2025-10-11
+
+### Changed
+
+- Bump bundled GNU gettext to 0.26 (Alexander Batischev)
+
+
+
 ## 0.25.0 - 2025-10-11
 
 ### Changed
