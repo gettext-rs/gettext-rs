@@ -1,8 +1,18 @@
 # Changelog
 
+## 0.7.5 - 2025-10-11
+
+### Changed
+
+- Document that GNU gettext tools support Rust since 0.24, so `xgettext` can be
+    used in place of `xtr` (#139) (Bruno Haible)
+- Allow gettext-sys 0.24
+
+
+
 ## 0.7.4 - 2025-10-10
 
-## Changed
+### Changed
 
 - Allow gettext-sys 0.23
 
