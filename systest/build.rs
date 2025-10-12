@@ -1,11 +1,11 @@
-extern crate ctest2;
+extern crate ctest;
 
 use std::env;
 use std::path::{Path, PathBuf};
 use std::process::{self, Command};
 
 fn main() {
-    let mut cfg = ctest2::TestGenerator::new();
+    let mut cfg = ctest::TestGenerator::new();
 
     let target = env::var("TARGET").unwrap();
     if target.contains("freebsd") {
