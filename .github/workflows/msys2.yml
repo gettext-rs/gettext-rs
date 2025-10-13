@@ -1,0 +1,35 @@
+name: Build & test on MSYS2
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "0 0 * * 6" # At 00:00 every Saturday
+
+jobs:
+  build_and_test_msys2:
+    name: "ci/run.sh on MSYS2"
+    runs-on: windows-latest
+    env:
+      # Disable progress bar in Cargo. This cuts down on output, avoiding log length limits.
+      TERM: dumb
+      GETTEXT_SYSTEM: 1
+      TARGET: x86_64-pc-cygwin
+
+    strategy:
+      fail-fast: false
+
+    steps:
+      - name: Setup MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          install: gettext-devel rust
+          update: true
+          release: false
+
+      - name: Check out the code
+        uses: actions/checkout@v4
+
+      - name: ./ci/run.sh
+        shell: msys2 {0}
+        run: sh ci/run.sh

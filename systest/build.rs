@@ -1,11 +1,11 @@
-extern crate ctest2;
+extern crate ctest;
 
 use std::env;
 use std::path::{Path, PathBuf};
 use std::process::{self, Command};
 
 fn main() {
-    let mut cfg = ctest2::TestGenerator::new();
+    let mut cfg = ctest::TestGenerator::new();
 
     let target = env::var("TARGET").unwrap();
     if target.contains("freebsd") {
@@ -22,7 +22,10 @@ fn main() {
     // Skip ptr check because the symbol name is different between glibc
     // implementation and static lib.
     // eg. gettext is libintl_gettext in static lib
-    if env::var_os("GETTEXT_SYSTEM").is_none() || env::var("TARGET").unwrap().contains("windows") {
+    if env::var_os("GETTEXT_SYSTEM").is_none()
+        || target.contains("windows")
+        || target.contains("cygwin")
+    {
         println!("Skipping ptr check");
         cfg.skip_fn_ptrcheck(|_| true);
     }
