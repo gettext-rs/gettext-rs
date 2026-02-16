@@ -228,7 +228,7 @@ fn prepare_cflags(target: &str, compiler: &cc::Tool) -> OsString {
 
 fn unpack_tarball(src: &Path, build_dir: &Path) {
     let xzcat = Command::new("xzcat")
-        .arg(&src.join("gettext-0.26.tar.xz"))
+        .arg(&src.join("gettext-1.0.tar.xz"))
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .spawn()
@@ -269,7 +269,7 @@ fn run_configure(target: &str, compiler: &cc::Tool, build_dir: &Path) {
         .arg(&posix_path(
             &build_dir
                 .join("gettext")
-                .join("gettext-0.26")
+                .join("gettext-1.0")
                 .join("gettext-runtime")
                 .join("configure"),
         ));
@@ -284,6 +284,7 @@ fn run_configure(target: &str, compiler: &cc::Tool, build_dir: &Path) {
     cmd.arg("--with-included-gettext");
     cmd.arg("--with-included-glib");
     cmd.arg("--with-included-libcroco");
+    cmd.arg("--with-included-libintl");
     cmd.arg("--with-included-libunistring");
 
     if target.contains("windows") {
