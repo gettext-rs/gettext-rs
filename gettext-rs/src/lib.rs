@@ -419,6 +419,8 @@ where
 /// `setlocale()` later to set the same local again. `None` means the call failed (the underlying
 /// API doesn't provide any details).
 ///
+/// If you want to *get* the locale, rather than set it, use [`getters::getlocale`].
+///
 /// For more information, see [setlocale(3)][].
 ///
 /// [setlocale(3)]: https://www.man7.org/linux/man-pages/man3/setlocale.3.html

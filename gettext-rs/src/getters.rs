@@ -17,6 +17,8 @@ use std::io;
 use std::path::PathBuf;
 use std::ptr;
 
+use super::LocaleCategory;
+
 /// Get currently set message domain.
 ///
 /// If you want to *set* the domain, rather than getting its current value, use
@@ -87,6 +89,25 @@ pub fn domain_directory<T: Into<Vec<u8>>>(domainname: T) -> Result<PathBuf, io::
                     result.to_bytes().to_vec(),
                 )))
             }
+        }
+    }
+}
+
+/// Get currently set locale.
+///
+/// If you want to *set* the locale, rather than getting its current value, use
+/// [`setlocale`][::setlocale].
+///
+/// For more information, see [setlocale(3)][].
+///
+/// [setlocale(3)]: https://www.man7.org/linux/man-pages/man3/setlocale.3.html
+pub fn getlocale(category: LocaleCategory) -> Option<Vec<u8>> {
+    unsafe {
+        let result = ffi::setlocale(category as i32, ptr::null());
+        if result.is_null() {
+            None
+        } else {
+            Some(CStr::from_ptr(result).to_bytes().to_owned())
         }
     }
 }
