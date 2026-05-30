@@ -1,0 +1,46 @@
+name: FreeBSD
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build_and_test_freebsd:
+    strategy:
+      matrix:
+        release: ["13.5", "14.3"]
+        set_gettext_system_env:
+          - "unset"
+          - 1
+
+    name: FreeBSD ${{ matrix.release }}, GETTEXT_SYSTEM is ${{ matrix.set_gettext_system_env }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v6
+
+      - name: Prepare the environment
+        if: ${{ matrix.set_gettext_system_env == 1 }}
+        run: echo "GETTEXT_SYSTEM=1" >> $GITHUB_ENV
+
+      - name: Build, test, fake-install, run Clippy
+        uses: vmactions/freebsd-vm@v1
+        with:
+          release: ${{ matrix.release }}
+          copyback: false
+          prepare: |
+            pkg update -f
+            pkg upgrade -y
+            pkg install -y rust gmake
+            if [ "x${GETTEXT_SYSTEM:-}" != "x" ]; then pkg install -y gettext gettext-runtime; fi
+
+          run: |
+            export TESTUSER_HOME=/home/testuser
+            pw groupadd testgroup
+            pw useradd testuser -g testgroup -w none -m -d $TESTUSER_HOME
+            cp -R . $TESTUSER_HOME
+            chown -R testuser:testgroup $TESTUSER_HOME
+
+            su testuser -c 'cd ~ && cargo build --verbose'
+            su testuser -c 'cd ~ && RUST_TEST_THREADS=5 RUST_BACKTRACE=1 cargo test'
