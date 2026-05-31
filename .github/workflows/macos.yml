@@ -50,13 +50,13 @@ jobs:
         run: echo '::remove-matcher owner=cargo-test::'
 
       - name: Check out the code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Generate lockfile
         run: cargo generate-lockfile
 
       - name: Cache Cargo dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           key: ${{ hashFiles('**/Cargo.lock') }}
           path: |

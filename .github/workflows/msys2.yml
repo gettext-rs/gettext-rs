@@ -28,7 +28,7 @@ jobs:
           release: false
 
       - name: Check out the code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: ./ci/run.sh
         shell: msys2 {0}

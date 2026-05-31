@@ -13,6 +13,6 @@ jobs:
           rust-version: stable
 
       - name: Check out the code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - run: cargo fmt --all -- --check
