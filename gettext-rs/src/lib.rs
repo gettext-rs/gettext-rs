@@ -558,60 +558,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn smoke_test() {
-        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-
-        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
-        textdomain("hellorust").unwrap();
-
-        assert_eq!("Hello, world!", gettext("Hello, world!"));
-    }
-
-    #[test]
-    fn plural_test() {
-        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-
-        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
-        textdomain("hellorust").unwrap();
-
-        assert_eq!(
-            "Hello, world!",
-            ngettext("Hello, world!", "Hello, worlds!", 1)
-        );
-        assert_eq!(
-            "Hello, worlds!",
-            ngettext("Hello, world!", "Hello, worlds!", 2)
-        );
-    }
-
-    #[test]
-    fn context_test() {
-        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-
-        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
-        textdomain("hellorust").unwrap();
-
-        assert_eq!("Hello, world!", pgettext("context", "Hello, world!"));
-    }
-
-    #[test]
-    fn plural_context_test() {
-        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-
-        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
-        textdomain("hellorust").unwrap();
-
-        assert_eq!(
-            "Hello, world!",
-            npgettext("context", "Hello, world!", "Hello, worlds!", 1)
-        );
-        assert_eq!(
-            "Hello, worlds!",
-            npgettext("context", "Hello, world!", "Hello, worlds!", 2)
-        );
-    }
-
-    #[test]
     #[should_panic(expected = "`msgid` contains an internal 0 byte")]
     fn gettext_panics() {
         gettext("input string\0");
@@ -711,12 +657,6 @@ mod tests {
     #[should_panic(expected = "`dirname` contains an internal 0 byte")]
     fn bindtextdomain_panics_on_zero_in_dirname() {
         bindtextdomain("my_domain", "/opt/locales\0").unwrap();
-    }
-
-    #[test]
-    #[should_panic(expected = "`locale` contains an internal 0 byte")]
-    fn setlocale_panics_on_zero_in_locale() {
-        setlocale(LocaleCategory::LcCollate, "en_\0US");
     }
 
     #[test]

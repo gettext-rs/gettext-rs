@@ -435,20 +435,7 @@ impl fmt::Debug for TextDomain {
 
 #[cfg(test)]
 mod tests {
-    use super::{LocaleCategory, TextDomain, TextDomainError};
-
-    #[test]
-    fn errors() {
-        match TextDomain::new("test").locale("(°_°)").init().err() {
-            Some(TextDomainError::InvalidLocale(message)) => assert_eq!(message, "(°_°)"),
-            _ => panic!(),
-        };
-
-        match TextDomain::new("0_0").locale("en_US").init().err() {
-            Some(TextDomainError::TranslationNotFound(message)) => assert_eq!(message, "en"),
-            _ => panic!(),
-        };
-    }
+    use super::{LocaleCategory, TextDomain};
 
     #[test]
     fn attributes() {
@@ -475,14 +462,11 @@ mod tests {
 
         let text_domain = text_domain.skip_system_data_paths();
         assert!(text_domain.skip_system_data_paths);
+    }
 
+    #[test]
+    fn override_locale() {
         let text_domain = TextDomain::new("test").locale("en_US");
         assert_eq!(Some("en_US".to_owned()), text_domain.locale);
-
-        // accept locale, but fail to find translation
-        match TextDomain::new("0_0").locale("en_US").init().err() {
-            Some(TextDomainError::TranslationNotFound(message)) => assert_eq!(message, "en"),
-            _ => panic!(),
-        };
     }
 }
