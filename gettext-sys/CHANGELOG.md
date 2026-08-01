@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.27.0 - unreleased
+
+This release breaks an unwritten rule: version of gettext-sys crate no longer
+matches that of the bundled GNU gettext library. gettext-sys contains a tiny bit
+of Rust code which previously didn't require any major version bumps. However,
+unsoundness in `setlocale` (#64) finally required one, so the rule can't hold
+anymore. Theoretically we could keep the rule by releasing 1.0, but I (Alexander
+Batischev) am not confident enough to do that just yet.
+
+### Changed
+
+- Bump bundled GNU gettext to 1.0 (Alexander Batischev)
+
+
+
 ## 0.26.0 - 2025-10-11
 
 ### Changed
