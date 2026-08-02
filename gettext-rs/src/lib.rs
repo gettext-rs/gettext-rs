@@ -14,7 +14,12 @@
 //!     // You could also use `TextDomain` builder which calls `textdomain` and
 //!     // other functions for you:
 //!     //
-//!     // TextDomain::new("hellorust").init()?;
+//!     // let text_domain = TextDomain::new("hellorust");
+//!     // unsafe {
+//!     //     // Safety: init() is safe to call because at this point the program
+//!     //     // is single-threaded
+//!     //     text_domain.init()?;
+//!     // }
 //!
 //!     // `gettext()` simultaneously marks a string for translation and translates
 //!     // it at runtime.
@@ -58,9 +63,12 @@
 //! ```rust,no_run
 //! # use gettextrs::*;
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
-//! TextDomain::new("hellorust")
-//!     .codeset("UTF-8") // Optional, the builder does this by default
-//!     .init()?;
+//! let text_domain = TextDomain::new("hellorust")
+//!     .codeset("UTF-8"); // Optional, the builder does this by default
+//! unsafe {
+//!     // Safety: init() is safe to call because at this point the program is single-threaded
+//!     text_domain.init()?;
+//! }
 //! # Ok(())
 //! # }
 //! ```
@@ -416,18 +424,28 @@ where
 /// Set current locale.
 ///
 /// Returns an opaque string that describes the locale set. You can pass that string into
-/// `setlocale()` later to set the same local again. `None` means the call failed (the underlying
+/// `setlocale()` later to set the same locale again. `None` means the call failed (the underlying
 /// API doesn't provide any details).
 ///
 /// For more information, see [setlocale(3)][].
 ///
 /// [setlocale(3)]: https://www.man7.org/linux/man-pages/man3/setlocale.3.html
 ///
+/// # Safety
+///
+/// The underlying C API performs the following unsafe operations:
+///
+/// * it non-atomically modifies the locale object which is better regarded as constant;
+/// * it accesses the program environment without any synchronization.
+///
+/// Canonical way to ensure safety is to call `setlocale()` as early as possible, prior to starting
+/// any more threads or enabling any POSIX signals.
+///
 /// # Panics
 ///
 /// Panics if `locale` contains an internal 0 byte, as such values can't be passed to the
 /// underlying C API.
-pub fn setlocale<T: Into<Vec<u8>>>(category: LocaleCategory, locale: T) -> Option<Vec<u8>> {
+pub unsafe fn setlocale<T: Into<Vec<u8>>>(category: LocaleCategory, locale: T) -> Option<Vec<u8>> {
     let c = CString::new(locale).expect("`locale` contains an internal 0 byte");
     unsafe {
         let ret = ffi::setlocale(category as i32, c.as_ptr());

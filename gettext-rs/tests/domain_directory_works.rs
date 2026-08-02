@@ -4,7 +4,11 @@ use gettextrs::{getters::*, *};
 use std::path::PathBuf;
 
 fn main() {
-    setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
+    unsafe {
+        // Safety: `setlocale` is safe to call because at this point, the program is
+        // single-threaded.
+        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
+    }
 
     bindtextdomain("bound_domain", "/usr/local/share/locale").unwrap();
 

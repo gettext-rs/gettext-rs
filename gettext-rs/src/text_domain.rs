@@ -100,7 +100,11 @@ impl error::Error for TextDomainError {
 /// use gettextrs::TextDomain;
 ///
 /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
-/// TextDomain::new("my_textdomain").init()?;
+/// let text_domain = TextDomain::new("my_textdomain");
+/// unsafe {
+///     // Safety: init() is safe to call because at this point the program is single-threaded
+///     text_domain.init()?;
+/// }
 /// # Ok(())
 /// # }
 /// ```
@@ -112,9 +116,12 @@ impl error::Error for TextDomainError {
 /// use gettextrs::TextDomain;
 ///
 /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
-/// TextDomain::new("my_textdomain")
-///            .prepend("target")
-///            .init()?;
+/// let text_domain = TextDomain::new("my_textdomain")
+///            .prepend("target");
+/// unsafe {
+///     // Safety: init() is safe to call because at this point the program is single-threaded
+///     text_domain.init()?;
+/// }
 /// # Ok(())
 /// # }
 /// ```
@@ -124,11 +131,15 @@ impl error::Error for TextDomainError {
 /// ```no_run
 /// use gettextrs::{TextDomain, TextDomainError};
 ///
-/// let init_msg = match TextDomain::new("my_textdomain")
+/// let text_domain = TextDomain::new("my_textdomain")
 ///     .skip_system_data_paths()
 ///     .push("target")
-///     .locale("fr_FR")
-///     .init()
+///     .locale("fr_FR");
+/// let init_result = unsafe {
+///     // Safety: init() is safe to call because at this point the program is single-threaded
+///     text_domain.init()
+/// };
+/// let init_msg = match init_result
 /// {
 ///     Ok(locale) => {
 ///         format!("translation found, `setlocale` returned {:?}", locale)
@@ -290,20 +301,29 @@ impl TextDomain {
     /// - a translation of the text domain in the requested language was found; and
     /// - the locale is valid.
     ///
+    /// # Safety
+    ///
+    /// Locale is initialized using the unsafe function [`setlocale`]. Please see its requirements
+    /// to understand when `init()` is safe to call.
+    ///
     /// # Examples
     ///
     /// ```no_run
     /// use gettextrs::TextDomain;
     ///
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /// TextDomain::new("my_textdomain").init()?;
+    /// let text_domain = TextDomain::new("my_textdomain");
+    /// unsafe {
+    ///     // Safety: init() is safe to call because at this point the program is single-threaded
+    ///     text_domain.init()?;
+    /// }
     /// # Ok(())
     /// # }
     /// ```
     ///
     /// [`TextDomainError`]: enum.TextDomainError.html
     /// [`setlocale`]: fn.setlocale.html
-    pub fn init(mut self) -> Result<Option<Vec<u8>>, TextDomainError> {
+    pub unsafe fn init(mut self) -> Result<Option<Vec<u8>>, TextDomainError> {
         let (req_locale, norm_locale) = match self.locale.take() {
             Some(req_locale) => {
                 if req_locale == "C" || req_locale == "POSIX" {
@@ -381,7 +401,11 @@ impl TextDomain {
                 false
             })
             .map_or(Err(TextDomainError::TranslationNotFound(lang)), |path| {
-                let result = setlocale(locale_category, req_locale);
+                let result = unsafe {
+                    // Safety: the caller of `TextDomain::init()` is responsible for ensuring the
+                    // safety of the `setlocale` call.
+                    setlocale(locale_category, req_locale)
+                };
                 bindtextdomain(domainname.clone(), path.join("locale"))
                     .map_err(TextDomainError::BindTextDomainCallFailed)?;
                 bind_textdomain_codeset(domainname.clone(), codeset)
