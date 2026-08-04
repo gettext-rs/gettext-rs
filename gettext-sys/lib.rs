@@ -47,7 +47,7 @@ unsafe extern "C" {
     /// starting any more threads or enabling any POSIX signals.
     ///
     /// See also [`setlocale(3)`](https://www.man7.org/linux/man-pages/man3/setlocale.3.html).
-    pub unsafe fn setlocale(category: c_int, locale: *const c_char) -> *mut c_char;
+    pub fn setlocale(category: c_int, locale: *const c_char) -> *mut c_char;
 }
 
 #[cfg(windows)]
