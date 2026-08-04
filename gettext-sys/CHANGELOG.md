@@ -5,9 +5,11 @@
 This release breaks an unwritten rule: version of gettext-sys crate no longer
 matches that of the bundled GNU gettext library. gettext-sys contains a tiny bit
 of Rust code which previously didn't require any major version bumps. However,
-unsoundness in `setlocale` (#64) finally required one, so the rule can't hold
-anymore. Theoretically we could keep the rule by releasing 1.0, but I (Alexander
-Batischev) am not confident enough to do that just yet.
+unsoundness in `setlocale` (https://github.com/gettext-rs/gettext-rs/issues/64)
+made me realise that this in unsustainable. The newest GNU gettext version
+is 1.0, but I (Alexander Batischev) am not ready to bump gettext-sys to 1.0.
+Thus I am releasing this as 0.27, and will continue with 0.x versioning until
+such time that I'm confident enough to cut a 1.0.
 
 ### Changed
 
