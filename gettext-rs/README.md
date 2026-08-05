@@ -61,7 +61,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // You could also use `TextDomain` builder which calls `textdomain` and
     // other functions for you:
     //
-    // TextDomain::new("hellorust").init()?;
+    // let text_domain = TextDomain::new("hellorust");
+    // unsafe {
+    //     // Safety: init() is safe to call because at this point the program
+    //     // is single-threaded
+    //     text_domain.init()?;
+    // }
 
     // `gettext()` simultaneously marks a string for translation and translates
     // it at runtime.

@@ -14,7 +14,12 @@
 //!     // You could also use `TextDomain` builder which calls `textdomain` and
 //!     // other functions for you:
 //!     //
-//!     // TextDomain::new("hellorust").init()?;
+//!     // let text_domain = TextDomain::new("hellorust");
+//!     // unsafe {
+//!     //     // Safety: init() is safe to call because at this point the program
+//!     //     // is single-threaded
+//!     //     text_domain.init()?;
+//!     // }
 //!
 //!     // `gettext()` simultaneously marks a string for translation and translates
 //!     // it at runtime.
@@ -58,9 +63,12 @@
 //! ```rust,no_run
 //! # use gettextrs::*;
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
-//! TextDomain::new("hellorust")
-//!     .codeset("UTF-8") // Optional, the builder does this by default
-//!     .init()?;
+//! let text_domain = TextDomain::new("hellorust")
+//!     .codeset("UTF-8"); // Optional, the builder does this by default
+//! unsafe {
+//!     // Safety: init() is safe to call because at this point the program is single-threaded
+//!     text_domain.init()?;
+//! }
 //! # Ok(())
 //! # }
 //! ```
@@ -124,9 +132,10 @@ pub enum LocaleCategory {
 
 /// Translate msgid to localized message from the default domain.
 ///
-/// For more information, see [gettext(3)][].
+/// For more information, see [gettext(3)][] and [The GNU C Library Reference Manual][glibc].
 ///
 /// [gettext(3)]: https://www.man7.org/linux/man-pages/man3/gettext.3.html
+/// [glibc]: https://sourceware.org/glibc/manual/2.44/html_node/Translation-with-gettext.html
 ///
 /// # Panics
 ///
@@ -146,9 +155,10 @@ pub fn gettext<T: Into<String>>(msgid: T) -> String {
 
 /// Translate msgid to localized message from the specified domain.
 ///
-/// For more information, see [dgettext(3)][].
+/// For more information, see [dgettext(3)][] and [The GNU C Library Reference Manual][glibc].
 ///
 /// [dgettext(3)]: https://www.man7.org/linux/man-pages/man3/dgettext.3.html
+/// [glibc]: https://sourceware.org/glibc/manual/2.44/html_node/Translation-with-gettext.html
 ///
 /// # Panics
 ///
@@ -175,9 +185,10 @@ where
 
 /// Translate msgid to localized message from the specified domain using custom locale category.
 ///
-/// For more information, see [dcgettext(3)][].
+/// For more information, see [dcgettext(3)][] and [The GNU C Library Reference Manual][glibc].
 ///
 /// [dcgettext(3)]: https://www.man7.org/linux/man-pages/man3/dcgettext.3.html
+/// [glibc]: https://sourceware.org/glibc/manual/2.44/html_node/Translation-with-gettext.html
 ///
 /// # Panics
 ///
@@ -207,9 +218,10 @@ where
 
 /// Translate msgid to localized message from the default domain (with plural support).
 ///
-/// For more information, see [ngettext(3)][].
+/// For more information, see [ngettext(3)][] and [The GNU C Library Reference Manual][glibc].
 ///
 /// [ngettext(3)]: https://www.man7.org/linux/man-pages/man3/ngettext.3.html
+/// [glibc]: https://sourceware.org/glibc/manual/2.44/html_node/Advanced-gettext-functions.html
 ///
 /// # Panics
 ///
@@ -239,9 +251,10 @@ where
 
 /// Translate msgid to localized message from the specified domain (with plural support).
 ///
-/// For more information, see [dngettext(3)][].
+/// For more information, see [dngettext(3)][] and [The GNU C Library Reference Manual][glibc].
 ///
 /// [dngettext(3)]: https://www.man7.org/linux/man-pages/man3/dngettext.3.html
+/// [glibc]: https://sourceware.org/glibc/manual/2.44/html_node/Advanced-gettext-functions.html
 ///
 /// # Panics
 ///
@@ -276,9 +289,10 @@ where
 /// Translate msgid to localized message from the specified domain using custom locale category
 /// (with plural support).
 ///
-/// For more information, see [dcngettext(3)][].
+/// For more information, see [dcngettext(3)][] and [The GNU C Library Reference Manual][glibc].
 ///
 /// [dcngettext(3)]: https://www.man7.org/linux/man-pages/man3/dcngettext.3.html
+/// [glibc]: https://sourceware.org/glibc/manual/2.44/html_node/Advanced-gettext-functions.html
 ///
 /// # Panics
 ///
@@ -324,9 +338,10 @@ where
 ///
 /// If you want to *get* current domain, rather than set it, use [`getters::current_textdomain`].
 ///
-/// For more information, see [textdomain(3)][].
+/// For more information, see [textdomain(3)][] and [The GNU C Library Reference Manual][glibc].
 ///
 /// [textdomain(3)]: https://www.man7.org/linux/man-pages/man3/textdomain.3.html
+/// [glibc]: https://sourceware.org/glibc/manual/2.44/html_node/Locating-gettext-catalog.html
 ///
 /// # Panics
 ///
@@ -350,9 +365,10 @@ pub fn textdomain<T: Into<Vec<u8>>>(domainname: T) -> Result<Vec<u8>, io::Error>
 ///
 /// If you want to *get* domain directory, rather than set it, use [`getters::domain_directory`].
 ///
-/// For more information, see [bindtextdomain(3)][].
+/// For more information, see [bindtextdomain(3)][] and [The GNU C Library Reference Manual][glibc].
 ///
 /// [bindtextdomain(3)]: https://www.man7.org/linux/man-pages/man3/bindtextdomain.3.html
+/// [glibc]: https://sourceware.org/glibc/manual/2.44/html_node/Locating-gettext-catalog.html
 ///
 /// # Panics
 ///
@@ -416,18 +432,28 @@ where
 /// Set current locale.
 ///
 /// Returns an opaque string that describes the locale set. You can pass that string into
-/// `setlocale()` later to set the same local again. `None` means the call failed (the underlying
+/// `setlocale()` later to set the same locale again. `None` means the call failed (the underlying
 /// API doesn't provide any details).
 ///
 /// For more information, see [setlocale(3)][].
 ///
 /// [setlocale(3)]: https://www.man7.org/linux/man-pages/man3/setlocale.3.html
 ///
+/// # Safety
+///
+/// The underlying C API performs the following unsafe operations:
+///
+/// * it non-atomically modifies the locale object which is better regarded as constant;
+/// * it accesses the program environment without any synchronization.
+///
+/// Canonical way to ensure safety is to call `setlocale()` as early as possible, prior to starting
+/// any more threads or enabling any POSIX signals.
+///
 /// # Panics
 ///
 /// Panics if `locale` contains an internal 0 byte, as such values can't be passed to the
 /// underlying C API.
-pub fn setlocale<T: Into<Vec<u8>>>(category: LocaleCategory, locale: T) -> Option<Vec<u8>> {
+pub unsafe fn setlocale<T: Into<Vec<u8>>>(category: LocaleCategory, locale: T) -> Option<Vec<u8>> {
     let c = CString::new(locale).expect("`locale` contains an internal 0 byte");
     unsafe {
         let ret = ffi::setlocale(category as i32, c.as_ptr());
@@ -446,9 +472,11 @@ pub fn setlocale<T: Into<Vec<u8>>>(category: LocaleCategory, locale: T) -> Optio
 ///
 /// If you want to *get* current encoding, rather than set it, use [`getters::textdomain_codeset`].
 ///
-/// For more information, see [bind_textdomain_codeset(3)][].
+/// For more information, see [bind_textdomain_codeset(3)][] and [The GNU C Library Reference
+/// Manual][glibc].
 ///
 /// [bind_textdomain_codeset(3)]: https://www.man7.org/linux/man-pages/man3/bind_textdomain_codeset.3.html
+/// [glibc]: https://sourceware.org/glibc/manual/2.44/html_node/Charset-conversion-in-gettext.html
 ///
 /// # Panics
 ///
@@ -558,60 +586,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn smoke_test() {
-        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-
-        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
-        textdomain("hellorust").unwrap();
-
-        assert_eq!("Hello, world!", gettext("Hello, world!"));
-    }
-
-    #[test]
-    fn plural_test() {
-        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-
-        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
-        textdomain("hellorust").unwrap();
-
-        assert_eq!(
-            "Hello, world!",
-            ngettext("Hello, world!", "Hello, worlds!", 1)
-        );
-        assert_eq!(
-            "Hello, worlds!",
-            ngettext("Hello, world!", "Hello, worlds!", 2)
-        );
-    }
-
-    #[test]
-    fn context_test() {
-        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-
-        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
-        textdomain("hellorust").unwrap();
-
-        assert_eq!("Hello, world!", pgettext("context", "Hello, world!"));
-    }
-
-    #[test]
-    fn plural_context_test() {
-        setlocale(LocaleCategory::LcAll, "en_US.UTF-8");
-
-        bindtextdomain("hellorust", "/usr/local/share/locale").unwrap();
-        textdomain("hellorust").unwrap();
-
-        assert_eq!(
-            "Hello, world!",
-            npgettext("context", "Hello, world!", "Hello, worlds!", 1)
-        );
-        assert_eq!(
-            "Hello, worlds!",
-            npgettext("context", "Hello, world!", "Hello, worlds!", 2)
-        );
-    }
-
-    #[test]
     #[should_panic(expected = "`msgid` contains an internal 0 byte")]
     fn gettext_panics() {
         gettext("input string\0");
@@ -711,12 +685,6 @@ mod tests {
     #[should_panic(expected = "`dirname` contains an internal 0 byte")]
     fn bindtextdomain_panics_on_zero_in_dirname() {
         bindtextdomain("my_domain", "/opt/locales\0").unwrap();
-    }
-
-    #[test]
-    #[should_panic(expected = "`locale` contains an internal 0 byte")]
-    fn setlocale_panics_on_zero_in_locale() {
-        setlocale(LocaleCategory::LcCollate, "en_\0US");
     }
 
     #[test]

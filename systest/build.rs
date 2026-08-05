@@ -30,7 +30,8 @@ fn main() {
         cfg.skip_fn_ptrcheck(|_| true);
     }
 
-    cfg.generate("../gettext-sys/lib.rs", "all.rs");
+    ctest::generate_test(&mut cfg, "../gettext-sys/lib.rs", "all.rs")
+        .expect("Failed to generate tests");
 
     // Check that we can find and run gettext binary
     let cmd = if let Some(bin) = env::var_os("DEP_GETTEXT_BIN") {
