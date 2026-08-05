@@ -132,9 +132,10 @@ pub enum LocaleCategory {
 
 /// Translate msgid to localized message from the default domain.
 ///
-/// For more information, see [gettext(3)][].
+/// For more information, see [gettext(3)][] and [The GNU C Library Reference Manual][glibc].
 ///
 /// [gettext(3)]: https://www.man7.org/linux/man-pages/man3/gettext.3.html
+/// [glibc]: https://sourceware.org/glibc/manual/2.44/html_node/Translation-with-gettext.html
 ///
 /// # Panics
 ///
@@ -154,9 +155,10 @@ pub fn gettext<T: Into<String>>(msgid: T) -> String {
 
 /// Translate msgid to localized message from the specified domain.
 ///
-/// For more information, see [dgettext(3)][].
+/// For more information, see [dgettext(3)][] and [The GNU C Library Reference Manual][glibc].
 ///
 /// [dgettext(3)]: https://www.man7.org/linux/man-pages/man3/dgettext.3.html
+/// [glibc]: https://sourceware.org/glibc/manual/2.44/html_node/Translation-with-gettext.html
 ///
 /// # Panics
 ///
@@ -183,9 +185,10 @@ where
 
 /// Translate msgid to localized message from the specified domain using custom locale category.
 ///
-/// For more information, see [dcgettext(3)][].
+/// For more information, see [dcgettext(3)][] and [The GNU C Library Reference Manual][glibc].
 ///
 /// [dcgettext(3)]: https://www.man7.org/linux/man-pages/man3/dcgettext.3.html
+/// [glibc]: https://sourceware.org/glibc/manual/2.44/html_node/Translation-with-gettext.html
 ///
 /// # Panics
 ///
@@ -215,9 +218,10 @@ where
 
 /// Translate msgid to localized message from the default domain (with plural support).
 ///
-/// For more information, see [ngettext(3)][].
+/// For more information, see [ngettext(3)][] and [The GNU C Library Reference Manual][glibc].
 ///
 /// [ngettext(3)]: https://www.man7.org/linux/man-pages/man3/ngettext.3.html
+/// [glibc]: https://sourceware.org/glibc/manual/2.44/html_node/Advanced-gettext-functions.html
 ///
 /// # Panics
 ///
@@ -247,9 +251,10 @@ where
 
 /// Translate msgid to localized message from the specified domain (with plural support).
 ///
-/// For more information, see [dngettext(3)][].
+/// For more information, see [dngettext(3)][] and [The GNU C Library Reference Manual][glibc].
 ///
 /// [dngettext(3)]: https://www.man7.org/linux/man-pages/man3/dngettext.3.html
+/// [glibc]: https://sourceware.org/glibc/manual/2.44/html_node/Advanced-gettext-functions.html
 ///
 /// # Panics
 ///
@@ -284,9 +289,10 @@ where
 /// Translate msgid to localized message from the specified domain using custom locale category
 /// (with plural support).
 ///
-/// For more information, see [dcngettext(3)][].
+/// For more information, see [dcngettext(3)][] and [The GNU C Library Reference Manual][glibc].
 ///
 /// [dcngettext(3)]: https://www.man7.org/linux/man-pages/man3/dcngettext.3.html
+/// [glibc]: https://sourceware.org/glibc/manual/2.44/html_node/Advanced-gettext-functions.html
 ///
 /// # Panics
 ///
@@ -332,9 +338,10 @@ where
 ///
 /// If you want to *get* current domain, rather than set it, use [`getters::current_textdomain`].
 ///
-/// For more information, see [textdomain(3)][].
+/// For more information, see [textdomain(3)][] and [The GNU C Library Reference Manual][glibc].
 ///
 /// [textdomain(3)]: https://www.man7.org/linux/man-pages/man3/textdomain.3.html
+/// [glibc]: https://sourceware.org/glibc/manual/2.44/html_node/Locating-gettext-catalog.html
 ///
 /// # Panics
 ///
@@ -358,9 +365,10 @@ pub fn textdomain<T: Into<Vec<u8>>>(domainname: T) -> Result<Vec<u8>, io::Error>
 ///
 /// If you want to *get* domain directory, rather than set it, use [`getters::domain_directory`].
 ///
-/// For more information, see [bindtextdomain(3)][].
+/// For more information, see [bindtextdomain(3)][] and [The GNU C Library Reference Manual][glibc].
 ///
 /// [bindtextdomain(3)]: https://www.man7.org/linux/man-pages/man3/bindtextdomain.3.html
+/// [glibc]: https://sourceware.org/glibc/manual/2.44/html_node/Locating-gettext-catalog.html
 ///
 /// # Panics
 ///
@@ -464,9 +472,11 @@ pub unsafe fn setlocale<T: Into<Vec<u8>>>(category: LocaleCategory, locale: T) -
 ///
 /// If you want to *get* current encoding, rather than set it, use [`getters::textdomain_codeset`].
 ///
-/// For more information, see [bind_textdomain_codeset(3)][].
+/// For more information, see [bind_textdomain_codeset(3)][] and [The GNU C Library Reference
+/// Manual][glibc].
 ///
 /// [bind_textdomain_codeset(3)]: https://www.man7.org/linux/man-pages/man3/bind_textdomain_codeset.3.html
+/// [glibc]: https://sourceware.org/glibc/manual/2.44/html_node/Charset-conversion-in-gettext.html
 ///
 /// # Panics
 ///
