@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.27.0 - unreleased
+## 0.27.0 - 2026-08-05
 
 This release breaks an unwritten rule: version of gettext-sys crate no longer
 matches that of the bundled GNU gettext library. gettext-sys contains a tiny bit
@@ -10,6 +10,11 @@ made me realise that this in unsustainable. The newest GNU gettext version
 is 1.0, but I (Alexander Batischev) am not ready to bump gettext-sys to 1.0.
 Thus I am releasing this as 0.27, and will continue with 0.x versioning until
 such time that I'm confident enough to cut a 1.0.
+
+### Added
+
+- Support for Cygwin's system libraries when building with gettext-system
+    feature (Yuyi Wang)
 
 ### Changed
 

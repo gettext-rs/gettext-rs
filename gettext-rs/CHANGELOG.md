@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.8.0 - 2026-08-05
+
+### Changed
+
+- Allow gettext-sys 0.27 which bundles GNU gettext 1.0 (Alexander Batischev)
+
+### Security
+
+- Mark `setlocale` and `TextDomain::init()` as `unsafe` because calling
+    `setlocale` from multiple threads can lead to memory corruption. See updated
+    docs for details on how to call those functions safely (#64)
+    (Alexander Batischev)
+
+
+
 ## 0.7.7 - 2025-10-11
 
 ### Changed
