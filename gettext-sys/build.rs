@@ -101,8 +101,12 @@ fn try_gettext_system() -> bool {
     let target = env::var("TARGET").unwrap();
 
     if cfg!(feature = "gettext-system") || env("GETTEXT_SYSTEM").is_some() {
-        if (target.contains("linux") || target.contains("hurd"))
-            && (target.contains("-gnu") || target.contains("-musl"))
+        // Use the cfg values rather than the target triple, as custom targets (such
+        // as Yocto's aarch64-poky-linux) don't necessarily spell out the libc.
+        let target_os = env::var("CARGO_CFG_TARGET_OS").unwrap_or_default();
+        let target_env = env::var("CARGO_CFG_TARGET_ENV").unwrap_or_default();
+        if matches!(target_os.as_str(), "linux" | "hurd")
+            && matches!(target_env.as_str(), "gnu" | "musl")
         {
             // intl is part of glibc and musl
             return true;
