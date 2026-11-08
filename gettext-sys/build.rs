@@ -94,13 +94,17 @@ fn main() {
         println!("cargo:rustc-link-lib=dylib=iconv");
     }
 
-    let _ = try_gettext_dir() || try_gettext_dirs() || build_from_source();
+    let _ = try_gettext_dir() || try_gettext_dirs() || try_conda_prefix() || build_from_source();
+}
+
+fn gettext_system_requested() -> bool {
+    cfg!(feature = "gettext-system") || env("GETTEXT_SYSTEM").is_some()
 }
 
 fn try_gettext_system() -> bool {
     let target = env::var("TARGET").unwrap();
 
-    if cfg!(feature = "gettext-system") || env("GETTEXT_SYSTEM").is_some() {
+    if gettext_system_requested() {
         if (target.contains("linux") || target.contains("hurd"))
             && (target.contains("-gnu") || target.contains("-musl"))
         {
@@ -133,37 +137,81 @@ fn try_gettext_system() -> bool {
 
 fn try_gettext_dir() -> bool {
     if let Some(gettext_dir) = env("GETTEXT_DIR") {
-        println!("cargo:root={}", gettext_dir);
-        if let Some(bin) = env("GETTEXT_BIN_DIR") {
-            println!("cargo:bin={}", bin);
-        } else {
-            println!("cargo:bin={}/bin", gettext_dir);
-        }
-
-        if let Some(lib) = env("GETTEXT_LIB_DIR") {
-            println!("cargo:lib={}", lib);
-            println!("cargo:rustc-link-search=native={}", lib);
-        } else {
-            println!("cargo:lib={}/lib", gettext_dir);
-            println!("cargo:rustc-link-search=native={}/lib", gettext_dir);
-        }
-
-        if let Some(include) = env("GETTEXT_INCLUDE_DIR") {
-            println!("cargo:include={}", include);
-        } else {
-            println!("cargo:include={}/include", gettext_dir);
-        }
-
-        if env("GETTEXT_STATIC").is_some() {
-            println!("cargo:rustc-link-lib=static=intl");
-        } else {
-            println!("cargo:rustc-link-lib=dylib=intl");
-        }
-
+        use_gettext_root(&gettext_dir);
         return true;
     }
 
     false
+}
+
+fn try_conda_prefix() -> bool {
+    if !gettext_system_requested() {
+        return false;
+    }
+
+    let prefix = if env("CONDA_BUILD").is_some() {
+        env("PREFIX")
+    } else {
+        env("CONDA_PREFIX")
+    };
+    let prefix = match prefix {
+        Some(prefix) => PathBuf::from(prefix),
+        None => return false,
+    };
+
+    let candidates = if env::var("TARGET").unwrap().contains("windows") {
+        vec![prefix.join("Library"), prefix]
+    } else {
+        vec![prefix]
+    };
+
+    let lib_names = [
+        "libintl.dylib",
+        "libintl.so",
+        "libintl.a",
+        "intl.lib",
+        "libintl.lib",
+        "libintl.dll.a",
+    ];
+
+    for root in candidates {
+        let lib = root.join("lib");
+        if lib_names.iter().any(|name| lib.join(name).is_file()) {
+            use_gettext_root(&root.display().to_string());
+            return true;
+        }
+    }
+
+    false
+}
+
+fn use_gettext_root(gettext_dir: &str) {
+    println!("cargo:root={}", gettext_dir);
+    if let Some(bin) = env("GETTEXT_BIN_DIR") {
+        println!("cargo:bin={}", bin);
+    } else {
+        println!("cargo:bin={}/bin", gettext_dir);
+    }
+
+    if let Some(lib) = env("GETTEXT_LIB_DIR") {
+        println!("cargo:lib={}", lib);
+        println!("cargo:rustc-link-search=native={}", lib);
+    } else {
+        println!("cargo:lib={}/lib", gettext_dir);
+        println!("cargo:rustc-link-search=native={}/lib", gettext_dir);
+    }
+
+    if let Some(include) = env("GETTEXT_INCLUDE_DIR") {
+        println!("cargo:include={}", include);
+    } else {
+        println!("cargo:include={}/include", gettext_dir);
+    }
+
+    if env("GETTEXT_STATIC").is_some() {
+        println!("cargo:rustc-link-lib=static=intl");
+    } else {
+        println!("cargo:rustc-link-lib=dylib=intl");
+    }
 }
 
 fn try_gettext_dirs() -> bool {
