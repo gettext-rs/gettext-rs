@@ -88,11 +88,12 @@
 extern crate locale_config;
 
 extern crate gettext_sys as ffi;
+extern crate libc;
 
 use std::ffi::CStr;
 use std::ffi::CString;
 use std::io;
-use std::os::raw::c_ulong;
+use std::os::raw::{c_int, c_ulong};
 use std::path::PathBuf;
 
 mod text_domain;
@@ -128,6 +129,24 @@ pub enum LocaleCategory {
     LcMeasurement = 11,
     /// Metadata about the locale information.
     LcIdentification = 12,
+}
+
+impl LocaleCategory {
+    fn to_raw(self) -> Option<c_int> {
+        match self {
+            LocaleCategory::LcCType => Some(libc::LC_CTYPE),
+            LocaleCategory::LcNumeric => Some(libc::LC_NUMERIC),
+            LocaleCategory::LcTime => Some(libc::LC_TIME),
+            LocaleCategory::LcCollate => Some(libc::LC_COLLATE),
+            LocaleCategory::LcMonetary => Some(libc::LC_MONETARY),
+            LocaleCategory::LcAll => Some(libc::LC_ALL),
+            #[cfg(not(windows))]
+            LocaleCategory::LcMessages => Some(libc::LC_MESSAGES),
+            // glibc-only categories
+            _ if cfg!(all(unix, target_env = "gnu")) => Some(self as c_int),
+            _ => None,
+        }
+    }
 }
 
 /// Translate msgid to localized message from the default domain.
@@ -456,7 +475,7 @@ where
 pub unsafe fn setlocale<T: Into<Vec<u8>>>(category: LocaleCategory, locale: T) -> Option<Vec<u8>> {
     let c = CString::new(locale).expect("`locale` contains an internal 0 byte");
     unsafe {
-        let ret = ffi::setlocale(category as i32, c.as_ptr());
+        let ret = ffi::setlocale(category.to_raw()?, c.as_ptr());
         if ret.is_null() {
             None
         } else {

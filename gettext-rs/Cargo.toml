@@ -79,4 +79,5 @@ version = ">= 0.21.0, <0.28.0"
 path = "../gettext-sys"
 
 [dependencies]
+libc = "0.2"
 locale_config = "0.3"
