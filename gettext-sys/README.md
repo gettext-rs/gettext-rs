@@ -27,6 +27,7 @@ abide by LGPL**. If you don't want or can't do that, there are two ways out:
         ```
     * FreeBSD with GNU gettext installed as a package or port;
     * GNU/Hurd with glibc;
+    * macOS and Windows inside a conda environment with gettext installed;
 
     If none of those conditions hold, the crate will proceed to building and
     statically linking its own copy of GNU gettext!
